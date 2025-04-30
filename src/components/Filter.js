@@ -151,6 +151,7 @@ const Filter = ({
   };
 
   const getActiveClass = () => {
+    if (type === "daterange") return "";
     return isFilterActive() ? "border-blue-500 ring-1 ring-blue-500" : "";
   };
 

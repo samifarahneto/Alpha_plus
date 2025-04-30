@@ -172,6 +172,14 @@ const ProjectDetails = () => {
   const [selectedRefundOption, setSelectedRefundOption] = useState("total");
   const [showCustomAmount, setShowCustomAmount] = useState(false);
 
+  console.log("Estado inicial do ProjectDetails:", {
+    projectId,
+    location: location.state,
+    projectDetails,
+    project,
+    loading,
+  });
+
   // Memoização dos cálculos
   const totalPages = useMemo(() => {
     if (!projectDetails?.files) return 0;
@@ -218,36 +226,115 @@ const ProjectDetails = () => {
     debouncedSetEditedPages.cancel();
   }, [debouncedSetEditedPages]);
 
-  useEffect(() => {
-    const fetchProjectDetails = async () => {
-      try {
-        const { state } = location;
+  const fetchProjectDetails = useCallback(async () => {
+    try {
+      setLoading(true);
 
-        if (!state || !state.collection) {
-          console.error("Coleção não encontrada no estado:", state);
-          return;
-        }
+      if (!projectId) {
+        console.error("ID do projeto não encontrado");
+        setLoading(false);
+        return;
+      }
 
-        const projectRef = doc(getFirestore(), state.collection, projectId);
+      // Lista de todas as coleções possíveis
+      const collections = [
+        "b2bprojects",
+        "b2bprojectspaid",
+        "b2bapproved",
+        "b2bdocprojects",
+        "b2bapproval",
+        "b2cprojectspaid",
+        "b2cdocprojects",
+        "b2capproval",
+      ];
+
+      // Primeiro, tentar usar a coleção do estado/URL
+      const { state } = location;
+      const urlParams = new URLSearchParams(window.location.search);
+      const collectionFromUrl = urlParams.get("collection");
+      const collectionFromState = state?.collection;
+
+      let projectData = null;
+      let foundCollection = null;
+
+      // Se tivermos uma coleção específica, tentar primeiro ela
+      if (collectionFromUrl || collectionFromState) {
+        const collection = collectionFromUrl || collectionFromState;
+        console.log("Tentando coleção específica:", collection);
+
+        const projectRef = doc(getFirestore(), collection, projectId);
         const projectDoc = await getDoc(projectRef);
 
         if (projectDoc.exists()) {
-          const projectData = projectDoc.data();
-          setProjectDetails(projectData);
-          setProject(projectData);
-          setLoading(false);
-        } else {
-          console.error("Projeto não encontrado");
-          setLoading(false);
+          projectData = projectDoc.data();
+          foundCollection = collection;
         }
-      } catch (error) {
-        console.error("Erro ao buscar detalhes do projeto:", error);
-        setLoading(false);
       }
-    };
 
-    fetchProjectDetails();
+      // Se não encontrou na coleção específica, procurar em todas as coleções
+      if (!projectData) {
+        for (const collection of collections) {
+          console.log("Procurando projeto na coleção:", collection);
+          const projectRef = doc(getFirestore(), collection, projectId);
+          const projectDoc = await getDoc(projectRef);
+
+          if (projectDoc.exists()) {
+            projectData = projectDoc.data();
+            foundCollection = collection;
+            break;
+          }
+        }
+      }
+
+      if (!projectData) {
+        console.error("Projeto não encontrado em nenhuma coleção");
+        setLoading(false);
+        return;
+      }
+
+      console.log("Projeto encontrado:", {
+        projectData,
+        collection: foundCollection,
+      });
+
+      setProjectDetails(projectData);
+      setProject(projectData);
+      setLoading(false);
+    } catch (error) {
+      console.error("Erro ao buscar detalhes do projeto:", error);
+      setLoading(false);
+    }
   }, [projectId, location]);
+
+  const initializeProject = useCallback(() => {
+    console.log("useEffect disparado com:", {
+      projectId,
+      location: location.state,
+      projectDetails,
+      project,
+      loading,
+    });
+
+    if (location.state?.project) {
+      console.log("Projeto encontrado no estado:", location.state.project);
+      setProject(location.state.project);
+      setProjectDetails(location.state.project);
+      setLoading(false);
+    } else {
+      fetchProjectDetails();
+    }
+  }, [
+    projectId,
+    location.state,
+    fetchProjectDetails,
+    projectDetails,
+    project,
+    loading,
+  ]);
+
+  useEffect(() => {
+    initializeProject();
+  }, [initializeProject]);
 
   const handleShareLink = async () => {
     try {
@@ -867,9 +954,14 @@ const ProjectDetails = () => {
       setIsSendingApproval(true);
 
       // Verifica se há contagem de páginas zerada
-      const hasZeroPages = project.files.some((file) => {
+      const hasZeroPages = project?.files?.some((file) => {
+        const fileIndex = Array.isArray(project.files)
+          ? project.files.indexOf(file)
+          : -1;
         const pageCount =
-          editedPages[project.files.indexOf(file)] || file.pageCount;
+          fileIndex !== -1
+            ? editedPages[fileIndex] || file.pageCount
+            : file.pageCount;
         return !pageCount || pageCount <= 0;
       });
 
@@ -1282,6 +1374,13 @@ const ProjectDetails = () => {
   };
 
   if (loading) {
+    console.log("Estado durante o carregamento:", {
+      loading,
+      projectId,
+      projectDetails,
+      project,
+      location: location.state,
+    });
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
@@ -1295,6 +1394,13 @@ const ProjectDetails = () => {
   }
 
   if (!projectDetails) {
+    console.log("Estado quando o projeto não é encontrado:", {
+      loading,
+      projectId,
+      projectDetails,
+      project,
+      location: location.state,
+    });
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
@@ -1309,6 +1415,14 @@ const ProjectDetails = () => {
       </div>
     );
   }
+
+  console.log("Estado quando o projeto é encontrado:", {
+    loading,
+    projectId,
+    projectDetails,
+    project,
+    location: location.state,
+  });
 
   return (
     <div className="w-full max-w-[1200px] mx-auto p-8 space-y-8">

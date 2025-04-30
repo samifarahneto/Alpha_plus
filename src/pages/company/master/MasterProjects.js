@@ -473,6 +473,13 @@ const MasterProjects = ({ style, isMobile }) => {
 
     // Determinar a coleção correta
     const collectionName = selectedUpload.collection;
+    console.log("Coleção do projeto:", collectionName);
+
+    if (!collectionName) {
+      console.error("Coleção não encontrada no projeto:", selectedUpload);
+      return;
+    }
+
     const uploadDoc = doc(firestore, collectionName, uploadId);
 
     try {
@@ -488,42 +495,25 @@ const MasterProjects = ({ style, isMobile }) => {
         isRead: true,
       });
 
-      // Atualizar o estado local mantendo todos os dados originais
-      setAllUploads((prevUploads) =>
-        prevUploads.map((upload) =>
-          upload.id === uploadId
-            ? {
-                ...upload,
-                files: updatedFiles,
-                isRead: true,
-                projectName: upload.projectName,
-                userEmail: upload.userEmail,
-                projectOwner: upload.projectOwner,
-                sourceLanguage: upload.sourceLanguage,
-                targetLanguage: upload.targetLanguage,
-                status: upload.status,
-                createdAt: upload.createdAt,
-                deadline: upload.deadline,
-                totalProjectValue: upload.totalProjectValue,
-                isPaid: upload.isPaid,
-                collection: upload.collection,
-              }
-            : upload
-        )
-      );
+      // Navegar para a página de detalhes com a coleção correta
+      const url = `/company/master/project/${uploadId}?collection=${collectionName}`;
+      console.log("Navegando para:", url);
+      console.log("Estado sendo passado:", {
+        project: selectedUpload,
+        collection: collectionName,
+      });
 
-      // Recalcula os projetos não lidos
-      const unreadProjects = allUploads.filter(
-        (upload) => !upload.isRead
-      ).length;
+      // Garantir que o projeto tenha todos os dados necessários
+      const projectToPass = {
+        ...selectedUpload,
+        id: uploadId,
+        collection: collectionName,
+        files: updatedFiles,
+      };
 
-      // Atualiza os contadores de não lidos
-      setUnreadCount(unreadProjects);
-
-      // Navega para a página de detalhes do projeto com o estado correto
-      navigate(`/company/master/project/${uploadId}`, {
+      navigate(url, {
         state: {
-          project: selectedUpload,
+          project: projectToPass,
           collection: collectionName,
         },
       });
@@ -1281,7 +1271,7 @@ const MasterProjects = ({ style, isMobile }) => {
               {/* Botão de Personalizar Colunas - Versão Mobile */}
               <button
                 onClick={() => setShowColumnSelector(true)}
-                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gray-100 hover:bg-gray-200 transition-colors duration-200 border border-gray-800 mt-4"
+                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gray-50 hover:bg-gray-100 transition-colors duration-200 rounded-lg shadow-sm mt-4"
                 title="Configurar colunas"
               >
                 <svg
@@ -1414,7 +1404,7 @@ const MasterProjects = ({ style, isMobile }) => {
               </div>
               <button
                 onClick={() => setShowColumnSelector(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-full transition-colors duration-200 border border-gray-800"
+                className="flex items-center gap-2 px-4 py-2 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors duration-200 shadow-sm"
                 title="Configurar colunas"
               >
                 <svg

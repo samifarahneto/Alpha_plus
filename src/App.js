@@ -41,6 +41,8 @@ import ProjectsPaid from "./pages/company/master/ProjectsPaid";
 import MasterPayments from "./pages/company/master/MasterPayments";
 import MasterOnGoing from "./pages/company/master/MasterOnGoing";
 import ProjectsApproved from "./pages/company/master/ProjectsApproved";
+import MasterDashboard from "./pages/company/master/MasterDashboard";
+import ActivityLog from "./pages/company/master/ActivityLog";
 
 // Outras configurações
 import { getFirestore, collection, onSnapshot } from "firebase/firestore";
@@ -114,6 +116,19 @@ const AppContent = () => {
           />
 
           {/* Rotas do Master */}
+          <Route
+            path="/company/master/dashboard"
+            element={<MasterDashboard />}
+          />
+          <Route
+            path="/company/master/activity-logs"
+            element={<ActivityLog />}
+          />
+          <Route path="/company/master/clients" element={<MasterClient />} />
+          <Route
+            path="/company/master/employees"
+            element={<MasterEmployee />}
+          />
           <Route path="/company/master" element={<MasterLayout />}>
             <Route index element={<MasterProjects />} />
             <Route path="projects" element={<MasterProjects />} />
@@ -124,12 +139,10 @@ const AppContent = () => {
             <Route path="projects-done" element={<ProjectsDone />} />
             <Route path="projects-paid" element={<ProjectsPaid />} />
             <Route path="payments" element={<MasterPayments />} />
-            <Route path="project/:id" element={<ProjectDetails />} />
           </Route>
-          <Route path="/company/master/clients" element={<MasterClient />} />
           <Route
-            path="/company/master/employees"
-            element={<MasterEmployee />}
+            path="/company/master/project/:id"
+            element={<ProjectDetails />}
           />
 
           {/* Rota de Pagamento */}

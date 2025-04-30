@@ -95,9 +95,9 @@ const Header = () => {
         Projetos
       </Link>
       <Link
-        to="/company/master/activity-log"
+        to="/company/master/activity-logs"
         className={`text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium ${
-          location.pathname === "/company/master/activity-log"
+          location.pathname === "/company/master/activity-logs"
             ? "text-primary font-bold"
             : ""
         }`}
