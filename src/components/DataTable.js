@@ -67,8 +67,8 @@ const DataTable = ({
   }, [data, filters, sortConfig, columns]);
 
   return (
-    <div className="table-wrapper">
-      <table className="table-default">
+    <div className="table-wrapper overflow-x-auto firstMobile:overflow-x-scroll">
+      <table className="table-default w-full">
         <DataTableHeader
           columns={columns}
           columnOrder={columnOrder}
@@ -95,7 +95,7 @@ const DataTable = ({
                 return (
                   <td
                     key={columnId}
-                    className="table-cell !py-0 whitespace-nowrap max-w-[150px] truncate text-center h-8"
+                    className="table-cell !py-0 whitespace-nowrap max-w-[150px] firstMobile:max-w-[120px] truncate text-center h-8 text-xs font-medium"
                   >
                     {column.render
                       ? column.render(row[columnId], row)

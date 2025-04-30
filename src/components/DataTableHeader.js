@@ -43,13 +43,13 @@ const SortableItem = ({ id, column, isFixed, sortConfig, onSort }) => {
     <th
       ref={setNodeRef}
       style={style}
-      className={`table-header-cell !py-0 whitespace-nowrap truncate text-center ${
+      className={`table-header-cell !py-0 whitespace-nowrap truncate text-center firstMobile:min-w-[120px] ${
         isDragging ? "shadow-lg" : ""
       }`}
     >
       <div className="flex items-center justify-center gap-1 h-6">
         <div {...attributes} {...listeners} className="flex-1">
-          <span>{column.label}</span>
+          <span className="firstMobile:text-sm">{column.label}</span>
         </div>
         <div
           onClick={(e) => {
@@ -60,7 +60,7 @@ const SortableItem = ({ id, column, isFixed, sortConfig, onSort }) => {
           style={{ pointerEvents: "auto" }}
         >
           <svg
-            className={`w-3 h-3 ${
+            className={`w-3 h-3 firstMobile:w-2.5 firstMobile:h-2.5 ${
               sortConfig.key === column.id ? "text-blue-600" : "text-gray-400"
             }`}
             viewBox="0 0 10 6"
@@ -159,7 +159,7 @@ const DataTableHeader = ({
                           onChange={(e) =>
                             onFilterChange(columnId, e.target.value)
                           }
-                          className="w-full p-0.5 text-xs border rounded h-6"
+                          className="w-full p-0.5 text-xs firstMobile:text-[10px] border rounded h-6"
                         />
                       )}
                       {column.filter.type === "select" && (
@@ -168,7 +168,7 @@ const DataTableHeader = ({
                           onChange={(e) =>
                             onFilterChange(columnId, e.target.value)
                           }
-                          className="w-full p-0.5 text-xs border rounded h-6"
+                          className="w-full p-0.5 text-xs firstMobile:text-[10px] border rounded h-6"
                         >
                           <option value="">Todos</option>
                           {column.filter.options.map((option) => (
@@ -185,7 +185,7 @@ const DataTableHeader = ({
                           onChange={(e) =>
                             onFilterChange(columnId, e.target.value)
                           }
-                          className="w-full p-0.5 text-xs border rounded h-6"
+                          className="w-full p-0.5 text-xs firstMobile:text-[10px] border rounded h-6"
                         />
                       )}
                     </div>

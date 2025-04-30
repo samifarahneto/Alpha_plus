@@ -13,17 +13,24 @@ import { useAuth } from "../../../contexts/AuthContext";
 import MasterNavigation from "./MasterNavigation";
 import { FaDownload } from "react-icons/fa";
 import { getStorage, ref, getDownloadURL } from "firebase/storage";
-import { IoMdSettings } from "react-icons/io";
 import "../../../styles/Pagination.css";
 import PageLayout from "../../../components/PageLayout";
 import DataTable from "../../../components/DataTable";
 import "../../../styles/Table.css";
 import Pagination from "../../../components/Pagination";
+import Filter from "../../../components/Filter";
 
 const MasterProjects = ({ style, isMobile }) => {
   const { user, loading } = useAuth();
   const [allUploads, setAllUploads] = useState([]);
   const [filteredUploads, _setFilteredUploads] = useState([]);
+  const [clientFilter, setClientFilter] = useState("");
+  const [projectNameFilter, setProjectNameFilter] = useState("");
+  const [dateFilter, setDateFilter] = useState({ start: "", end: "" });
+  const [sourceLanguageFilter, setSourceLanguageFilter] = useState([]);
+  const [paymentFilter, setPaymentFilter] = useState("");
+  const [clientTypeFilter, setClientTypeFilter] = useState("");
+  const [isFiltersExpanded, setIsFiltersExpanded] = useState(false);
   const location = useLocation();
   const [activeLink, setActiveLink] = useState(() => {
     if (location.pathname.includes("projects-budget")) return "projectsBudget";
@@ -39,22 +46,11 @@ const MasterProjects = ({ style, isMobile }) => {
       return "masterProjects";
     return "masterProjects";
   });
-  const [filters, setFilters] = useState({
-    client: "",
-    projectName: "",
-    origin: "",
-    startDate: "",
-    endDate: "",
-    paymentStatus: "",
-    clientType: "",
-    status: [],
-    month: "",
-  });
   const [clientTypes, setClientTypes] = useState({});
   const [unreadCount, setUnreadCount] = useState(0);
   const [unreadBudgetCount, setUnreadBudgetCount] = useState(0);
   const [unreadApprovalCount, setUnreadApprovalCount] = useState(0);
-  const [showStatusDropdown, setShowStatusDropdown] = useState(false);
+  const [, setShowStatusDropdown] = useState(false);
   const [showFilesModal, setShowFilesModal] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [showColumnSelector, setShowColumnSelector] = useState(false);
@@ -94,6 +90,8 @@ const MasterProjects = ({ style, isMobile }) => {
       ? JSON.parse(savedSortConfig)
       : { key: "createdAt", direction: "desc" };
   });
+  const [projectStatusFilter, setProjectStatusFilter] = useState([]);
+  const [translationStatusFilter, setTranslationStatusFilter] = useState([]);
 
   const columns = [
     { id: "client", label: "Cliente", fixed: true },
@@ -116,19 +114,36 @@ const MasterProjects = ({ style, isMobile }) => {
 
   const navigate = useNavigate();
 
-  const months = [
-    { value: "01", label: "Janeiro" },
-    { value: "02", label: "Fevereiro" },
-    { value: "03", label: "Março" },
-    { value: "04", label: "Abril" },
-    { value: "05", label: "Maio" },
-    { value: "06", label: "Junho" },
-    { value: "07", label: "Julho" },
-    { value: "08", label: "Agosto" },
-    { value: "09", label: "Setembro" },
-    { value: "10", label: "Outubro" },
-    { value: "11", label: "Novembro" },
-    { value: "12", label: "Dezembro" },
+  const sourceLanguageOptions = [
+    { value: "Português (Brasil)", label: "Português (Brasil)" },
+    { value: "Espanhol (América Latina)", label: "Espanhol (América Latina)" },
+  ];
+
+  const paymentOptions = [
+    { value: "Pago", label: "Pago" },
+    { value: "Pendente", label: "Pendente" },
+  ];
+
+  const clientTypeOptions = [
+    { value: "B2B", label: "B2B" },
+    { value: "B2C", label: "B2C" },
+  ];
+
+  const projectStatusOptions = [
+    { value: "Ag. Orçamento", label: "Aguardando Orçamento" },
+    { value: "Ag. Aprovação", label: "Aguardando Aprovação" },
+    { value: "Ag. Pagamento", label: "Aguardando Pagamento" },
+    { value: "Em Análise", label: "Em Análise" },
+    { value: "Em Andamento", label: "Em Andamento" },
+    { value: "Cancelado", label: "Cancelado" },
+  ];
+
+  const translationStatusOptions = [
+    { value: "Em Andamento", label: "Em Andamento" },
+    { value: "Finalizado", label: "Finalizado" },
+    { value: "Em Revisão", label: "Em Revisão" },
+    { value: "Cancelado", label: "Cancelado" },
+    { value: "N/A", label: "N/A" },
   ];
 
   useEffect(() => {
@@ -252,9 +267,9 @@ const MasterProjects = ({ style, isMobile }) => {
 
     let filteredData = [...allUploads];
 
-    // Aplicar filtros
-    if (filters.client) {
-      const searchTerm = filters.client.toLowerCase();
+    // Aplicar filtro de cliente
+    if (clientFilter) {
+      const searchTerm = clientFilter.toLowerCase();
       filteredData = filteredData.filter((upload) => {
         const projectOwner = (upload.projectOwner || "").toLowerCase();
         const nomeCompleto = (
@@ -266,140 +281,108 @@ const MasterProjects = ({ style, isMobile }) => {
       });
     }
 
-    // Filtro por nome do projeto
-    if (filters.projectName) {
-      const searchTerm = filters.projectName.toLowerCase();
+    // Aplicar filtro de nome do projeto
+    if (projectNameFilter) {
+      const searchTerm = projectNameFilter.toLowerCase();
       filteredData = filteredData.filter((upload) =>
         (upload.projectName || "").toLowerCase().includes(searchTerm)
       );
     }
 
-    // Filtro por cliente origem
-    if (filters.origin) {
-      const searchTerm = filters.origin.toLowerCase();
-      filteredData = filteredData.filter((upload) => {
-        const clientOrigin = (
-          clientTypes[upload.userEmail]?.registeredBy ||
-          upload.userEmail ||
-          ""
-        ).toLowerCase();
-        const clientOriginName = (
-          clientTypes[clientOrigin]?.nomeCompleto ||
-          clientOrigin ||
-          ""
-        ).toLowerCase();
-        return (
-          clientOrigin.includes(searchTerm) ||
-          clientOriginName.includes(searchTerm)
-        );
-      });
-    }
-
-    // Filtro por status
-    if (filters.status.length > 0) {
-      filteredData = filteredData.filter((upload) => {
-        if (
-          filters.status.includes("Ag. Orçamento") &&
-          upload.collection === "b2bdocprojects"
-        ) {
-          return true;
-        }
-        return filters.status.includes(upload.status);
-      });
-    }
-
-    // Filtro por status de pagamento
-    if (filters.paymentStatus) {
-      filteredData = filteredData.filter((upload) => {
-        const paymentStatus =
-          typeof upload.payment_status === "object"
-            ? upload.payment_status.status
-            : upload.isPaid
-            ? "Pago"
-            : "Pendente";
-
-        switch (filters.paymentStatus) {
-          case "paid":
-            return paymentStatus === "Pago";
-          case "pending":
-            return paymentStatus === "Pendente";
-          case "refund":
-            return paymentStatus === "Reembolso";
-          case "divergence":
-            return paymentStatus === "Divergência";
-          default:
-            return true;
-        }
-      });
-    }
-
-    // Filtro por tipo de cliente
-    if (filters.clientType) {
-      filteredData = filteredData.filter((upload) => {
-        const userInfo = clientTypes[upload.userEmail];
-        if (!userInfo) return false;
-
-        let clientType = "N/A";
-        if (userInfo.userType === "colaborator" && userInfo.registeredBy) {
-          const registeredByInfo = clientTypes[userInfo.registeredBy];
-          if (registeredByInfo && registeredByInfo.userType === "b2b") {
-            clientType = "B2B";
-          } else if (
-            registeredByInfo &&
-            (registeredByInfo.clientType === "Cliente" ||
-              registeredByInfo.clientType === "Colab")
-          ) {
-            clientType = "B2C";
-          }
-        } else if (
-          userInfo.clientType === "Colab" ||
-          userInfo.clientType === "Cliente"
-        ) {
-          clientType = "B2C";
-        } else {
-          clientType = userInfo.clientType || "N/A";
-        }
-
-        return clientType === filters.clientType;
-      });
-    }
-
-    // Filtro por data
-    if (filters.startDate || filters.endDate) {
+    // Aplicar filtro de data
+    if (dateFilter.start || dateFilter.end) {
       filteredData = filteredData.filter((upload) => {
         if (!upload.createdAt?.seconds) return false;
         const uploadDate = new Date(upload.createdAt.seconds * 1000);
 
-        if (filters.startDate && filters.endDate) {
-          const startDate = new Date(`${filters.startDate}T00:00:00`);
-          const endDate = new Date(`${filters.endDate}T23:59:59`);
+        if (dateFilter.start && dateFilter.end) {
+          const startDate = new Date(`${dateFilter.start}T00:00:00`);
+          const endDate = new Date(`${dateFilter.end}T23:59:59`);
           return uploadDate >= startDate && uploadDate <= endDate;
-        } else if (filters.startDate) {
-          const startDate = new Date(`${filters.startDate}T00:00:00`);
+        } else if (dateFilter.start) {
+          const startDate = new Date(`${dateFilter.start}T00:00:00`);
           return uploadDate >= startDate;
-        } else if (filters.endDate) {
-          const endDate = new Date(`${filters.endDate}T23:59:59`);
+        } else if (dateFilter.end) {
+          const endDate = new Date(`${dateFilter.end}T23:59:59`);
           return uploadDate <= endDate;
         }
         return true;
       });
     }
 
-    // Filtro por mês
-    if (filters.month) {
+    // Aplicar filtro de língua de origem
+    if (sourceLanguageFilter.length > 0) {
+      filteredData = filteredData.filter((upload) =>
+        sourceLanguageFilter.includes(upload.sourceLanguage)
+      );
+    }
+
+    // Aplicar filtro de pagamento
+    if (paymentFilter) {
       filteredData = filteredData.filter((upload) => {
-        if (!upload.createdAt?.seconds) return false;
-        const projectDate = new Date(upload.createdAt.seconds * 1000);
-        const projectMonth = (projectDate.getMonth() + 1)
-          .toString()
-          .padStart(2, "0");
-        return projectMonth === filters.month;
+        const paymentStatus =
+          typeof upload.payment_status === "object"
+            ? upload.payment_status.status
+            : upload.payment_status;
+        return paymentStatus?.toUpperCase() === paymentFilter.toUpperCase();
       });
     }
 
-    // Atualizar filteredUploads
+    // Aplicar filtro de tipo de cliente
+    if (clientTypeFilter) {
+      filteredData = filteredData.filter((upload) => {
+        const userInfo = clientTypes[upload.userEmail];
+        if (!userInfo) return false;
+
+        if (userInfo.userType === "colaborator" && userInfo.registeredBy) {
+          const registeredByInfo = clientTypes[userInfo.registeredBy];
+          if (registeredByInfo && registeredByInfo.userType === "b2b")
+            return clientTypeFilter === "B2B";
+          if (
+            registeredByInfo &&
+            (registeredByInfo.clientType === "Cliente" ||
+              registeredByInfo.clientType === "Colab")
+          )
+            return clientTypeFilter === "B2C";
+        } else if (
+          userInfo.clientType === "Colab" ||
+          userInfo.clientType === "Cliente"
+        ) {
+          return clientTypeFilter === "B2C";
+        }
+        return userInfo.clientType === clientTypeFilter;
+      });
+    }
+
+    // Aplicar filtro de status do projeto
+    if (projectStatusFilter && projectStatusFilter.length > 0) {
+      filteredData = filteredData.filter((upload) => {
+        const projectStatus = upload.project_status || "Rascunho";
+        return projectStatusFilter.includes(projectStatus);
+      });
+    }
+
+    // Aplicar filtro de status da tradução
+    if (translationStatusFilter && translationStatusFilter.length > 0) {
+      filteredData = filteredData.filter((upload) => {
+        const translationStatus = upload.translation_status || "N/A";
+        return translationStatusFilter.includes(translationStatus);
+      });
+    }
+
     _setFilteredUploads(filteredData);
-  }, [allUploads, clientTypes, filters]);
+  }, [
+    allUploads,
+    clientTypes,
+    clientFilter,
+    projectNameFilter,
+    dateFilter,
+    sourceLanguageFilter,
+    paymentFilter,
+    clientTypeFilter,
+    projectStatusFilter,
+    translationStatusFilter,
+  ]);
 
   // Adicionar useEffect para fechar o dropdown quando clicar fora
   useEffect(() => {
@@ -421,14 +404,6 @@ const MasterProjects = ({ style, isMobile }) => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
-
-  const handleFilterChange = (e) => {
-    const { name, value } = e.target;
-    setFilters((prevFilters) => ({
-      ...prevFilters,
-      [name]: value,
-    }));
-  };
 
   const calculateTotalValue = (files) => {
     if (!files || !Array.isArray(files)) return "0.00";
@@ -763,16 +738,19 @@ const MasterProjects = ({ style, isMobile }) => {
 
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-        <div className="w-[420px] bg-white rounded-lg shadow-xl p-6">
+        <div className="w-[90%] max-w-[420px] bg-white rounded-lg shadow-xl p-4">
           <div className="mb-4">
             <h3 className="text-lg font-semibold text-gray-900 text-center">
               Personalizar Colunas
             </h3>
           </div>
 
-          <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2">
+          <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-2">
             {columns.map((column) => (
-              <div key={column.id} className="flex items-center">
+              <div
+                key={column.id}
+                className="flex items-center p-2 hover:bg-gray-50 rounded-lg transition-colors"
+              >
                 <input
                   type="checkbox"
                   id={column.id}
@@ -783,7 +761,7 @@ const MasterProjects = ({ style, isMobile }) => {
                 />
                 <label
                   htmlFor={column.id}
-                  className={`ml-2 text-sm ${
+                  className={`ml-3 text-sm flex-1 ${
                     column.fixed ? "text-gray-500" : "text-gray-700"
                   }`}
                 >
@@ -941,6 +919,197 @@ const MasterProjects = ({ style, isMobile }) => {
     return rowIsUnread ? "unread" : "";
   };
 
+  const handleClientFilterChange = (e) => {
+    setClientFilter(e.target.value);
+  };
+
+  const handleProjectNameFilterChange = (e) => {
+    setProjectNameFilter(e.target.value);
+  };
+
+  const handleDateFilterChange = (e) => {
+    const { name, value } = e.target;
+    setDateFilter((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handleSourceLanguageFilterChange = (e) => {
+    setSourceLanguageFilter(e.target.value);
+  };
+
+  const handlePaymentFilterChange = (e) => {
+    setPaymentFilter(e.target.value);
+  };
+
+  const handleClientTypeFilterChange = (e) => {
+    setClientTypeFilter(e.target.value);
+  };
+
+  const handleProjectStatusFilterChange = (e) => {
+    setProjectStatusFilter(e.target.value);
+  };
+
+  const handleTranslationStatusFilterChange = (e) => {
+    setTranslationStatusFilter(e.target.value);
+  };
+
+  const renderStatusBadge = (status) => {
+    const statusConfig = {
+      "Em Andamento": {
+        bg: "bg-blue-50",
+        text: "text-blue-700",
+        border: "border-blue-200",
+      },
+      Finalizado: {
+        bg: "bg-green-50",
+        text: "text-green-700",
+        border: "border-green-200",
+      },
+      "Em Revisão": {
+        bg: "bg-yellow-50",
+        text: "text-yellow-700",
+        border: "border-yellow-200",
+      },
+      Cancelado: {
+        bg: "bg-red-50",
+        text: "text-red-700",
+        border: "border-red-200",
+      },
+      "Em Análise": {
+        bg: "bg-yellow-50",
+        text: "text-yellow-700",
+        border: "border-yellow-200",
+      },
+      "Ag. Orçamento": {
+        bg: "bg-orange-50",
+        text: "text-orange-700",
+        border: "border-orange-200",
+      },
+      "Ag. Aprovação": {
+        bg: "bg-amber-50",
+        text: "text-amber-700",
+        border: "border-amber-200",
+      },
+      "Ag. Pagamento": {
+        bg: "bg-purple-50",
+        text: "text-purple-700",
+        border: "border-purple-200",
+      },
+      "N/A": {
+        bg: "bg-gray-50",
+        text: "text-gray-700",
+        border: "border-gray-200",
+      },
+    };
+
+    const config = statusConfig[status] || statusConfig["N/A"];
+
+    return (
+      <div
+        className={`w-full px-2 py-1 rounded-full border ${config.bg} ${config.text} ${config.border} text-center text-xs font-medium`}
+      >
+        {status || "N/A"}
+      </div>
+    );
+  };
+
+  const renderPaymentStatusBadge = (status) => {
+    const statusConfig = {
+      Pago: {
+        bg: "bg-green-50",
+        text: "text-green-700",
+        border: "border-green-200",
+      },
+      Pendente: {
+        bg: "bg-yellow-50",
+        text: "text-yellow-700",
+        border: "border-yellow-200",
+      },
+      Atrasado: {
+        bg: "bg-red-50",
+        text: "text-red-700",
+        border: "border-red-200",
+      },
+      "N/A": {
+        bg: "bg-gray-50",
+        text: "text-gray-700",
+        border: "border-gray-200",
+      },
+    };
+
+    const config = statusConfig[status] || statusConfig["N/A"];
+
+    return (
+      <div
+        className={`w-full px-2 py-1 rounded-full border ${config.bg} ${config.text} ${config.border} text-center text-xs font-medium`}
+      >
+        {status || "N/A"}
+      </div>
+    );
+  };
+
+  const renderProjectStatusBadge = (status) => {
+    const statusConfig = {
+      "Em Andamento": {
+        bg: "bg-blue-50",
+        text: "text-blue-700",
+        border: "border-blue-200",
+      },
+      Finalizado: {
+        bg: "bg-green-50",
+        text: "text-green-700",
+        border: "border-green-200",
+      },
+      "Em Revisão": {
+        bg: "bg-yellow-50",
+        text: "text-yellow-700",
+        border: "border-yellow-200",
+      },
+      Cancelado: {
+        bg: "bg-red-50",
+        text: "text-red-700",
+        border: "border-red-200",
+      },
+      "Em Análise": {
+        bg: "bg-yellow-50",
+        text: "text-yellow-700",
+        border: "border-yellow-200",
+      },
+      "Ag. Orçamento": {
+        bg: "bg-orange-50",
+        text: "text-orange-700",
+        border: "border-orange-200",
+      },
+      "Ag. Aprovação": {
+        bg: "bg-amber-50",
+        text: "text-amber-700",
+        border: "border-amber-200",
+      },
+      "Ag. Pagamento": {
+        bg: "bg-purple-50",
+        text: "text-purple-700",
+        border: "border-purple-200",
+      },
+      "N/A": {
+        bg: "bg-gray-50",
+        text: "text-gray-700",
+        border: "border-gray-200",
+      },
+    };
+
+    const config = statusConfig[status] || statusConfig["N/A"];
+
+    return (
+      <div
+        className={`w-full px-2 py-1 rounded-full border ${config.bg} ${config.text} ${config.border} text-center text-xs font-medium`}
+      >
+        {status || "N/A"}
+      </div>
+    );
+  };
+
   return (
     <PageLayout>
       <div className="glass-card w-full max-w-[100%] mx-0">
@@ -956,104 +1125,17 @@ const MasterProjects = ({ style, isMobile }) => {
           unreadApprovalCount={unreadApprovalCount}
         />
 
-        {/* Filtros */}
-        <div className="flex gap-4 mb-6 w-full firstMobile:flex-col">
-          <div className="flex-1 flex flex-col">
-            <label
-              htmlFor="client-filter"
-              className="text-sm font-medium mb-1 text-center"
+        {/* Filtros e Personalizar Colunas */}
+        <div className="flex flex-col md:flex-row items-end gap-2.5 mt-6 mb-8">
+          {/* Versão Mobile - Aba Expansível */}
+          <div className="w-full lg:hidden">
+            <button
+              onClick={() => setIsFiltersExpanded(!isFiltersExpanded)}
+              className="w-full flex items-center justify-between px-4 py-3 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors mb-4 shadow-sm"
             >
-              Cliente
-            </label>
-            <input
-              id="client-filter"
-              type="text"
-              placeholder="Buscar por cliente"
-              value={filters.client}
-              onChange={(e) => handleFilterChange(e)}
-              name="client"
-              className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm placeholder:text-gray-400"
-            />
-          </div>
-          <div className="flex-1 flex flex-col">
-            <label
-              htmlFor="projectName-filter"
-              className="text-sm font-medium mb-1 text-center"
-            >
-              Nome do projeto
-            </label>
-            <input
-              id="projectName-filter"
-              type="text"
-              placeholder="Buscar por projeto"
-              value={filters.projectName}
-              onChange={(e) => handleFilterChange(e)}
-              name="projectName"
-              className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm placeholder:text-gray-400"
-            />
-          </div>
-          <div className="flex-1 flex flex-col">
-            <label
-              htmlFor="origin-filter"
-              className="text-sm font-medium mb-1 text-center"
-            >
-              Cliente origem
-            </label>
-            <input
-              id="origin-filter"
-              type="text"
-              placeholder="Buscar por origem"
-              value={filters.origin}
-              onChange={(e) => handleFilterChange(e)}
-              name="origin"
-              className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm placeholder:text-gray-400"
-            />
-          </div>
-          <div className="flex-1 flex flex-col relative">
-            <label
-              htmlFor="status-filter"
-              className="text-sm font-medium mb-1 text-center"
-            >
-              Status
-            </label>
-            <div className="relative">
-              <div
-                id="status-button"
-                onClick={() => setShowStatusDropdown(!showStatusDropdown)}
-                className="w-full p-2 border border-gray-300 rounded-md cursor-pointer bg-white hover:bg-gray-50 text-black flex justify-between items-center h-[38px]"
-              >
-                <div className="flex flex-wrap gap-1">
-                  {filters.status.length > 0 ? (
-                    filters.status.map((status, index) => (
-                      <span
-                        key={index}
-                        className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
-                          status === "Finalizado"
-                            ? "bg-green-100 text-green-800"
-                            : status === "Em Andamento"
-                            ? "bg-blue-100 text-blue-800"
-                            : status === "Em Revisão"
-                            ? "bg-yellow-100 text-yellow-800"
-                            : status === "Em Certificação"
-                            ? "bg-orange-100 text-orange-800"
-                            : status === "Cancelado"
-                            ? "bg-gray-100 text-gray-800"
-                            : status === "Ag. Orçamento"
-                            ? "bg-purple-100 text-purple-800"
-                            : status === "Ag. Aprovação"
-                            ? "bg-indigo-100 text-indigo-800"
-                            : "bg-gray-100 text-gray-800"
-                        }`}
-                      >
-                        {status}
-                      </span>
-                    ))
-                  ) : (
-                    <span className="text-gray-500">Selecionar Status</span>
-                  )}
-                </div>
+              <div className="flex items-center gap-2">
                 <svg
-                  className="w-4 h-4 text-gray-500"
+                  className="w-5 h-5 text-gray-600"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -1062,269 +1144,315 @@ const MasterProjects = ({ style, isMobile }) => {
                     strokeLinecap="round"
                     strokeLinejoin="round"
                     strokeWidth="2"
-                    d="M19 9l-7 7-7-7"
+                    d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
                   />
                 </svg>
+                <span className="font-medium">Filtros</span>
+                {isFiltersExpanded && (
+                  <span className="text-sm text-gray-500">
+                    (Clique para recolher)
+                  </span>
+                )}
               </div>
+              <svg
+                className={`w-5 h-5 transform transition-transform duration-200 ${
+                  isFiltersExpanded ? "rotate-180" : ""
+                }`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M19 9l-7 7-7-7"
+                />
+              </svg>
+            </button>
 
-              {showStatusDropdown && (
-                <div
-                  id="status-dropdown"
-                  className="absolute z-[9999] w-full top-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto"
-                >
-                  <div className="p-2 space-y-2">
-                    <label className="flex items-center space-x-1 hover:bg-gray-50 p-1 rounded cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={filters.status.includes("Finalizado")}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setFilters((prev) => ({
-                              ...prev,
-                              status: [...prev.status, "Finalizado"],
-                            }));
-                          } else {
-                            setFilters((prev) => ({
-                              ...prev,
-                              status: prev.status.filter(
-                                (s) => s !== "Finalizado"
-                              ),
-                            }));
-                          }
-                        }}
-                        className="rounded text-green-600"
-                        style={{ accentColor: "green" }}
-                      />
-                      <span className="text-sm text-green-600">Finalizado</span>
-                    </label>
-                    <label className="flex items-center space-x-1 hover:bg-gray-50 p-1 rounded cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={filters.status.includes("Em Andamento")}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setFilters((prev) => ({
-                              ...prev,
-                              status: [...prev.status, "Em Andamento"],
-                            }));
-                          } else {
-                            setFilters((prev) => ({
-                              ...prev,
-                              status: prev.status.filter(
-                                (s) => s !== "Em Andamento"
-                              ),
-                            }));
-                          }
-                        }}
-                        className="rounded text-blue-600"
-                        style={{ accentColor: "blue" }}
-                      />
-                      <span className="text-sm text-blue-600">
-                        Em Andamento
-                      </span>
-                    </label>
-                    <label className="flex items-center space-x-1 hover:bg-gray-50 p-1 rounded cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={filters.status.includes("Em Revisão")}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setFilters((prev) => ({
-                              ...prev,
-                              status: [...prev.status, "Em Revisão"],
-                            }));
-                          } else {
-                            setFilters((prev) => ({
-                              ...prev,
-                              status: prev.status.filter(
-                                (s) => s !== "Em Revisão"
-                              ),
-                            }));
-                          }
-                        }}
-                        className="rounded text-yellow-600"
-                        style={{ accentColor: "yellow" }}
-                      />
-                      <span className="text-sm text-yellow-600">
-                        Em Revisão
-                      </span>
-                    </label>
-                    <label className="flex items-center space-x-1 hover:bg-gray-50 p-1 rounded cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={filters.status.includes("Em Certificação")}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setFilters((prev) => ({
-                              ...prev,
-                              status: [...prev.status, "Em Certificação"],
-                            }));
-                          } else {
-                            setFilters((prev) => ({
-                              ...prev,
-                              status: prev.status.filter(
-                                (s) => s !== "Em Certificação"
-                              ),
-                            }));
-                          }
-                        }}
-                        className="rounded text-orange-600"
-                        style={{ accentColor: "orange" }}
-                      />
-                      <span className="text-sm text-orange-600">
-                        Em Certificação
-                      </span>
-                    </label>
-                    <label className="flex items-center space-x-1 hover:bg-gray-50 p-1 rounded cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={filters.status.includes("Cancelado")}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setFilters((prev) => ({
-                              ...prev,
-                              status: [...prev.status, "Cancelado"],
-                            }));
-                          } else {
-                            setFilters((prev) => ({
-                              ...prev,
-                              status: prev.status.filter(
-                                (s) => s !== "Cancelado"
-                              ),
-                            }));
-                          }
-                        }}
-                        className="rounded text-gray-600"
-                        style={{ accentColor: "gray" }}
-                      />
-                      <span className="text-sm text-gray-600">Cancelado</span>
-                    </label>
-                  </div>
-                </div>
-              )}
+            {/* Conteúdo dos Filtros Mobile */}
+            <div
+              className={`grid grid-cols-1 gap-4 transition-all duration-300 ease-in-out ${
+                isFiltersExpanded
+                  ? "opacity-100 max-h-[500px] overflow-y-auto"
+                  : "opacity-0 max-h-0 overflow-hidden"
+              }`}
+            >
+              <div className="w-full">
+                <Filter
+                  label="Cliente"
+                  type="search"
+                  name="client"
+                  value={clientFilter}
+                  onChange={handleClientFilterChange}
+                  placeholder="Buscar por cliente..."
+                  className="text-sm w-full"
+                  labelClassName="text-center lg:text-center"
+                  containerClassName="flex flex-col items-center gap-1"
+                />
+              </div>
+              <div className="w-full">
+                <Filter
+                  label="Nome do Projeto"
+                  type="search"
+                  name="projectName"
+                  value={projectNameFilter}
+                  onChange={handleProjectNameFilterChange}
+                  placeholder="Buscar por projeto..."
+                  className="text-sm w-full"
+                  labelClassName="text-center lg:text-center"
+                  containerClassName="flex flex-col items-center gap-1"
+                />
+              </div>
+              <div className="w-full">
+                <Filter
+                  label="Data"
+                  type="daterange"
+                  value={dateFilter}
+                  onChange={handleDateFilterChange}
+                  onClear={() => setDateFilter({ start: "", end: "" })}
+                  className="text-sm w-full"
+                  labelClassName="text-center lg:text-center"
+                  containerClassName="flex flex-col items-center gap-1"
+                />
+              </div>
+              <div className="w-full">
+                <Filter
+                  label="Língua de Origem"
+                  type="multiselect"
+                  name="sourceLanguage"
+                  value={sourceLanguageFilter}
+                  onChange={handleSourceLanguageFilterChange}
+                  options={sourceLanguageOptions}
+                  placeholder="Selecione as línguas..."
+                  className="text-sm w-full"
+                  labelClassName="text-center lg:text-center"
+                  containerClassName="flex flex-col items-center gap-1"
+                />
+              </div>
+              <div className="w-full">
+                <Filter
+                  label="Status de Pagamento"
+                  type="select"
+                  name="payment"
+                  value={paymentFilter}
+                  onChange={handlePaymentFilterChange}
+                  options={paymentOptions}
+                  placeholder="Todos"
+                  className="text-sm w-full"
+                  labelClassName="text-center lg:text-center"
+                  containerClassName="flex flex-col items-center gap-1"
+                />
+              </div>
+              <div className="w-full">
+                <Filter
+                  label="Tipo de Cliente"
+                  type="select"
+                  name="clientType"
+                  value={clientTypeFilter}
+                  onChange={handleClientTypeFilterChange}
+                  options={clientTypeOptions}
+                  placeholder="Todos"
+                  className="text-sm w-full"
+                  labelClassName="text-center lg:text-center"
+                  containerClassName="flex flex-col items-center gap-1"
+                />
+              </div>
+              <div className="w-full">
+                <Filter
+                  label="Status do Projeto"
+                  type="multiselect"
+                  name="projectStatus"
+                  value={projectStatusFilter}
+                  onChange={handleProjectStatusFilterChange}
+                  options={projectStatusOptions}
+                  placeholder="Selecione os status..."
+                  className="text-sm w-full"
+                  labelClassName="text-center lg:text-center"
+                  containerClassName="flex flex-col items-center gap-1"
+                />
+              </div>
+              <div className="w-full">
+                <Filter
+                  label="Status da Tradução"
+                  type="multiselect"
+                  name="translationStatus"
+                  value={translationStatusFilter}
+                  onChange={handleTranslationStatusFilterChange}
+                  options={translationStatusOptions}
+                  placeholder="Selecione os status..."
+                  className="text-sm w-full"
+                  labelClassName="text-center lg:text-center"
+                  containerClassName="flex flex-col items-center gap-1"
+                />
+              </div>
             </div>
-          </div>
-          <div className="flex-1 flex flex-col">
-            <label
-              htmlFor="paymentStatus-filter"
-              className="text-sm font-medium mb-1 text-center"
+
+            {/* Botão de Personalizar Colunas - Versão Mobile */}
+            <button
+              onClick={() => setShowColumnSelector(true)}
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors duration-200 border border-gray-800 mt-4"
+              title="Configurar colunas"
             >
-              Status de Pagamento
-            </label>
-            <select
-              id="paymentStatus-filter"
-              value={filters.paymentStatus}
-              onChange={(e) => handleFilterChange(e)}
-              name="paymentStatus"
-              className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm"
-            >
-              <option value="">Todos</option>
-              <option value="pending">Pendente</option>
-              <option value="paid">Pago</option>
-              <option value="refund">Reembolso</option>
-              <option value="divergence">Divergência</option>
-            </select>
-          </div>
-          <div className="flex-1 flex flex-col">
-            <label
-              htmlFor="clientType-filter"
-              className="text-sm font-medium mb-1 text-center"
-            >
-              Tipo de Cliente
-            </label>
-            <select
-              id="clientType-filter"
-              value={filters.clientType}
-              onChange={(e) => handleFilterChange(e)}
-              name="clientType"
-              className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm"
-            >
-              <option value="">Todos</option>
-              <option value="B2B">B2B</option>
-              <option value="B2C">B2C</option>
-            </select>
-          </div>
-          <div className="flex-1 flex flex-col">
-            <label
-              htmlFor="startDate-filter"
-              className="text-sm font-medium mb-1 text-center"
-            >
-              Data Inicial
-            </label>
-            <input
-              id="startDate-filter"
-              type="date"
-              value={filters.startDate}
-              onChange={(e) => handleFilterChange(e)}
-              name="startDate"
-              className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm"
-            />
-          </div>
-          <div className="flex-1 flex flex-col">
-            <label
-              htmlFor="endDate-filter"
-              className="text-sm font-medium mb-1 text-center"
-            >
-              Data Final
-            </label>
-            <input
-              id="endDate-filter"
-              type="date"
-              value={filters.endDate}
-              onChange={(e) => handleFilterChange(e)}
-              name="endDate"
-              className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm"
-            />
-          </div>
-          <div className="flex-1 flex flex-col">
-            <label
-              htmlFor="month-filter"
-              className="text-sm font-medium mb-1 text-center"
-            >
-              Mês
-            </label>
-            <select
-              id="month-filter"
-              value={filters.month}
-              onChange={(e) => handleFilterChange(e)}
-              name="month"
-              className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm"
-            >
-              <option value="">Todos</option>
-              {months.map((month) => (
-                <option key={month.value} value={month.value}>
-                  {month.label}
-                </option>
-              ))}
-            </select>
+              <svg
+                className="w-5 h-5 text-gray-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+                />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                />
+              </svg>
+              <span className="text-sm font-medium text-gray-600">
+                Personalizar Colunas
+              </span>
+            </button>
           </div>
 
-          {/* Botão Personalizar Colunas */}
-          <button
-            onClick={() => setShowColumnSelector(true)}
-            style={{
-              padding: "5px 10px",
-              backgroundColor: "#E0F7FA",
-              border: "1px solid grey",
-              borderRadius: "20px",
-              fontSize: "14px",
-              cursor: "pointer",
-              color: "#333",
-              whiteSpace: "nowrap",
-              width: "auto",
-              boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
-              transition: "background-color 0.3s ease, box-shadow 0.3s ease",
-              display: "flex",
-              alignItems: "center",
-              gap: "4px",
-              height: "38px",
-              marginTop: "24px",
-            }}
-            className="firstMobile:mt-4"
-          >
-            <IoMdSettings />
-            Personalizar Colunas
-          </button>
+          {/* Versão Desktop */}
+          <div className="hidden lg:flex w-full items-end gap-2.5">
+            <div className="flex-1">
+              <Filter
+                label="Cliente"
+                type="search"
+                name="client"
+                value={clientFilter}
+                onChange={handleClientFilterChange}
+                placeholder="Buscar por cliente..."
+                className="text-sm w-full"
+                labelClassName="text-center"
+              />
+            </div>
+            <div className="flex-1">
+              <Filter
+                label="Nome do Projeto"
+                type="search"
+                name="projectName"
+                value={projectNameFilter}
+                onChange={handleProjectNameFilterChange}
+                placeholder="Buscar por projeto..."
+                className="text-sm w-full"
+                labelClassName="text-center"
+              />
+            </div>
+            <div className="flex-1">
+              <Filter
+                label="Data"
+                type="daterange"
+                value={dateFilter}
+                onChange={handleDateFilterChange}
+                onClear={() => setDateFilter({ start: "", end: "" })}
+                className="text-sm w-full"
+                labelClassName="text-center"
+              />
+            </div>
+            <div className="flex-1">
+              <Filter
+                label="Língua de Origem"
+                type="multiselect"
+                name="sourceLanguage"
+                value={sourceLanguageFilter}
+                onChange={handleSourceLanguageFilterChange}
+                options={sourceLanguageOptions}
+                placeholder="Selecione as línguas..."
+                className="text-sm w-full"
+                labelClassName="text-center"
+              />
+            </div>
+            <div className="flex-1">
+              <Filter
+                label="Status de Pagamento"
+                type="select"
+                name="payment"
+                value={paymentFilter}
+                onChange={handlePaymentFilterChange}
+                options={paymentOptions}
+                placeholder="Todos"
+                className="text-sm w-full"
+                labelClassName="text-center"
+              />
+            </div>
+            <div className="flex-1">
+              <Filter
+                label="Tipo de Cliente"
+                type="select"
+                name="clientType"
+                value={clientTypeFilter}
+                onChange={handleClientTypeFilterChange}
+                options={clientTypeOptions}
+                placeholder="Todos"
+                className="text-sm w-full"
+                labelClassName="text-center"
+              />
+            </div>
+            <div className="flex-1">
+              <Filter
+                label="Status do Projeto"
+                type="multiselect"
+                name="projectStatus"
+                value={projectStatusFilter}
+                onChange={handleProjectStatusFilterChange}
+                options={projectStatusOptions}
+                placeholder="Selecione os status..."
+                className="text-sm w-full"
+                labelClassName="text-center"
+              />
+            </div>
+            <div className="flex-1">
+              <Filter
+                label="Status da Tradução"
+                type="multiselect"
+                name="translationStatus"
+                value={translationStatusFilter}
+                onChange={handleTranslationStatusFilterChange}
+                options={translationStatusOptions}
+                placeholder="Selecione os status..."
+                className="text-sm w-full"
+                labelClassName="text-center"
+              />
+            </div>
+            <button
+              onClick={() => setShowColumnSelector(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-full transition-colors duration-200 border border-gray-800"
+              title="Configurar colunas"
+            >
+              <svg
+                className="w-5 h-5 text-gray-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+                />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                />
+              </svg>
+              <span className="text-sm font-medium text-gray-600">
+                Personalizar Colunas
+              </span>
+            </button>
+          </div>
         </div>
 
         <DataTable
@@ -1354,7 +1482,9 @@ const MasterProjects = ({ style, isMobile }) => {
             pages: calculateTotalPages(row.files) || "0",
             filesDisplay: (
               <div className="flex items-center justify-center gap-1">
-                <span>{row.files?.length || "0"}</span>
+                <span className="text-xs font-medium">
+                  {row.files?.length || "0"}
+                </span>
                 <FaDownload
                   className="text-blue-600 hover:text-blue-800 cursor-pointer"
                   onClick={(e) => {
@@ -1366,81 +1496,55 @@ const MasterProjects = ({ style, isMobile }) => {
                 />
               </div>
             ),
-            totalValue: `U$ ${Number(
-              row.totalProjectValue ||
-                row.totalValue ||
-                calculateTotalValue(row.files)
-            ).toFixed(2)}`,
-            paymentStatus: (
-              <span
-                className={`status-badge ${
-                  (typeof row.payment_status === "object"
-                    ? row.payment_status.status
-                    : row.payment_status) === "Pago"
-                    ? "status-approved"
-                    : (typeof row.payment_status === "object"
-                        ? row.payment_status.status
-                        : row.payment_status) === "Reembolso"
-                    ? "status-refund"
-                    : (typeof row.payment_status === "object"
-                        ? row.payment_status.status
-                        : row.payment_status) === "Divergência"
-                    ? "status-divergence"
-                    : "status-pending"
-                }`}
-              >
-                {typeof row.payment_status === "object"
-                  ? row.payment_status.status
-                  : row.payment_status || "PENDENTE"}
+            totalValue: (
+              <span className="text-xs font-medium">
+                {`U$ ${Number(
+                  row.totalProjectValue ||
+                    row.totalValue ||
+                    calculateTotalValue(row.files)
+                ).toFixed(2)}`}
               </span>
             ),
-            deadline: formatDeadline(row.deadline, row.deadlineDate),
-            clientType: (() => {
-              const userInfo = clientTypes[row.userEmail];
-              if (!userInfo) return "N/A";
-              if (
-                userInfo.userType === "colaborator" &&
-                userInfo.registeredBy
-              ) {
-                const registeredByInfo = clientTypes[userInfo.registeredBy];
-                if (registeredByInfo && registeredByInfo.userType === "b2b")
-                  return "B2B";
-                if (
-                  registeredByInfo &&
-                  (registeredByInfo.clientType === "Cliente" ||
-                    registeredByInfo.clientType === "Colab")
-                )
-                  return "B2C";
-              } else if (
-                userInfo.clientType === "Colab" ||
-                userInfo.clientType === "Cliente"
-              ) {
-                return "B2C";
-              }
-              return userInfo.clientType || "N/A";
-            })(),
-            projectStatus: (
-              <span
-                className={`status-badge ${
-                  row.project_status === "Rascunho"
-                    ? "status-draft"
-                    : row.project_status === "Ag. Orçamento"
-                    ? "status-budget"
-                    : row.project_status === "Ag. Aprovação"
-                    ? "status-approval"
-                    : row.project_status === "Ag. Pagamento"
-                    ? "status-pending"
-                    : row.project_status === "Em Análise"
-                    ? "status-in-progress"
-                    : row.project_status === "Em Andamento"
-                    ? "status-in-progress"
-                    : row.project_status === "Cancelado"
-                    ? "status-canceled"
-                    : "status-draft"
-                }`}
-              >
-                {row.project_status || "Rascunho"}
+            paymentStatus: renderPaymentStatusBadge(
+              typeof row.payment_status === "object"
+                ? row.payment_status.status || "N/A"
+                : row.payment_status || "N/A"
+            ),
+            deadline: (
+              <span className="text-xs font-medium">
+                {formatDeadline(row.deadline, row.deadlineDate)}
               </span>
+            ),
+            clientType: (
+              <span className="text-xs font-medium">
+                {(() => {
+                  const userInfo = clientTypes[row.userEmail];
+                  if (!userInfo) return "N/A";
+                  if (
+                    userInfo.userType === "colaborator" &&
+                    userInfo.registeredBy
+                  ) {
+                    const registeredByInfo = clientTypes[userInfo.registeredBy];
+                    if (registeredByInfo && registeredByInfo.userType === "b2b")
+                      return "B2B";
+                    if (
+                      registeredByInfo &&
+                      (registeredByInfo.clientType === "Cliente" ||
+                        registeredByInfo.clientType === "Colab")
+                    )
+                      return "B2C";
+                  } else if (
+                    userInfo.clientType === "Colab" ||
+                    userInfo.clientType === "Cliente"
+                  ) {
+                    return "B2C";
+                  }
+                  return userInfo.clientType || "N/A";
+                })()}
+              </span>
+            ),
+            projectStatus: renderProjectStatusBadge(
+              row.project_status || "N/A"
             ),
             translationStatus: (
               <select
@@ -1451,20 +1555,20 @@ const MasterProjects = ({ style, isMobile }) => {
                 }}
                 onClick={(e) => e.stopPropagation()}
                 disabled={row.collection === "b2bdocprojects"}
-                className={`input-default w-36 !h-6 !py-0 !text-sm rounded-lg ${
+                className={`w-36 !h-6 !py-0 !text-xs font-medium rounded-full text-center ${
                   row.translation_status === "Finalizado"
-                    ? "text-green-600"
+                    ? "bg-green-50 text-green-700 border border-green-200"
                     : row.translation_status === "Em Andamento"
-                    ? "text-blue-600"
+                    ? "bg-blue-50 text-blue-700 border border-blue-200"
                     : row.translation_status === "Em Revisão"
-                    ? "text-yellow-600"
+                    ? "bg-yellow-50 text-yellow-700 border border-yellow-200"
                     : row.translation_status === "Em Certificação"
-                    ? "text-orange-600"
+                    ? "bg-orange-50 text-orange-700 border border-orange-200"
                     : row.translation_status === "Cancelado"
-                    ? "text-gray-600"
+                    ? "bg-red-50 text-red-700 border border-red-200"
                     : row.translation_status === "N/A"
-                    ? "text-gray-600"
-                    : "text-blue-600"
+                    ? "bg-gray-50 text-gray-700 border border-gray-200"
+                    : "bg-blue-50 text-blue-700 border border-blue-200"
                 }`}
               >
                 {row.collection === "b2bdocprojects" ? (
