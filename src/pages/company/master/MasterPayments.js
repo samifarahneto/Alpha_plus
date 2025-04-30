@@ -3,9 +3,10 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { getFirestore, collection, onSnapshot } from "firebase/firestore";
 
 import { useAuth } from "../../../contexts/AuthContext";
-import MasterNavigation from "./MasterNavigation";
+import NavigationLinks from "../../../components/NavigationLinks";
+import PageLayout from "../../../components/PageLayout";
 
-const MasterPayments = () => {
+const MasterPayments = ({ style, isMobile }) => {
   const [payments, setPayments] = useState([]);
   const [allProjects, setAllProjects] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -226,13 +227,13 @@ const MasterPayments = () => {
   };
 
   return (
-    <div className="w-full max-w-full p-8 space-y-8">
-      <div className="glass-card">
+    <PageLayout>
+      <div className="glass-card w-full max-w-[100%] mx-0">
         <h2 className="text-3xl font-bold text-center mb-8 bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
-          Pagamentos Pendentes
+          Pagamentos
         </h2>
 
-        <MasterNavigation
+        <NavigationLinks
           activeLink={activeLink}
           setActiveLink={setActiveLink}
           unreadCount={unreadCount}
@@ -354,7 +355,7 @@ const MasterPayments = () => {
           </div>
         )}
       </div>
-    </div>
+    </PageLayout>
   );
 };
 

@@ -68,7 +68,7 @@ const DataTable = ({
 
   return (
     <div className="table-wrapper overflow-x-auto firstMobile:overflow-x-scroll">
-      <table className="table-default w-full">
+      <table className="w-full">
         <DataTableHeader
           columns={columns}
           columnOrder={columnOrder}

@@ -10,7 +10,7 @@ import {
   serverTimestamp,
 } from "firebase/firestore";
 import { useAuth } from "../../../contexts/AuthContext";
-import MasterNavigation from "./MasterNavigation";
+import NavigationLinks from "../../../components/NavigationLinks";
 import { FaDownload } from "react-icons/fa";
 import { getStorage, ref, getDownloadURL } from "firebase/storage";
 import "../../../styles/Pagination.css";
@@ -31,6 +31,7 @@ const MasterProjects = ({ style, isMobile }) => {
   const [paymentFilter, setPaymentFilter] = useState("");
   const [clientTypeFilter, setClientTypeFilter] = useState("");
   const [isFiltersExpanded, setIsFiltersExpanded] = useState(false);
+  const [error, setError] = useState(null);
   const location = useLocation();
   const [activeLink, setActiveLink] = useState(() => {
     if (location.pathname.includes("projects-budget")) return "projectsBudget";
@@ -1111,31 +1112,41 @@ const MasterProjects = ({ style, isMobile }) => {
   };
 
   return (
-    <PageLayout>
-      <div className="glass-card w-full max-w-[100%] mx-0">
-        <h2 className="text-3xl font-bold text-center mb-8 bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
-          Projetos Recebidos
-        </h2>
-
-        <MasterNavigation
-          activeLink={activeLink}
-          setActiveLink={setActiveLink}
-          unreadCount={unreadCount}
-          unreadBudgetCount={unreadBudgetCount}
-          unreadApprovalCount={unreadApprovalCount}
-        />
-
-        {/* Filtros e Personalizar Colunas */}
-        <div className="flex flex-col md:flex-row items-end gap-2.5 mt-6 mb-8">
-          {/* Versão Mobile - Aba Expansível */}
-          <div className="w-full lg:hidden">
-            <button
-              onClick={() => setIsFiltersExpanded(!isFiltersExpanded)}
-              className="w-full flex items-center justify-between px-4 py-3 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors mb-4 shadow-sm"
-            >
-              <div className="flex items-center gap-2">
+    <div className="w-full px-4">
+      {!loading && (
+        <div className="w-full">
+          <div className="flex flex-col md:flex-row items-end gap-2.5 mb-8 px-10">
+            {/* Versão Mobile - Aba Expansível */}
+            <div className="w-full lg:hidden">
+              <button
+                onClick={() => setIsFiltersExpanded(!isFiltersExpanded)}
+                className="w-full flex items-center justify-between px-4 py-3 bg-gray-100 hover:bg-gray-200 transition-colors mb-4 shadow-sm"
+              >
+                <div className="flex items-center gap-2">
+                  <svg
+                    className="w-5 h-5 text-gray-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
+                    />
+                  </svg>
+                  <span className="font-medium">Filtros</span>
+                  {isFiltersExpanded && (
+                    <span className="text-sm text-gray-500">
+                      (Clique para recolher)
+                    </span>
+                  )}
+                </div>
                 <svg
-                  className="w-5 h-5 text-gray-600"
+                  className={`w-5 h-5 transform transition-transform duration-200 ${
+                    isFiltersExpanded ? "rotate-180" : ""
+                  }`}
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -1144,42 +1155,164 @@ const MasterProjects = ({ style, isMobile }) => {
                     strokeLinecap="round"
                     strokeLinejoin="round"
                     strokeWidth="2"
-                    d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
+                    d="M19 9l-7 7-7-7"
                   />
                 </svg>
-                <span className="font-medium">Filtros</span>
-                {isFiltersExpanded && (
-                  <span className="text-sm text-gray-500">
-                    (Clique para recolher)
-                  </span>
-                )}
-              </div>
-              <svg
-                className={`w-5 h-5 transform transition-transform duration-200 ${
-                  isFiltersExpanded ? "rotate-180" : ""
-                }`}
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M19 9l-7 7-7-7"
-                />
-              </svg>
-            </button>
+              </button>
 
-            {/* Conteúdo dos Filtros Mobile */}
-            <div
-              className={`grid grid-cols-1 gap-4 transition-all duration-300 ease-in-out ${
-                isFiltersExpanded
-                  ? "opacity-100 max-h-[500px] overflow-y-auto"
-                  : "opacity-0 max-h-0 overflow-hidden"
-              }`}
-            >
-              <div className="w-full">
+              {/* Conteúdo dos Filtros Mobile */}
+              <div
+                className={`grid grid-cols-1 gap-4 transition-all duration-300 ease-in-out ${
+                  isFiltersExpanded
+                    ? "opacity-100 max-h-[500px] overflow-y-auto"
+                    : "opacity-0 max-h-0 overflow-hidden"
+                }`}
+              >
+                <div className="w-full">
+                  <Filter
+                    label="Cliente"
+                    type="search"
+                    name="client"
+                    value={clientFilter}
+                    onChange={handleClientFilterChange}
+                    placeholder="Buscar por cliente..."
+                    className="text-sm w-full"
+                    labelClassName="text-center lg:text-center"
+                    containerClassName="flex flex-col items-center gap-1"
+                  />
+                </div>
+                <div className="w-full">
+                  <Filter
+                    label="Nome do Projeto"
+                    type="search"
+                    name="projectName"
+                    value={projectNameFilter}
+                    onChange={handleProjectNameFilterChange}
+                    placeholder="Buscar por projeto..."
+                    className="text-sm w-full"
+                    labelClassName="text-center lg:text-center"
+                    containerClassName="flex flex-col items-center gap-1"
+                  />
+                </div>
+                <div className="w-full">
+                  <Filter
+                    label="Data"
+                    type="daterange"
+                    value={dateFilter}
+                    onChange={handleDateFilterChange}
+                    onClear={() => setDateFilter({ start: "", end: "" })}
+                    className="text-sm w-full"
+                    labelClassName="text-center lg:text-center"
+                    containerClassName="flex flex-col items-center gap-1"
+                  />
+                </div>
+                <div className="w-full">
+                  <Filter
+                    label="Língua de Origem"
+                    type="multiselect"
+                    name="sourceLanguage"
+                    value={sourceLanguageFilter}
+                    onChange={handleSourceLanguageFilterChange}
+                    options={sourceLanguageOptions}
+                    placeholder="Selecione as línguas..."
+                    className="text-sm w-full"
+                    labelClassName="text-center lg:text-center"
+                    containerClassName="flex flex-col items-center gap-1"
+                  />
+                </div>
+                <div className="w-full">
+                  <Filter
+                    label="Status de Pagamento"
+                    type="select"
+                    name="payment"
+                    value={paymentFilter}
+                    onChange={handlePaymentFilterChange}
+                    options={paymentOptions}
+                    placeholder="Todos"
+                    className="text-sm w-full"
+                    labelClassName="text-center lg:text-center"
+                    containerClassName="flex flex-col items-center gap-1"
+                  />
+                </div>
+                <div className="w-full">
+                  <Filter
+                    label="Tipo de Cliente"
+                    type="select"
+                    name="clientType"
+                    value={clientTypeFilter}
+                    onChange={handleClientTypeFilterChange}
+                    options={clientTypeOptions}
+                    placeholder="Todos"
+                    className="text-sm w-full"
+                    labelClassName="text-center lg:text-center"
+                    containerClassName="flex flex-col items-center gap-1"
+                  />
+                </div>
+                <div className="w-full">
+                  <Filter
+                    label="Status do Projeto"
+                    type="multiselect"
+                    name="projectStatus"
+                    value={projectStatusFilter}
+                    onChange={handleProjectStatusFilterChange}
+                    options={projectStatusOptions}
+                    placeholder="Selecione os status..."
+                    className="text-sm w-full"
+                    labelClassName="text-center lg:text-center"
+                    containerClassName="flex flex-col items-center gap-1"
+                  />
+                </div>
+                <div className="w-full">
+                  <Filter
+                    label="Status da Tradução"
+                    type="multiselect"
+                    name="translationStatus"
+                    value={translationStatusFilter}
+                    onChange={handleTranslationStatusFilterChange}
+                    options={translationStatusOptions}
+                    placeholder="Selecione os status..."
+                    className="text-sm w-full"
+                    labelClassName="text-center lg:text-center"
+                    containerClassName="flex flex-col items-center gap-1"
+                  />
+                </div>
+              </div>
+
+              {/* Botão de Personalizar Colunas - Versão Mobile */}
+              <button
+                onClick={() => setShowColumnSelector(true)}
+                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gray-100 hover:bg-gray-200 transition-colors duration-200 border border-gray-800 mt-4"
+                title="Configurar colunas"
+              >
+                <svg
+                  className="w-5 h-5 text-gray-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+                  />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                  />
+                </svg>
+                <span className="text-sm font-medium text-gray-600">
+                  Personalizar Colunas
+                </span>
+              </button>
+            </div>
+
+            {/* Versão Desktop */}
+            <div className="hidden lg:flex w-full items-end gap-2.5">
+              <div className="flex-1">
                 <Filter
                   label="Cliente"
                   type="search"
@@ -1188,11 +1321,10 @@ const MasterProjects = ({ style, isMobile }) => {
                   onChange={handleClientFilterChange}
                   placeholder="Buscar por cliente..."
                   className="text-sm w-full"
-                  labelClassName="text-center lg:text-center"
-                  containerClassName="flex flex-col items-center gap-1"
+                  labelClassName="text-center"
                 />
               </div>
-              <div className="w-full">
+              <div className="flex-1">
                 <Filter
                   label="Nome do Projeto"
                   type="search"
@@ -1201,11 +1333,10 @@ const MasterProjects = ({ style, isMobile }) => {
                   onChange={handleProjectNameFilterChange}
                   placeholder="Buscar por projeto..."
                   className="text-sm w-full"
-                  labelClassName="text-center lg:text-center"
-                  containerClassName="flex flex-col items-center gap-1"
+                  labelClassName="text-center"
                 />
               </div>
-              <div className="w-full">
+              <div className="flex-1">
                 <Filter
                   label="Data"
                   type="daterange"
@@ -1213,11 +1344,10 @@ const MasterProjects = ({ style, isMobile }) => {
                   onChange={handleDateFilterChange}
                   onClear={() => setDateFilter({ start: "", end: "" })}
                   className="text-sm w-full"
-                  labelClassName="text-center lg:text-center"
-                  containerClassName="flex flex-col items-center gap-1"
+                  labelClassName="text-center"
                 />
               </div>
-              <div className="w-full">
+              <div className="flex-1">
                 <Filter
                   label="Língua de Origem"
                   type="multiselect"
@@ -1227,11 +1357,10 @@ const MasterProjects = ({ style, isMobile }) => {
                   options={sourceLanguageOptions}
                   placeholder="Selecione as línguas..."
                   className="text-sm w-full"
-                  labelClassName="text-center lg:text-center"
-                  containerClassName="flex flex-col items-center gap-1"
+                  labelClassName="text-center"
                 />
               </div>
-              <div className="w-full">
+              <div className="flex-1">
                 <Filter
                   label="Status de Pagamento"
                   type="select"
@@ -1241,11 +1370,10 @@ const MasterProjects = ({ style, isMobile }) => {
                   options={paymentOptions}
                   placeholder="Todos"
                   className="text-sm w-full"
-                  labelClassName="text-center lg:text-center"
-                  containerClassName="flex flex-col items-center gap-1"
+                  labelClassName="text-center"
                 />
               </div>
-              <div className="w-full">
+              <div className="flex-1">
                 <Filter
                   label="Tipo de Cliente"
                   type="select"
@@ -1255,11 +1383,10 @@ const MasterProjects = ({ style, isMobile }) => {
                   options={clientTypeOptions}
                   placeholder="Todos"
                   className="text-sm w-full"
-                  labelClassName="text-center lg:text-center"
-                  containerClassName="flex flex-col items-center gap-1"
+                  labelClassName="text-center"
                 />
               </div>
-              <div className="w-full">
+              <div className="flex-1">
                 <Filter
                   label="Status do Projeto"
                   type="multiselect"
@@ -1269,11 +1396,10 @@ const MasterProjects = ({ style, isMobile }) => {
                   options={projectStatusOptions}
                   placeholder="Selecione os status..."
                   className="text-sm w-full"
-                  labelClassName="text-center lg:text-center"
-                  containerClassName="flex flex-col items-center gap-1"
+                  labelClassName="text-center"
                 />
               </div>
-              <div className="w-full">
+              <div className="flex-1">
                 <Filter
                   label="Status da Tradução"
                   type="multiselect"
@@ -1283,328 +1409,196 @@ const MasterProjects = ({ style, isMobile }) => {
                   options={translationStatusOptions}
                   placeholder="Selecione os status..."
                   className="text-sm w-full"
-                  labelClassName="text-center lg:text-center"
-                  containerClassName="flex flex-col items-center gap-1"
+                  labelClassName="text-center"
                 />
               </div>
-            </div>
-
-            {/* Botão de Personalizar Colunas - Versão Mobile */}
-            <button
-              onClick={() => setShowColumnSelector(true)}
-              className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors duration-200 border border-gray-800 mt-4"
-              title="Configurar colunas"
-            >
-              <svg
-                className="w-5 h-5 text-gray-600"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
+              <button
+                onClick={() => setShowColumnSelector(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-full transition-colors duration-200 border border-gray-800"
+                title="Configurar colunas"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
-                />
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                />
-              </svg>
-              <span className="text-sm font-medium text-gray-600">
-                Personalizar Colunas
-              </span>
-            </button>
-          </div>
-
-          {/* Versão Desktop */}
-          <div className="hidden lg:flex w-full items-end gap-2.5">
-            <div className="flex-1">
-              <Filter
-                label="Cliente"
-                type="search"
-                name="client"
-                value={clientFilter}
-                onChange={handleClientFilterChange}
-                placeholder="Buscar por cliente..."
-                className="text-sm w-full"
-                labelClassName="text-center"
-              />
-            </div>
-            <div className="flex-1">
-              <Filter
-                label="Nome do Projeto"
-                type="search"
-                name="projectName"
-                value={projectNameFilter}
-                onChange={handleProjectNameFilterChange}
-                placeholder="Buscar por projeto..."
-                className="text-sm w-full"
-                labelClassName="text-center"
-              />
-            </div>
-            <div className="flex-1">
-              <Filter
-                label="Data"
-                type="daterange"
-                value={dateFilter}
-                onChange={handleDateFilterChange}
-                onClear={() => setDateFilter({ start: "", end: "" })}
-                className="text-sm w-full"
-                labelClassName="text-center"
-              />
-            </div>
-            <div className="flex-1">
-              <Filter
-                label="Língua de Origem"
-                type="multiselect"
-                name="sourceLanguage"
-                value={sourceLanguageFilter}
-                onChange={handleSourceLanguageFilterChange}
-                options={sourceLanguageOptions}
-                placeholder="Selecione as línguas..."
-                className="text-sm w-full"
-                labelClassName="text-center"
-              />
-            </div>
-            <div className="flex-1">
-              <Filter
-                label="Status de Pagamento"
-                type="select"
-                name="payment"
-                value={paymentFilter}
-                onChange={handlePaymentFilterChange}
-                options={paymentOptions}
-                placeholder="Todos"
-                className="text-sm w-full"
-                labelClassName="text-center"
-              />
-            </div>
-            <div className="flex-1">
-              <Filter
-                label="Tipo de Cliente"
-                type="select"
-                name="clientType"
-                value={clientTypeFilter}
-                onChange={handleClientTypeFilterChange}
-                options={clientTypeOptions}
-                placeholder="Todos"
-                className="text-sm w-full"
-                labelClassName="text-center"
-              />
-            </div>
-            <div className="flex-1">
-              <Filter
-                label="Status do Projeto"
-                type="multiselect"
-                name="projectStatus"
-                value={projectStatusFilter}
-                onChange={handleProjectStatusFilterChange}
-                options={projectStatusOptions}
-                placeholder="Selecione os status..."
-                className="text-sm w-full"
-                labelClassName="text-center"
-              />
-            </div>
-            <div className="flex-1">
-              <Filter
-                label="Status da Tradução"
-                type="multiselect"
-                name="translationStatus"
-                value={translationStatusFilter}
-                onChange={handleTranslationStatusFilterChange}
-                options={translationStatusOptions}
-                placeholder="Selecione os status..."
-                className="text-sm w-full"
-                labelClassName="text-center"
-              />
-            </div>
-            <button
-              onClick={() => setShowColumnSelector(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-full transition-colors duration-200 border border-gray-800"
-              title="Configurar colunas"
-            >
-              <svg
-                className="w-5 h-5 text-gray-600"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
-                />
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                />
-              </svg>
-              <span className="text-sm font-medium text-gray-600">
-                Personalizar Colunas
-              </span>
-            </button>
-          </div>
-        </div>
-
-        <DataTable
-          columns={columns}
-          data={currentRows.map((row) => ({
-            ...row,
-            client:
-              clientTypes[row.userEmail]?.registeredBy ||
-              row.userEmail ||
-              "N/A",
-            projectName:
-              row.projectName && row.projectName.length > 20
-                ? `${row.projectName.slice(0, 20)}...`
-                : row.projectName || "Sem Nome",
-            createdAt: new Date(
-              row.createdAt.seconds * 1000
-            ).toLocaleDateString("pt-BR"),
-            monthYear: row.createdAt
-              ? new Date(row.createdAt.seconds * 1000).toLocaleDateString(
-                  "pt-BR",
-                  {
-                    month: "2-digit",
-                    year: "2-digit",
-                  }
-                )
-              : "Sem Data",
-            pages: calculateTotalPages(row.files) || "0",
-            filesDisplay: (
-              <div className="flex items-center justify-center gap-1">
-                <span className="text-xs font-medium">
-                  {row.files?.length || "0"}
+                <svg
+                  className="w-5 h-5 text-gray-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+                  />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                  />
+                </svg>
+                <span className="text-sm font-medium text-gray-600">
+                  Personalizar Colunas
                 </span>
-                <FaDownload
-                  className="text-blue-600 hover:text-blue-800 cursor-pointer"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setSelectedFiles(row.files);
-                    setShowFilesModal(true);
-                  }}
-                  size={14}
-                />
-              </div>
-            ),
-            totalValue: (
-              <span className="text-xs font-medium">
-                {`U$ ${Number(
-                  row.totalProjectValue ||
-                    row.totalValue ||
-                    calculateTotalValue(row.files)
-                ).toFixed(2)}`}
-              </span>
-            ),
-            paymentStatus: renderPaymentStatusBadge(
-              typeof row.payment_status === "object"
-                ? row.payment_status.status || "N/A"
-                : row.payment_status || "N/A"
-            ),
-            deadline: (
-              <span className="text-xs font-medium">
-                {formatDeadline(row.deadline, row.deadlineDate)}
-              </span>
-            ),
-            clientType: (
-              <span className="text-xs font-medium">
-                {(() => {
-                  const userInfo = clientTypes[row.userEmail];
-                  if (!userInfo) return "N/A";
-                  if (
-                    userInfo.userType === "colaborator" &&
-                    userInfo.registeredBy
-                  ) {
-                    const registeredByInfo = clientTypes[userInfo.registeredBy];
-                    if (registeredByInfo && registeredByInfo.userType === "b2b")
-                      return "B2B";
+              </button>
+            </div>
+          </div>
+
+          <DataTable
+            columns={columns}
+            data={currentRows.map((row) => ({
+              ...row,
+              client:
+                clientTypes[row.userEmail]?.registeredBy ||
+                row.userEmail ||
+                "N/A",
+              projectName:
+                row.projectName && row.projectName.length > 20
+                  ? `${row.projectName.slice(0, 20)}...`
+                  : row.projectName || "Sem Nome",
+              createdAt: new Date(
+                row.createdAt.seconds * 1000
+              ).toLocaleDateString("pt-BR"),
+              monthYear: row.createdAt
+                ? new Date(row.createdAt.seconds * 1000).toLocaleDateString(
+                    "pt-BR",
+                    {
+                      month: "2-digit",
+                      year: "2-digit",
+                    }
+                  )
+                : "Sem Data",
+              pages: calculateTotalPages(row.files) || "0",
+              filesDisplay: (
+                <div className="flex items-center justify-center gap-1">
+                  <span className="text-xs font-medium">
+                    {row.files?.length || "0"}
+                  </span>
+                  <FaDownload
+                    className="text-blue-600 hover:text-blue-800 cursor-pointer"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedFiles(row.files);
+                      setShowFilesModal(true);
+                    }}
+                    size={14}
+                  />
+                </div>
+              ),
+              totalValue: (
+                <span className="text-xs font-medium">
+                  {`U$ ${Number(
+                    row.totalProjectValue ||
+                      row.totalValue ||
+                      calculateTotalValue(row.files)
+                  ).toFixed(2)}`}
+                </span>
+              ),
+              paymentStatus: renderPaymentStatusBadge(
+                typeof row.payment_status === "object"
+                  ? row.payment_status.status || "N/A"
+                  : row.payment_status || "N/A"
+              ),
+              deadline: (
+                <span className="text-xs font-medium">
+                  {formatDeadline(row.deadline, row.deadlineDate)}
+                </span>
+              ),
+              clientType: (
+                <span className="text-xs font-medium">
+                  {(() => {
+                    const userInfo = clientTypes[row.userEmail];
+                    if (!userInfo) return "N/A";
                     if (
-                      registeredByInfo &&
-                      (registeredByInfo.clientType === "Cliente" ||
-                        registeredByInfo.clientType === "Colab")
-                    )
+                      userInfo.userType === "colaborator" &&
+                      userInfo.registeredBy
+                    ) {
+                      const registeredByInfo =
+                        clientTypes[userInfo.registeredBy];
+                      if (
+                        registeredByInfo &&
+                        registeredByInfo.userType === "b2b"
+                      )
+                        return "B2B";
+                      if (
+                        registeredByInfo &&
+                        (registeredByInfo.clientType === "Cliente" ||
+                          registeredByInfo.clientType === "Colab")
+                      )
+                        return "B2C";
+                    } else if (
+                      userInfo.clientType === "Colab" ||
+                      userInfo.clientType === "Cliente"
+                    ) {
                       return "B2C";
-                  } else if (
-                    userInfo.clientType === "Colab" ||
-                    userInfo.clientType === "Cliente"
-                  ) {
-                    return "B2C";
-                  }
-                  return userInfo.clientType || "N/A";
-                })()}
-              </span>
-            ),
-            projectStatus: renderProjectStatusBadge(
-              row.project_status || "N/A"
-            ),
-            translationStatus: (
-              <select
-                value={row.translation_status || "N/A"}
-                onChange={(e) => {
-                  e.stopPropagation();
-                  updateProjectStatus(row.id, e.target.value);
-                }}
-                onClick={(e) => e.stopPropagation()}
-                disabled={row.collection === "b2bdocprojects"}
-                className={`w-36 !h-6 !py-0 !text-xs font-medium rounded-full text-center ${
-                  row.translation_status === "Finalizado"
-                    ? "bg-green-50 text-green-700 border border-green-200"
-                    : row.translation_status === "Em Andamento"
-                    ? "bg-blue-50 text-blue-700 border border-blue-200"
-                    : row.translation_status === "Em Revisão"
-                    ? "bg-yellow-50 text-yellow-700 border border-yellow-200"
-                    : row.translation_status === "Em Certificação"
-                    ? "bg-orange-50 text-orange-700 border border-orange-200"
-                    : row.translation_status === "Cancelado"
-                    ? "bg-red-50 text-red-700 border border-red-200"
-                    : row.translation_status === "N/A"
-                    ? "bg-gray-50 text-gray-700 border border-gray-200"
-                    : "bg-blue-50 text-blue-700 border border-blue-200"
-                }`}
-              >
-                {row.collection === "b2bdocprojects" ? (
-                  <option value="Ag. Orçamento">Ag. Orçamento</option>
-                ) : (
-                  <>
-                    <option value="N/A">N/A</option>
-                    <option value="Em Andamento">Em Andamento</option>
-                    <option value="Em Revisão">Em Revisão</option>
-                    <option value="Em Certificação">Em Certificação</option>
-                    <option value="Finalizado">Finalizado</option>
-                    <option value="Cancelado">Cancelado</option>
-                  </>
-                )}
-              </select>
-            ),
-          }))}
-          initialColumnOrder={columns.map((col) => col.id)}
-          fixedColumns={fixedColumns}
-          onRowClick={handleRowClick}
-          getRowClassName={getRowClassName}
-        />
+                    }
+                    return userInfo.clientType || "N/A";
+                  })()}
+                </span>
+              ),
+              projectStatus: renderProjectStatusBadge(
+                row.project_status || "N/A"
+              ),
+              translationStatus: (
+                <select
+                  value={row.translation_status || "N/A"}
+                  onChange={(e) => {
+                    e.stopPropagation();
+                    updateProjectStatus(row.id, e.target.value);
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                  disabled={row.collection === "b2bdocprojects"}
+                  className={`w-36 !h-6 !py-0 !text-xs font-medium rounded-full text-center ${
+                    row.translation_status === "Finalizado"
+                      ? "bg-green-50 text-green-700 border border-green-200"
+                      : row.translation_status === "Em Andamento"
+                      ? "bg-blue-50 text-blue-700 border border-blue-200"
+                      : row.translation_status === "Em Revisão"
+                      ? "bg-yellow-50 text-yellow-700 border border-yellow-200"
+                      : row.translation_status === "Em Certificação"
+                      ? "bg-orange-50 text-orange-700 border border-orange-200"
+                      : row.translation_status === "Cancelado"
+                      ? "bg-red-50 text-red-700 border border-red-200"
+                      : row.translation_status === "N/A"
+                      ? "bg-gray-50 text-gray-700 border border-gray-200"
+                      : "bg-blue-50 text-blue-700 border border-blue-200"
+                  }`}
+                >
+                  {row.collection === "b2bdocprojects" ? (
+                    <option value="Ag. Orçamento">Ag. Orçamento</option>
+                  ) : (
+                    <>
+                      <option value="N/A">N/A</option>
+                      <option value="Em Andamento">Em Andamento</option>
+                      <option value="Em Revisão">Em Revisão</option>
+                      <option value="Em Certificação">Em Certificação</option>
+                      <option value="Finalizado">Finalizado</option>
+                      <option value="Cancelado">Cancelado</option>
+                    </>
+                  )}
+                </select>
+              ),
+            }))}
+            initialColumnOrder={columns.map((col) => col.id)}
+            fixedColumns={fixedColumns}
+            onRowClick={handleRowClick}
+            getRowClassName={getRowClassName}
+          />
 
-        <Pagination
-          currentPage={currentPage}
-          totalPages={totalPages}
-          onPageChange={paginate}
-          rowsPerPage={rowsPerPage}
-          onRowsPerPageChange={handleRowsPerPageChange}
-          totalItems={sortedUploads.length}
-        />
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={paginate}
+            rowsPerPage={rowsPerPage}
+            onRowsPerPageChange={handleRowsPerPageChange}
+            totalItems={sortedUploads.length}
+          />
 
-        {renderFilesModal()}
-        {renderColumnSelector()}
-      </div>
-    </PageLayout>
+          {renderFilesModal()}
+          {renderColumnSelector()}
+        </div>
+      )}
+    </div>
   );
 };
 

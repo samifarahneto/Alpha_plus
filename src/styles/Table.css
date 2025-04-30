@@ -2,9 +2,6 @@
 .table-wrapper {
   width: 100%;
   overflow-x: auto;
-  border-radius: 6px;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-  border: 1px solid #e2e8f0;
   background-color: #ffffff;
 }
 
@@ -101,8 +98,6 @@
 .table-container {
   width: 100%;
   overflow-x: auto;
-  border-radius: 0.5rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .table {
@@ -151,11 +146,8 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: 1rem;
   padding: 1rem;
   background-color: #ffffff;
-  border-radius: 8px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .pagination-rows-per-page {

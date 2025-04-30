@@ -5,6 +5,7 @@ import { loadStripe } from "@stripe/stripe-js";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { UnreadCountProvider } from "./contexts/UnreadCountContext";
 import Header from "./components/Header";
+import MasterLayout from "./components/MasterLayout";
 
 // Importações das páginas
 import Home from "./pages/Home";
@@ -29,7 +30,6 @@ import ClientPayments from "./pages/client/ClientPayments";
 import ClientGoingOn from "./pages/client/ClientGoingOn";
 
 // Master
-import MasterDashboard from "./pages/company/master/MasterDashboard";
 import MasterClient from "./pages/company/master/MasterClient";
 import MasterEmployee from "./pages/company/master/MasterEmployee";
 import MasterProjects from "./pages/company/master/MasterProjects";
@@ -41,7 +41,6 @@ import ProjectsPaid from "./pages/company/master/ProjectsPaid";
 import MasterPayments from "./pages/company/master/MasterPayments";
 import MasterOnGoing from "./pages/company/master/MasterOnGoing";
 import ProjectsApproved from "./pages/company/master/ProjectsApproved";
-import ActivityLog from "./pages/company/master/ActivityLog";
 
 // Outras configurações
 import { getFirestore, collection, onSnapshot } from "firebase/firestore";
@@ -74,7 +73,7 @@ const AppContent = () => {
   }, [user, loading]);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-white">
       <Header />
       <main className="mt-[70px]">
         <Routes>
@@ -115,45 +114,22 @@ const AppContent = () => {
           />
 
           {/* Rotas do Master */}
-          <Route
-            path="/company/master/dashboard"
-            element={<MasterDashboard />}
-          />
-          <Route path="/company/master/projects" element={<MasterProjects />} />
-          <Route
-            path="/company/master/projects-budget"
-            element={<ProjectsBudget />}
-          />
-          <Route
-            path="/company/master/projects-approval"
-            element={<ProjectsApproval />}
-          />
-          <Route
-            path="/company/master/projects-done"
-            element={<ProjectsDone />}
-          />
-          <Route
-            path="/company/master/projects-paid"
-            element={<ProjectsPaid />}
-          />
-          <Route path="/company/master/payments" element={<MasterPayments />} />
-          <Route path="/company/master/going-on" element={<MasterOnGoing />} />
-          <Route
-            path="/company/master/projects-approved"
-            element={<ProjectsApproved />}
-          />
-          <Route
-            path="/company/master/activity-log"
-            element={<ActivityLog />}
-          />
+          <Route path="/company/master" element={<MasterLayout />}>
+            <Route index element={<MasterProjects />} />
+            <Route path="projects" element={<MasterProjects />} />
+            <Route path="projects-budget" element={<ProjectsBudget />} />
+            <Route path="projects-approval" element={<ProjectsApproval />} />
+            <Route path="projects-approved" element={<ProjectsApproved />} />
+            <Route path="ongoing" element={<MasterOnGoing />} />
+            <Route path="projects-done" element={<ProjectsDone />} />
+            <Route path="projects-paid" element={<ProjectsPaid />} />
+            <Route path="payments" element={<MasterPayments />} />
+            <Route path="project/:id" element={<ProjectDetails />} />
+          </Route>
           <Route path="/company/master/clients" element={<MasterClient />} />
           <Route
             path="/company/master/employees"
             element={<MasterEmployee />}
-          />
-          <Route
-            path="/company/master/project/:projectId"
-            element={<ProjectDetails />}
           />
 
           {/* Rota de Pagamento */}
