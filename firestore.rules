@@ -1,0 +1,77 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Função auxiliar para verificar se o usuário é master
+    function isMaster() {
+      return request.auth != null && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.userType == "master";
+    }
+
+    // Coleção emailcheck
+    match /emailcheck/{emailId} {
+      allow read: if true; // Permite leitura pública
+      allow write: if request.auth != null; // Apenas usuários autenticados podem escrever
+    }
+
+    // Coleção priceperpage
+    match /priceperpage/{documentId} {
+      allow read: if true; // Permite leitura pública
+      allow write: if request.auth != null; // Apenas usuários autenticados podem escrever
+    }
+
+    // Coleção users
+    match /users/{userId} {
+      allow read: if request.auth != null; // Permite leitura para usuários autenticados
+      allow write: if request.auth != null && request.auth.uid == userId; // Apenas o próprio usuário pode escrever
+    }
+
+    // Coleções B2B
+    match /b2bprojects/{projectId} {
+      allow read: if request.auth != null;
+      allow write: if isMaster() || (request.auth != null && request.auth.token.email == resource.data.userEmail);
+    }
+
+    match /b2bprojectspaid/{projectId} {
+      allow read: if request.auth != null;
+      allow write: if isMaster() || (request.auth != null && request.auth.token.email == resource.data.userEmail);
+    }
+
+    match /b2bapproved/{projectId} {
+      allow read: if request.auth != null;
+      allow write: if isMaster() || (request.auth != null && request.auth.token.email == resource.data.userEmail);
+    }
+
+    match /b2bdocprojects/{projectId} {
+      allow read: if request.auth != null;
+      allow write: if isMaster() || (request.auth != null && request.auth.token.email == resource.data.userEmail);
+    }
+
+    match /b2bapproval/{projectId} {
+      allow read: if request.auth != null;
+      allow write: if isMaster() || (request.auth != null && request.auth.token.email == resource.data.userEmail);
+    }
+
+    // Coleções B2C
+    match /b2cprojectspaid/{projectId} {
+      allow read: if request.auth != null;
+      allow write: if isMaster() || (request.auth != null && request.auth.token.email == resource.data.userEmail);
+    }
+
+    match /b2cdocprojects/{projectId} {
+      allow read: if request.auth != null;
+      allow write: if isMaster() || (request.auth != null && request.auth.token.email == resource.data.userEmail);
+    }
+
+    match /b2capproval/{projectId} {
+      allow read: if request.auth != null;
+      allow write: if isMaster() || (request.auth != null && request.auth.token.email == resource.data.userEmail);
+    }
+
+    // Outras coleções
+    match /{document=**} {
+      allow read: if request.auth != null; // Apenas usuários autenticados podem ler
+      allow write: if request.auth != null; // Apenas usuários autenticados podem escrever
+    }
+  }
+}

@@ -1,0 +1,164 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Reset e estilos base */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+@layer base {
+  body {
+    @apply m-0 antialiased bg-gradient-to-br from-gray-50 to-gray-100 min-h-screen;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto",
+      "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans",
+      "Helvetica Neue", sans-serif;
+  }
+
+  code {
+    font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New",
+      monospace;
+  }
+}
+
+/* Força o Tailwind a ter prioridade sobre o MUI */
+@layer utilities {
+  .text-emerald-600 {
+    color: #059669 !important;
+  }
+  .text-red-600 {
+    color: #dc2626 !important;
+  }
+  .text-yellow-600 {
+    color: #d97706 !important;
+  }
+  .text-blue-600 {
+    color: #2563eb !important;
+  }
+}
+
+@layer components {
+  /* Estilos modernos para tabelas */
+  .table-default {
+    @apply min-w-full bg-white divide-y divide-gray-200 rounded-2xl shadow-lg border border-gray-100 !important;
+  }
+
+  .table-header {
+    @apply bg-gradient-to-b from-gray-50 to-gray-100 !important;
+  }
+
+  .table-header-cell {
+    @apply px-4 py-5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider border-b border-gray-200 !important;
+  }
+
+  .table-body {
+    @apply bg-white divide-y divide-gray-100 !important;
+  }
+
+  .table-row {
+    @apply hover:bg-blue-50/50 cursor-pointer transition-all duration-200 !important;
+  }
+
+  .table-cell {
+    @apply px-4 py-4 text-sm text-gray-700 !important;
+  }
+
+  .table-cell-select {
+    @apply px-4 py-4 text-sm text-center relative !important;
+    pointer-events: none;
+  }
+
+  .table-cell-select input[type="checkbox"] {
+    pointer-events: auto;
+    position: relative;
+    z-index: 10;
+  }
+
+  /* Estilos modernos para botões */
+  .btn {
+    @apply inline-flex items-center justify-center h-8 px-4 text-sm font-medium
+           rounded-md transition-all duration-150 whitespace-nowrap
+           hover:bg-opacity-90 active:scale-[0.98] focus:outline-none !important;
+  }
+
+  .btn-primary {
+    @apply bg-blue-400 text-white hover:bg-blue-500
+           border border-transparent shadow-sm !important;
+  }
+
+  .btn-success {
+    @apply bg-emerald-500 text-white hover:bg-emerald-600
+           border border-transparent shadow-sm !important;
+  }
+
+  .btn-danger {
+    @apply bg-red-500 text-white hover:bg-red-600
+           border border-transparent shadow-sm !important;
+  }
+
+  .btn-warning {
+    @apply bg-yellow-400 text-white hover:bg-yellow-500
+           border border-transparent shadow-sm !important;
+  }
+
+  .btn-disabled {
+    @apply bg-gray-100 text-gray-400 cursor-not-allowed 
+           border border-transparent pointer-events-none shadow-none !important;
+  }
+
+  /* Estilos modernos para inputs */
+  .input-default {
+    @apply px-3 py-1.5 border border-gray-300 rounded-lg bg-white/90 text-sm
+           focus:outline-none focus:ring-1 focus:ring-blue-500/30 focus:border-blue-400
+           shadow-sm hover:border-gray-400 transition-all duration-200 !important;
+  }
+
+  /* Estilos modernos para navegação */
+  .nav-link {
+    @apply inline-flex items-center gap-2 py-3 px-6 text-sm font-medium cursor-pointer 
+           transition-all duration-200 rounded-lg hover:bg-gray-50 whitespace-nowrap !important;
+  }
+
+  .nav-link-active {
+    @apply text-blue-600 border-b-2 border-blue-600 bg-blue-50/50 !important;
+  }
+
+  .nav-link-inactive {
+    @apply text-gray-600 hover:text-gray-800 !important;
+  }
+
+  /* Cards e containers */
+  .card {
+    @apply bg-white rounded-2xl shadow-lg border border-gray-100 p-6 
+           hover:shadow-xl transition-all duration-300 !important;
+  }
+
+  .glass-card {
+    @apply bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/20 p-6 !important;
+  }
+
+  /* Status badges */
+  .status-badge {
+    @apply px-2.5 py-0.5 rounded-full text-xs font-medium inline-flex items-center gap-1 !important;
+  }
+
+  .status-pending {
+    @apply bg-yellow-100 text-yellow-700 !important;
+  }
+
+  .status-approved {
+    @apply bg-emerald-100 text-emerald-700 !important;
+  }
+
+  .status-rejected {
+    @apply bg-red-100 text-red-700 !important;
+  }
+
+  .status-warning {
+    @apply bg-orange-100 text-orange-700 !important;
+  }
+}

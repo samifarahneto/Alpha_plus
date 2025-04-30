@@ -1,0 +1,30 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Reset básico para garantir consistência */
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: "Inter", "Roboto", "Arial", sans-serif;
+  background: #f9f9f9;
+}
+
+/* Remove outline azul padrão do Chrome em botões e inputs, mas mantém acessibilidade */
+button:focus,
+input:focus,
+textarea:focus,
+select:focus {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
+
+/* Remove decoração de link padrão */
+a {
+  text-decoration: none;
+  color: inherit;
+}
