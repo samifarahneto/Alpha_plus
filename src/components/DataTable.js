@@ -1,5 +1,15 @@
 import React, { useState } from "react";
 import DataTableHeader from "./DataTableHeader";
+import {
+  DndContext,
+  useSensors,
+  useSensor,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  defaultKeyboardCoordinateGetter,
+} from "@dnd-kit/core";
+import { arrayMove } from "@dnd-kit/sortable";
 
 const DataTable = ({
   columns,
@@ -66,48 +76,74 @@ const DataTable = ({
     return filteredData;
   }, [data, filters, sortConfig, columns]);
 
-  return (
-    <div className="table-wrapper overflow-x-auto firstMobile:overflow-x-scroll">
-      <table className="w-full">
-        <DataTableHeader
-          columns={columns}
-          columnOrder={columnOrder}
-          onColumnOrderChange={setColumnOrder}
-          sortConfig={sortConfig}
-          onSort={handleSort}
-          filters={filters}
-          onFilterChange={handleFilterChange}
-          fixedColumns={fixedColumns}
-        />
-        <tbody className="table-body">
-          {filteredAndSortedData.map((row, index) => (
-            <tr
-              key={index}
-              onClick={() => onRowClick?.(row)}
-              className={`table-row ${
-                getRowClassName ? getRowClassName(row) : ""
-              }`}
-            >
-              {columnOrder.map((columnId) => {
-                const column = columns.find((c) => c.id === columnId);
-                if (!column) return null;
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: defaultKeyboardCoordinateGetter,
+    })
+  );
 
-                return (
-                  <td
-                    key={columnId}
-                    className="table-cell !py-0 whitespace-nowrap max-w-[150px] firstMobile:max-w-[120px] truncate text-center h-8 text-xs font-medium"
-                  >
-                    {column.render
-                      ? column.render(row[columnId], row)
-                      : row[columnId]}
-                  </td>
-                );
-              })}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+  const handleDragEnd = (event) => {
+    const { active, over } = event;
+    if (active.id !== over.id) {
+      setColumnOrder((items) => {
+        const oldIndex = items.indexOf(active.id);
+        const newIndex = items.indexOf(over.id);
+        return arrayMove(items, oldIndex, newIndex);
+      });
+    }
+  };
+
+  return (
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      onDragEnd={handleDragEnd}
+    >
+      <div className="table-wrapper overflow-x-auto firstMobile:overflow-x-scroll">
+        <div className="table-container">
+          <table className="w-full">
+            <DataTableHeader
+              columns={columns}
+              columnOrder={columnOrder}
+              onColumnOrderChange={setColumnOrder}
+              sortConfig={sortConfig}
+              onSort={handleSort}
+              filters={filters}
+              onFilterChange={handleFilterChange}
+              fixedColumns={fixedColumns}
+            />
+            <tbody className="table-body">
+              {filteredAndSortedData.map((row, index) => (
+                <tr
+                  key={index}
+                  onClick={() => onRowClick?.(row)}
+                  className={`table-row ${
+                    getRowClassName ? getRowClassName(row) : ""
+                  }`}
+                >
+                  {columnOrder.map((columnId) => {
+                    const column = columns.find((c) => c.id === columnId);
+                    if (!column) return null;
+
+                    return (
+                      <td
+                        key={columnId}
+                        className="table-cell !py-0 whitespace-nowrap max-w-[150px] firstMobile:max-w-[120px] truncate text-center h-8 text-xs font-medium"
+                      >
+                        {column.render
+                          ? column.render(row[columnId], row)
+                          : row[columnId]}
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </DndContext>
   );
 };
 

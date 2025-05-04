@@ -773,18 +773,18 @@ const MasterClient = () => {
   };
 
   return (
-    <div className="w-full max-w-[95%] mx-auto p-8 space-y-8">
+    <div className="w-full max-w-[95%] mx-auto p-2 md:p-8 space-y-4 md:space-y-8">
       <div className="glass-card">
-        <div className="text-center mb-8">
-          <div className="w-full bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
-            <div className="flex items-center justify-between gap-8">
+        <div className="text-center mb-4 md:mb-8">
+          <div className="w-full bg-white rounded-2xl shadow-lg border border-gray-100 p-3 md:p-6">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-4 md:gap-8">
               {/* Valores por Página */}
-              <div className="flex-1">
+              <div className="w-full md:flex-1">
                 <h4 className="font-medium text-gray-700 mb-2">
                   Valores por Página
                 </h4>
-                <div className="flex items-center justify-between gap-4">
-                  <div>
+                <div className="flex flex-col md:flex-row items-center justify-between gap-2 md:gap-4">
+                  <div className="w-full md:w-auto">
                     <label className="block text-sm text-gray-600 mb-1">
                       Português para Inglês:
                     </label>
@@ -792,7 +792,7 @@ const MasterClient = () => {
                       U$: {globalTranslationRates.pttoen}
                     </span>
                   </div>
-                  <div>
+                  <div className="w-full md:w-auto">
                     <label className="block text-sm text-gray-600 mb-1">
                       Espanhol para Inglês:
                     </label>
@@ -800,7 +800,7 @@ const MasterClient = () => {
                       U$: {globalTranslationRates.esptoen}
                     </span>
                   </div>
-                  <div>
+                  <div className="w-full md:w-auto">
                     <label className="block text-sm text-gray-600 mb-1">
                       Valor na Home:
                     </label>
@@ -812,12 +812,12 @@ const MasterClient = () => {
               </div>
 
               {/* Percentuais B2B */}
-              <div className="flex-1 border-l pl-8">
+              <div className="w-full md:flex-1 border-t md:border-t-0 md:border-l pt-4 md:pt-0 md:pl-8">
                 <h4 className="font-medium text-gray-700 mb-2">
                   Prioridades B2B
                 </h4>
-                <div className="flex items-center justify-between gap-4">
-                  <div>
+                <div className="flex flex-col md:flex-row items-center justify-between gap-2 md:gap-4">
+                  <div className="w-full md:w-auto">
                     <label className="block text-sm text-gray-600 mb-1">
                       Desconto no Tempo:
                     </label>
@@ -826,7 +826,7 @@ const MasterClient = () => {
                       <IoMdArrowDropdown className="text-red-500" />
                     </span>
                   </div>
-                  <div>
+                  <div className="w-full md:w-auto">
                     <label className="block text-sm text-gray-600 mb-1">
                       Acréscimo no Preço:
                     </label>
@@ -839,12 +839,12 @@ const MasterClient = () => {
               </div>
 
               {/* Percentuais B2C */}
-              <div className="flex-1 border-l pl-8">
+              <div className="w-full md:flex-1 border-t md:border-t-0 md:border-l pt-4 md:pt-0 md:pl-8">
                 <h4 className="font-medium text-gray-700 mb-2">
                   Prioridades B2C
                 </h4>
-                <div className="flex items-center justify-between gap-4">
-                  <div>
+                <div className="flex flex-col md:flex-row items-center justify-between gap-2 md:gap-4">
+                  <div className="w-full md:w-auto">
                     <label className="block text-sm text-gray-600 mb-1">
                       Desconto no Tempo:
                     </label>
@@ -853,7 +853,7 @@ const MasterClient = () => {
                       <IoMdArrowDropdown className="text-red-500" />
                     </span>
                   </div>
-                  <div>
+                  <div className="w-full md:w-auto">
                     <label className="block text-sm text-gray-600 mb-1">
                       Acréscimo no Preço:
                     </label>
@@ -868,72 +868,84 @@ const MasterClient = () => {
           </div>
         </div>
 
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-4">
-              <div>
-                <label className="font-medium mr-2">Por/Ing:</label>
-                <select
-                  value={filterPtToEn}
-                  className="input-default !h-7 !py-0 text-sm min-w-[100px]"
-                  onChange={(e) => setFilterPtToEn(e.target.value)}
-                >
-                  <option value="">Todos</option>
-                  {uniquePtToEnValues.map((value) => (
-                    <option key={value} value={value}>
-                      {value}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="font-medium mr-2">Esp/Ing:</label>
-                <select
-                  value={filterEsToEn}
-                  className="input-default !h-7 !py-0 text-sm min-w-[100px]"
-                  onChange={(e) => setFilterEsToEn(e.target.value)}
-                >
-                  <option value="">Todos</option>
-                  {uniqueEsToEnValues.map((value) => (
-                    <option key={value} value={value}>
-                      {value}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="font-medium mr-2">Tipo de Cliente:</label>
-                <select
-                  value={
-                    filterClientType === "Cliente" ? "B2C" : filterClientType
-                  }
-                  className="input-default !h-7 !py-0 text-sm min-w-[120px]"
-                  onChange={(e) =>
-                    setFilterClientType(
-                      e.target.value === "B2C" ? "Cliente" : e.target.value
-                    )
-                  }
-                >
-                  <option value="">Todos</option>
-                  {uniqueClientTypes.map((type) => {
-                    let displayType = type;
-                    if (type === "Cliente") displayType = "B2C";
-                    return (
-                      <option
-                        key={type}
-                        value={type === "Cliente" ? "B2C" : type}
-                      >
-                        {displayType}
+        <div className="mb-4 md:mb-8">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4 md:gap-6 mb-4 md:mb-6">
+            <div className="flex flex-col md:flex-row items-center gap-2 md:gap-4 w-full md:w-auto">
+              <div className="w-full md:w-auto">
+                <div className="flex items-center gap-2">
+                  <label className="text-sm font-medium text-gray-700 whitespace-nowrap">
+                    Por/Ing:
+                  </label>
+                  <select
+                    value={filterPtToEn}
+                    className="input-default !h-7 !py-0 text-sm w-full md:min-w-[100px] bg-white border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    onChange={(e) => setFilterPtToEn(e.target.value)}
+                  >
+                    <option value="">Todos</option>
+                    {uniquePtToEnValues.map((value) => (
+                      <option key={value} value={value}>
+                        {value}
                       </option>
-                    );
-                  })}
-                </select>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="w-full md:w-auto">
+                <div className="flex items-center gap-2">
+                  <label className="text-sm font-medium text-gray-700 whitespace-nowrap">
+                    Esp/Ing:
+                  </label>
+                  <select
+                    value={filterEsToEn}
+                    className="input-default !h-7 !py-0 text-sm w-full md:min-w-[100px] bg-white border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    onChange={(e) => setFilterEsToEn(e.target.value)}
+                  >
+                    <option value="">Todos</option>
+                    {uniqueEsToEnValues.map((value) => (
+                      <option key={value} value={value}>
+                        {value}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="w-full md:w-auto">
+                <div className="flex items-center gap-2">
+                  <label className="text-sm font-medium text-gray-700 whitespace-nowrap">
+                    Tipo de Cliente:
+                  </label>
+                  <select
+                    value={
+                      filterClientType === "Cliente" ? "B2C" : filterClientType
+                    }
+                    className="input-default !h-7 !py-0 text-sm w-full md:min-w-[120px] bg-white border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    onChange={(e) =>
+                      setFilterClientType(
+                        e.target.value === "B2C" ? "Cliente" : e.target.value
+                      )
+                    }
+                  >
+                    <option value="">Todos</option>
+                    {uniqueClientTypes.map((type) => {
+                      let displayType = type;
+                      if (type === "Cliente") displayType = "B2C";
+                      return (
+                        <option
+                          key={type}
+                          value={type === "Cliente" ? "B2C" : type}
+                        >
+                          {displayType}
+                        </option>
+                      );
+                    })}
+                  </select>
+                </div>
               </div>
             </div>
 
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2 w-full md:w-auto justify-center md:justify-end">
               <button
                 disabled={!isAnySelected}
                 onClick={handleOpenPriceModal}
@@ -941,240 +953,268 @@ const MasterClient = () => {
                   isAnySelected
                     ? "bg-blue-50 hover:bg-blue-100 text-blue-600"
                     : "bg-gray-50 text-gray-400 cursor-not-allowed"
-                } border border-gray-200 rounded-full px-4 py-1.5 text-sm font-medium transition-all duration-200`}
+                } border border-gray-200 rounded-full px-4 py-1.5 text-sm font-medium transition-all duration-200 w-full md:w-auto`}
               >
                 Alterar Preços
               </button>
 
               <button
                 onClick={() => setShowGlobalModal(true)}
-                className="btn bg-blue-50 hover:bg-blue-100 text-blue-600 border border-gray-200 rounded-full px-4 py-1.5 text-sm font-medium transition-all duration-200"
+                className="btn bg-blue-50 hover:bg-blue-100 text-blue-600 border border-gray-200 rounded-full px-4 py-1.5 text-sm font-medium transition-all duration-200 w-full md:w-auto"
               >
                 Alterar Valor Global
               </button>
 
               <button
                 onClick={handleSelectAll}
-                className="btn bg-blue-50 hover:bg-blue-100 text-blue-600 border border-gray-200 rounded-full px-4 py-1.5 text-sm font-medium transition-all duration-200"
+                className="btn bg-blue-50 hover:bg-blue-100 text-blue-600 border border-gray-200 rounded-full px-4 py-1.5 text-sm font-medium transition-all duration-200 w-full md:w-auto"
               >
                 {allSelected ? "Desmarcar" : "Sel. Todos"}
               </button>
             </div>
           </div>
 
-          <div className="overflow-x-auto">
-            <div className="overflow-hidden rounded-2xl shadow-lg border border-gray-100 min-w-[1200px]">
+          <div className="overflow-x-auto w-full">
+            <div className="overflow-hidden rounded-2xl shadow-lg border border-gray-100 min-w-[1000px] md:min-w-[1200px]">
               <table className="table-default w-full">
                 <thead className="table-header">
                   <tr className="table-header-row">
                     <th className="table-header-cell !py-2 whitespace-nowrap max-w-[120px] text-center">
-                      <div
-                        className="cursor-pointer"
-                        onClick={() => handleSort("nomeCompleto")}
-                      >
-                        Nome
-                        {sortField === "nomeCompleto" &&
-                          (sortDirection === "asc" ? (
-                            <IoMdArrowDropup className="inline ml-1" />
-                          ) : (
-                            <IoMdArrowDropdown className="inline ml-1" />
-                          ))}
+                      <div className="table-header-cell-content">
+                        <span
+                          className="cursor-pointer"
+                          onClick={() => handleSort("nomeCompleto")}
+                        >
+                          Nome
+                          {sortField === "nomeCompleto" &&
+                            (sortDirection === "asc" ? (
+                              <IoMdArrowDropup className="inline ml-1" />
+                            ) : (
+                              <IoMdArrowDropdown className="inline ml-1" />
+                            ))}
+                        </span>
                       </div>
                     </th>
                     <th className="table-header-cell !py-2 whitespace-nowrap max-w-[120px] text-center">
-                      <div
-                        className="cursor-pointer"
-                        onClick={() => handleSort("email")}
-                      >
-                        Email
-                        {sortField === "email" &&
-                          (sortDirection === "asc" ? (
-                            <IoMdArrowDropup className="inline ml-1" />
-                          ) : (
-                            <IoMdArrowDropdown className="inline ml-1" />
-                          ))}
+                      <div className="table-header-cell-content">
+                        <span
+                          className="cursor-pointer"
+                          onClick={() => handleSort("email")}
+                        >
+                          Email
+                          {sortField === "email" &&
+                            (sortDirection === "asc" ? (
+                              <IoMdArrowDropup className="inline ml-1" />
+                            ) : (
+                              <IoMdArrowDropdown className="inline ml-1" />
+                            ))}
+                        </span>
+                      </div>
+                    </th>
+                    <th className="table-header-cell !py-2 whitespace-nowrap max-w-[150px] text-center">
+                      <div className="table-header-cell-content">
+                        <span
+                          className="cursor-pointer"
+                          onClick={() => handleSort("clientType")}
+                        >
+                          Tipo
+                          {sortField === "clientType" &&
+                            (sortDirection === "asc" ? (
+                              <IoMdArrowDropup className="inline ml-1" />
+                            ) : (
+                              <IoMdArrowDropdown className="inline ml-1" />
+                            ))}
+                        </span>
                       </div>
                     </th>
                     <th className="table-header-cell !py-2 whitespace-nowrap max-w-[120px] text-center">
-                      <div
-                        className="cursor-pointer"
-                        onClick={() => handleSort("clientType")}
-                      >
-                        Tipo de Cliente
-                        {sortField === "clientType" &&
-                          (sortDirection === "asc" ? (
-                            <IoMdArrowDropup className="inline ml-1" />
-                          ) : (
-                            <IoMdArrowDropdown className="inline ml-1" />
-                          ))}
+                      <div className="table-header-cell-content">
+                        <span
+                          className="cursor-pointer"
+                          onClick={() => handleSort("userType")}
+                        >
+                          Usuário
+                          {sortField === "userType" &&
+                            (sortDirection === "asc" ? (
+                              <IoMdArrowDropup className="inline ml-1" />
+                            ) : (
+                              <IoMdArrowDropdown className="inline ml-1" />
+                            ))}
+                        </span>
                       </div>
                     </th>
                     <th className="table-header-cell !py-2 whitespace-nowrap max-w-[120px] text-center">
-                      <div
-                        className="cursor-pointer"
-                        onClick={() => handleSort("userType")}
-                      >
-                        Tipo de Usuário
-                        {sortField === "userType" &&
-                          (sortDirection === "asc" ? (
-                            <IoMdArrowDropup className="inline ml-1" />
-                          ) : (
-                            <IoMdArrowDropdown className="inline ml-1" />
-                          ))}
+                      <div className="table-header-cell-content">
+                        <span
+                          className="cursor-pointer"
+                          onClick={() => handleSort("registeredBy")}
+                        >
+                          Registrado
+                          {sortField === "registeredBy" &&
+                            (sortDirection === "asc" ? (
+                              <IoMdArrowDropup className="inline ml-1" />
+                            ) : (
+                              <IoMdArrowDropdown className="inline ml-1" />
+                            ))}
+                        </span>
                       </div>
                     </th>
                     <th className="table-header-cell !py-2 whitespace-nowrap max-w-[120px] text-center">
-                      <div
-                        className="cursor-pointer"
-                        onClick={() => handleSort("registeredBy")}
-                      >
-                        Registrado Por
-                        {sortField === "registeredBy" &&
-                          (sortDirection === "asc" ? (
-                            <IoMdArrowDropup className="inline ml-1" />
-                          ) : (
-                            <IoMdArrowDropdown className="inline ml-1" />
-                          ))}
+                      <div className="table-header-cell-content">
+                        <span
+                          className="cursor-pointer"
+                          onClick={() => handleSort("pttoen")}
+                        >
+                          Por/Ing
+                          {sortField === "pttoen" &&
+                            (sortDirection === "asc" ? (
+                              <IoMdArrowDropup className="inline ml-1" />
+                            ) : (
+                              <IoMdArrowDropdown className="inline ml-1" />
+                            ))}
+                        </span>
                       </div>
                     </th>
                     <th className="table-header-cell !py-2 whitespace-nowrap max-w-[120px] text-center">
-                      <div
-                        className="cursor-pointer"
-                        onClick={() => handleSort("pttoen")}
-                      >
-                        Por/Ing
-                        {sortField === "pttoen" &&
-                          (sortDirection === "asc" ? (
-                            <IoMdArrowDropup className="inline ml-1" />
-                          ) : (
-                            <IoMdArrowDropdown className="inline ml-1" />
-                          ))}
+                      <div className="table-header-cell-content">
+                        <span
+                          className="cursor-pointer"
+                          onClick={() => handleSort("esptoen")}
+                        >
+                          Esp/Ing
+                          {sortField === "esptoen" &&
+                            (sortDirection === "asc" ? (
+                              <IoMdArrowDropup className="inline ml-1" />
+                            ) : (
+                              <IoMdArrowDropdown className="inline ml-1" />
+                            ))}
+                        </span>
                       </div>
                     </th>
                     <th className="table-header-cell !py-2 whitespace-nowrap max-w-[120px] text-center">
-                      <div
-                        className="cursor-pointer"
-                        onClick={() => handleSort("esptoen")}
-                      >
-                        Esp/Ing
-                        {sortField === "esptoen" &&
-                          (sortDirection === "asc" ? (
-                            <IoMdArrowDropup className="inline ml-1" />
-                          ) : (
-                            <IoMdArrowDropdown className="inline ml-1" />
-                          ))}
+                      <div className="table-header-cell-content">
+                        Aprovação{" "}
+                        <FontAwesomeIcon
+                          icon={faInfoCircle}
+                          className="text-gray-500 hover:text-gray-700 cursor-pointer ml-1"
+                          onClick={() => setShowInfoModal(true)}
+                        />
                       </div>
                     </th>
-                    <th className="table-header-cell !py-2 whitespace-nowrap max-w-[120px] text-center">
-                      Habilitar Aprovação{" "}
-                      <FontAwesomeIcon
-                        icon={faInfoCircle}
-                        className="text-gray-500 hover:text-gray-700 cursor-pointer ml-1"
-                        onClick={() => setShowInfoModal(true)}
-                      />
-                    </th>
-                    <th className="table-header-cell !py-2 whitespace-nowrap max-w-[120px] text-center">
-                      Selecionar
+                    <th className="table-header-cell !py-2 whitespace-nowrap max-w-[80px] text-center">
+                      <div className="table-header-cell-content">Sel.</div>
                     </th>
                   </tr>
                 </thead>
                 <tbody className="table-body">
                   {filteredClients.map((client) => (
                     <tr key={client.id} className="table-row">
-                      <td className="table-cell !py-1.5 whitespace-nowrap max-w-[120px] text-center">
-                        {client.nomeCompleto?.length > 20
-                          ? `${client.nomeCompleto.slice(0, 20)}...`
+                      <td className="table-cell">
+                        {client.nomeCompleto?.length > 15
+                          ? `${client.nomeCompleto.slice(0, 15)}...`
                           : client.nomeCompleto || "N/A"}
                       </td>
-                      <td className="table-cell !py-1.5 whitespace-nowrap max-w-[120px] text-center">
-                        {client.email?.length > 20
-                          ? `${client.email.slice(0, 20)}...`
+                      <td className="table-cell">
+                        {client.email?.length > 15
+                          ? `${client.email.slice(0, 15)}...`
                           : client.email}
                       </td>
-                      <td className="table-cell !py-1.5 whitespace-nowrap max-w-[120px] text-center">
-                        <select
-                          value={
-                            client.userType === "b2b"
-                              ? "B2B"
-                              : client.userType === "b2c"
-                              ? "B2C"
-                              : client.userType === "colab"
-                              ? "Colab"
-                              : "Desconhecido"
-                          }
-                          onChange={(e) =>
-                            handleTypeChangeRequest(client.id, e.target.value)
-                          }
-                          disabled={client.userType === "colab"}
-                          className={`input-default !h-7 !py-0 text-sm min-w-[100px] ${
-                            client.userType === "colab"
-                              ? "bg-gray-100 cursor-not-allowed"
-                              : ""
-                          }`}
-                        >
-                          {client.userType === "colab" ? (
-                            <option value="Colab">Colab</option>
-                          ) : (
-                            <>
-                              <option value="B2C">B2C</option>
-                              <option value="B2B">B2B</option>
-                            </>
-                          )}
-                        </select>
+                      <td className="table-cell !overflow-visible">
+                        <div className="flex items-center justify-center">
+                          <select
+                            value={
+                              client.userType === "b2b"
+                                ? "B2B"
+                                : client.userType === "b2c"
+                                ? "B2C"
+                                : client.userType === "colab"
+                                ? "Colab"
+                                : "Desconhecido"
+                            }
+                            onChange={(e) =>
+                              handleTypeChangeRequest(client.id, e.target.value)
+                            }
+                            disabled={client.userType === "colab"}
+                            className="table-select w-full h-7 text-sm bg-white border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent min-w-[100px]"
+                          >
+                            {client.userType === "colab" ? (
+                              <option value="Colab">Colab</option>
+                            ) : (
+                              <>
+                                <option value="B2C">B2C</option>
+                                <option value="B2B">B2B</option>
+                              </>
+                            )}
+                          </select>
+                        </div>
                       </td>
-                      <td className="table-cell !py-1.5 whitespace-nowrap max-w-[120px] text-center">
-                        {client.userType === "b2c"
-                          ? "B2C"
-                          : client.userType === "b2b"
-                          ? "B2B"
-                          : client.userType === "colab"
-                          ? "Colab"
-                          : "Desconhecido"}
+                      <td className="table-cell">
+                        <div className="whitespace-nowrap">
+                          {client.userType === "b2c"
+                            ? "B2C"
+                            : client.userType === "b2b"
+                            ? "B2B"
+                            : client.userType === "colab"
+                            ? "Colab"
+                            : "Desconhecido"}
+                        </div>
                       </td>
-                      <td className="table-cell !py-1.5 whitespace-nowrap max-w-[120px] text-center">
-                        {(() => {
-                          const text = client.registeredBy || "";
-                          return text.length > 20
-                            ? `${text.slice(0, 20)}...`
-                            : text;
-                        })()}
+                      <td className="table-cell">
+                        <div className="whitespace-nowrap">
+                          {(() => {
+                            const text = client.registeredBy || "";
+                            return text.length > 15
+                              ? `${text.slice(0, 15)}...`
+                              : text;
+                          })()}
+                        </div>
                       </td>
-                      <td className="table-cell !py-1.5 whitespace-nowrap max-w-[120px] text-center">
-                        <input
-                          type="number"
-                          value={client.pttoen || ""}
-                          readOnly
-                          className="input-default !h-7 !py-0 text-sm w-16 bg-gray-50 cursor-default text-center"
-                        />
+                      <td className="table-cell">
+                        <div className="whitespace-nowrap">
+                          <input
+                            type="number"
+                            value={client.pttoen || ""}
+                            readOnly
+                            className="table-input w-full h-7 text-sm bg-gray-50 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          />
+                        </div>
                       </td>
-                      <td className="table-cell !py-1.5 whitespace-nowrap max-w-[120px] text-center">
-                        <input
-                          type="number"
-                          value={client.esptoen || ""}
-                          readOnly
-                          className="input-default !h-7 !py-0 text-sm w-16 bg-gray-50 cursor-default text-center"
-                        />
+                      <td className="table-cell">
+                        <div className="whitespace-nowrap">
+                          <input
+                            type="number"
+                            value={client.esptoen || ""}
+                            readOnly
+                            className="table-input w-full h-7 text-sm bg-gray-50 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          />
+                        </div>
                       </td>
-                      <td className="table-cell !py-1.5 whitespace-nowrap max-w-[120px] text-center">
+                      <td className="table-cell">
                         {client.userType === "b2b" && (
                           <button
                             onClick={() =>
                               handleEnableTest(client.id, client.canTest)
                             }
-                            className={`relative inline-flex items-center h-6 w-11 rounded-full transition-colors duration-200 ease-in-out focus:outline-none ${
+                            className={`relative inline-flex items-center h-6 w-11 rounded-full transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
                               client.canTest ? "bg-green-500" : "bg-gray-300"
                             }`}
                             role="switch"
                             aria-checked={client.canTest}
                           >
-                            {client.canTest ? "ON" : "OFF"}
+                            <span
+                              className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform duration-200 ease-in-out ${
+                                client.canTest
+                                  ? "translate-x-6"
+                                  : "translate-x-1"
+                              }`}
+                            />
                           </button>
                         )}
                         {client.userType === "b2c" && (
                           <span className="text-gray-500">N/A</span>
                         )}
                       </td>
-                      <td className="table-cell !py-1.5 whitespace-nowrap max-w-[120px] text-center">
+                      <td className="table-cell">
                         {client.userType !== "colab" ? (
                           <input
                             type="checkbox"
@@ -1218,42 +1258,42 @@ const MasterClient = () => {
       {/* Modal de Preços */}
       {showPriceModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-          <div className="bg-white rounded-2xl shadow-xl p-6 w-[400px]">
-            <h3 className="text-lg font-semibold text-gray-700 mb-6 bg-blue-50 -mx-6 -mt-6 p-4 rounded-t-2xl">
+          <div className="bg-white rounded-2xl shadow-xl p-4 md:p-6 w-[90%] md:w-[400px]">
+            <h3 className="text-lg font-semibold text-gray-700 mb-4 md:mb-6 bg-blue-50 -mx-4 md:-mx-6 -mt-4 md:-mt-6 p-4 rounded-t-2xl">
               Alterar Preços
             </h3>
-            <div className="space-y-6">
-              <div className="flex items-center justify-between">
+            <div className="space-y-4 md:space-y-6">
+              <div className="flex flex-col md:flex-row items-center justify-between gap-2 md:gap-4">
                 <label className="font-medium">Português para Inglês U$:</label>
                 <input
                   type="number"
                   name="pttoen"
                   value={priceInputs.pttoen}
                   onChange={handlePriceChange}
-                  className="input-default w-24 text-center"
+                  className="input-default w-full md:w-24 text-center"
                 />
               </div>
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col md:flex-row items-center justify-between gap-2 md:gap-4">
                 <label className="font-medium">Espanhol para Inglês U$:</label>
                 <input
                   type="number"
                   name="esptoen"
                   value={priceInputs.esptoen}
                   onChange={handlePriceChange}
-                  className="input-default w-24 text-center"
+                  className="input-default w-full md:w-24 text-center"
                 />
               </div>
             </div>
-            <div className="flex justify-center gap-4 mt-8">
+            <div className="flex flex-col md:flex-row justify-center gap-2 md:gap-4 mt-6 md:mt-8">
               <button
                 onClick={handleSavePrices}
-                className="btn bg-blue-50 hover:bg-blue-100 text-blue-600 border border-gray-200 rounded-full px-6"
+                className="btn bg-blue-50 hover:bg-blue-100 text-blue-600 border border-gray-200 rounded-full px-4 md:px-6 py-2"
               >
                 Salvar
               </button>
               <button
                 onClick={handleClosePriceModal}
-                className="btn bg-gray-50 hover:bg-gray-100 text-gray-600 border border-gray-200 rounded-full px-6"
+                className="btn bg-gray-50 hover:bg-gray-100 text-gray-600 border border-gray-200 rounded-full px-4 md:px-6 py-2"
               >
                 Cancelar
               </button>
@@ -1265,12 +1305,12 @@ const MasterClient = () => {
       {/* Modal de Valores Globais */}
       {showGlobalModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-          <div className="bg-white rounded-2xl shadow-xl p-6 w-[400px]">
-            <h3 className="text-lg font-semibold text-gray-700 mb-6 bg-blue-50 -mx-6 -mt-6 p-4 rounded-t-2xl">
+          <div className="bg-white rounded-2xl shadow-xl p-4 md:p-6 w-[90%] md:w-[400px]">
+            <h3 className="text-lg font-semibold text-gray-700 mb-4 md:mb-6 bg-blue-50 -mx-4 md:-mx-6 -mt-4 md:-mt-6 p-4 rounded-t-2xl">
               Alterar Valores Globais
             </h3>
-            <div className="space-y-6">
-              <div className="flex items-center justify-between">
+            <div className="space-y-4 md:space-y-6">
+              <div className="flex flex-col md:flex-row items-center justify-between gap-2 md:gap-4">
                 <label className="font-medium">Português para Inglês U$:</label>
                 <input
                   type="text"
@@ -1278,17 +1318,16 @@ const MasterClient = () => {
                   value={globalTranslationRates.pttoen}
                   onChange={(e) => {
                     const value = e.target.value.replace(/[^0-9,.]/g, "");
-                    // Permite apenas um ponto ou vírgula
                     if ((value.match(/[,.]/g) || []).length > 1) return;
                     setGlobalTranslationRates((prev) => ({
                       ...prev,
                       pttoen: value,
                     }));
                   }}
-                  className="input-default w-24 text-center"
+                  className="input-default w-full md:w-24 text-center"
                 />
               </div>
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col md:flex-row items-center justify-between gap-2 md:gap-4">
                 <label className="font-medium">Espanhol para Inglês U$:</label>
                 <input
                   type="text"
@@ -1302,12 +1341,12 @@ const MasterClient = () => {
                       esptoen: value,
                     }));
                   }}
-                  className="input-default w-24 text-center"
+                  className="input-default w-full md:w-24 text-center"
                 />
               </div>
               <div className="border-t pt-4">
                 <h4 className="font-medium mb-4">Percentuais B2B:</h4>
-                <div className="flex items-center justify-between mb-2">
+                <div className="flex flex-col md:flex-row items-center justify-between gap-2 md:gap-4 mb-2">
                   <label className="font-medium">Desconto no Tempo (%):</label>
                   <input
                     type="text"
@@ -1321,10 +1360,10 @@ const MasterClient = () => {
                         b2bTimePercentage: value,
                       }));
                     }}
-                    className="input-default w-24 text-center"
+                    className="input-default w-full md:w-24 text-center"
                   />
                 </div>
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col md:flex-row items-center justify-between gap-2 md:gap-4">
                   <label className="font-medium">Acréscimo no Preço (%):</label>
                   <input
                     type="text"
@@ -1338,13 +1377,13 @@ const MasterClient = () => {
                         b2bPricePercentage: value,
                       }));
                     }}
-                    className="input-default w-24 text-center"
+                    className="input-default w-full md:w-24 text-center"
                   />
                 </div>
               </div>
               <div className="border-t pt-4">
                 <h4 className="font-medium mb-4">Percentuais B2C:</h4>
-                <div className="flex items-center justify-between mb-2">
+                <div className="flex flex-col md:flex-row items-center justify-between gap-2 md:gap-4 mb-2">
                   <label className="font-medium">Desconto no Tempo (%):</label>
                   <input
                     type="text"
@@ -1358,10 +1397,10 @@ const MasterClient = () => {
                         b2cTimePercentage: value,
                       }));
                     }}
-                    className="input-default w-24 text-center"
+                    className="input-default w-full md:w-24 text-center"
                   />
                 </div>
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col md:flex-row items-center justify-between gap-2 md:gap-4">
                   <label className="font-medium">Acréscimo no Preço (%):</label>
                   <input
                     type="text"
@@ -1375,11 +1414,11 @@ const MasterClient = () => {
                         b2cPricePercentage: value,
                       }));
                     }}
-                    className="input-default w-24 text-center"
+                    className="input-default w-full md:w-24 text-center"
                   />
                 </div>
               </div>
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col md:flex-row items-center justify-between gap-2 md:gap-4">
                 <label className="font-medium">Valor na Home U$:</label>
                 <input
                   type="text"
@@ -1393,20 +1432,20 @@ const MasterClient = () => {
                       price_home: value,
                     }));
                   }}
-                  className="input-default w-24 text-center"
+                  className="input-default w-full md:w-24 text-center"
                 />
               </div>
             </div>
-            <div className="flex justify-center gap-4 mt-8">
+            <div className="flex flex-col md:flex-row justify-center gap-2 md:gap-4 mt-6 md:mt-8">
               <button
                 onClick={handleSaveGlobalRates}
-                className="btn bg-blue-50 hover:bg-blue-100 text-blue-600 border border-gray-200 rounded-full px-6"
+                className="btn bg-blue-50 hover:bg-blue-100 text-blue-600 border border-gray-200 rounded-full px-4 md:px-6 py-2"
               >
                 Salvar
               </button>
               <button
                 onClick={handleCancelGlobalRates}
-                className="btn bg-gray-50 hover:bg-gray-100 text-gray-600 border border-gray-200 rounded-full px-6"
+                className="btn bg-gray-50 hover:bg-gray-100 text-gray-600 border border-gray-200 rounded-full px-4 md:px-6 py-2"
               >
                 Cancelar
               </button>
@@ -1418,20 +1457,20 @@ const MasterClient = () => {
       {/* Modal de Confirmação */}
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-          <div className="bg-white rounded-2xl shadow-xl p-6 w-[400px] text-center">
-            <p className="text-gray-700 mb-6">
+          <div className="bg-white rounded-2xl shadow-xl p-4 md:p-6 w-[90%] md:w-[400px] text-center">
+            <p className="text-gray-700 mb-4 md:mb-6">
               Deseja realizar essa alteração?
             </p>
-            <div className="flex justify-center gap-4">
+            <div className="flex flex-col md:flex-row justify-center gap-2 md:gap-4">
               <button
                 onClick={handleTypeChangeConfirm}
-                className="btn bg-blue-50 hover:bg-blue-100 text-blue-600 border border-gray-200 rounded-full px-6"
+                className="btn bg-blue-50 hover:bg-blue-100 text-blue-600 border border-gray-200 rounded-full px-4 md:px-6 py-2"
               >
                 Ok
               </button>
               <button
                 onClick={handleTypeChangeCancel}
-                className="btn bg-gray-50 hover:bg-gray-100 text-gray-600 border border-gray-200 rounded-full px-6"
+                className="btn bg-gray-50 hover:bg-gray-100 text-gray-600 border border-gray-200 rounded-full px-4 md:px-6 py-2"
               >
                 Cancelar
               </button>
@@ -1443,22 +1482,21 @@ const MasterClient = () => {
       {/* Modal de Informação */}
       {showInfoModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl shadow-xl p-6 w-[400px]">
-            <div className="flex justify-between items-center mb-6 bg-blue-50 -mx-6 -mt-6 p-4 rounded-t-2xl">
-              <div className="w-6"></div>{" "}
-              {/* Espaçador para manter o título centralizado */}
+          <div className="bg-white rounded-2xl shadow-xl p-4 md:p-6 w-[90%] md:w-[400px]">
+            <div className="flex justify-between items-center mb-4 md:mb-6 bg-blue-50 -mx-4 md:-mx-6 -mt-4 md:-mt-6 p-4 rounded-t-2xl">
+              <div className="w-6"></div>
               <h3 className="text-lg font-semibold text-gray-700 flex-1 text-center">
                 Informação
               </h3>
             </div>
-            <p className="text-gray-600 mb-6">
+            <p className="text-gray-600 mb-4 md:mb-6">
               Este botão permite que parceiros de confiança possam aprovar o
               projeto que não tenha sido pago
             </p>
             <div className="flex justify-center">
               <button
                 onClick={() => setShowInfoModal(false)}
-                className="btn bg-blue-50 hover:bg-blue-100 text-blue-600 border border-gray-200 rounded-full px-6"
+                className="btn bg-blue-50 hover:bg-blue-100 text-blue-600 border border-gray-200 rounded-full px-4 md:px-6 py-2"
               >
                 Fechar
               </button>

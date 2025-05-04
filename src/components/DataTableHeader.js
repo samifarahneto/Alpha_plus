@@ -1,16 +1,6 @@
 import React from "react";
 import {
-  DndContext,
-  closestCenter,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-} from "@dnd-kit/core";
-import {
-  arrayMove,
   SortableContext,
-  sortableKeyboardCoordinates,
   useSortable,
   horizontalListSortingStrategy,
 } from "@dnd-kit/sortable";
@@ -47,11 +37,11 @@ const SortableItem = ({ id, column, isFixed, sortConfig, onSort }) => {
         isDragging ? "shadow-lg" : ""
       }`}
     >
-      <div className="flex items-center justify-center gap-1 h-6">
-        <div {...attributes} {...listeners} className="flex-1">
+      <span className="flex items-center justify-center gap-1 h-6">
+        <span {...attributes} {...listeners} className="flex-1">
           <span className="firstMobile:text-sm">{column.label}</span>
-        </div>
-        <div
+        </span>
+        <span
           onClick={(e) => {
             e.stopPropagation();
             onSort(column.id);
@@ -76,8 +66,8 @@ const SortableItem = ({ id, column, isFixed, sortConfig, onSort }) => {
               fill="currentColor"
             />
           </svg>
-        </div>
-      </div>
+        </span>
+      </span>
     </th>
   );
 };
@@ -92,113 +82,87 @@ const DataTableHeader = ({
   onFilterChange,
   fixedColumns = [],
 }) => {
-  const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
-  );
-
-  const handleDragEnd = (event) => {
-    const { active, over } = event;
-
-    if (active.id !== over.id) {
-      const newOrder = arrayMove(
-        columnOrder,
-        columnOrder.indexOf(active.id),
-        columnOrder.indexOf(over.id)
-      );
-      onColumnOrderChange(newOrder);
-    }
-  };
-
   return (
-    <DndContext
-      sensors={sensors}
-      collisionDetection={closestCenter}
-      onDragEnd={handleDragEnd}
-    >
-      <thead className="table-header">
-        <tr>
-          <SortableContext
-            items={columnOrder}
-            strategy={horizontalListSortingStrategy}
-          >
-            {columnOrder.map((columnId) => {
-              const column = columns.find((c) => c.id === columnId);
-              if (!column) return null;
+    <thead className="table-header">
+      <tr>
+        <SortableContext
+          items={columnOrder}
+          strategy={horizontalListSortingStrategy}
+        >
+          {columnOrder.map((columnId) => {
+            const column = columns.find((c) => c.id === columnId);
+            if (!column) return null;
 
-              return (
-                <SortableItem
-                  key={columnId}
-                  id={columnId}
-                  column={column}
-                  isFixed={fixedColumns.includes(columnId)}
-                  sortConfig={sortConfig}
-                  onSort={onSort}
-                />
-              );
-            })}
-          </SortableContext>
+            return (
+              <SortableItem
+                key={columnId}
+                id={columnId}
+                column={column}
+                isFixed={fixedColumns.includes(columnId)}
+                sortConfig={sortConfig}
+                onSort={onSort}
+              />
+            );
+          })}
+        </SortableContext>
+      </tr>
+      {columns.some((col) => col.filter) && (
+        <tr className="!h-0">
+          {columnOrder.map((columnId) => {
+            const column = columns.find((c) => c.id === columnId);
+            if (!column) return null;
+
+            return (
+              <th key={columnId} className="table-header-cell !py-0">
+                {column.filter ? (
+                  <span className="px-2 py-0">
+                    {column.filter.type === "text" && (
+                      <input
+                        type="text"
+                        placeholder={`Filtrar ${column.label}`}
+                        value={filters[columnId] || ""}
+                        onChange={(e) =>
+                          onFilterChange(columnId, e.target.value)
+                        }
+                        className="w-full p-0.5 text-xs firstMobile:text-[10px] border rounded h-6"
+                      />
+                    )}
+                    {column.filter.type === "select" && (
+                      <select
+                        value={filters[columnId] || ""}
+                        onChange={(e) =>
+                          onFilterChange(columnId, e.target.value)
+                        }
+                        className="w-full p-0.5 text-xs firstMobile:text-[10px] border rounded h-6"
+                      >
+                        <option value="">Todos</option>
+                        {column.filter.options.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    )}
+                    {column.filter.type === "date" && (
+                      <input
+                        type="date"
+                        value={filters[columnId] || ""}
+                        onChange={(e) =>
+                          onFilterChange(columnId, e.target.value)
+                        }
+                        className="w-full p-0.5 text-xs firstMobile:text-[10px] border rounded h-6"
+                      />
+                    )}
+                  </span>
+                ) : (
+                  <span className="h-6" />
+                )}
+              </th>
+            );
+          })}
         </tr>
-        {columns.some((col) => col.filter) && (
-          <tr className="!h-0">
-            {columnOrder.map((columnId) => {
-              const column = columns.find((c) => c.id === columnId);
-              if (!column) return null;
-
-              return (
-                <th key={columnId} className="table-header-cell !py-0">
-                  {column.filter ? (
-                    <div className="px-2 py-0">
-                      {column.filter.type === "text" && (
-                        <input
-                          type="text"
-                          placeholder={`Filtrar ${column.label}`}
-                          value={filters[columnId] || ""}
-                          onChange={(e) =>
-                            onFilterChange(columnId, e.target.value)
-                          }
-                          className="w-full p-0.5 text-xs firstMobile:text-[10px] border rounded h-6"
-                        />
-                      )}
-                      {column.filter.type === "select" && (
-                        <select
-                          value={filters[columnId] || ""}
-                          onChange={(e) =>
-                            onFilterChange(columnId, e.target.value)
-                          }
-                          className="w-full p-0.5 text-xs firstMobile:text-[10px] border rounded h-6"
-                        >
-                          <option value="">Todos</option>
-                          {column.filter.options.map((option) => (
-                            <option key={option.value} value={option.value}>
-                              {option.label}
-                            </option>
-                          ))}
-                        </select>
-                      )}
-                      {column.filter.type === "date" && (
-                        <input
-                          type="date"
-                          value={filters[columnId] || ""}
-                          onChange={(e) =>
-                            onFilterChange(columnId, e.target.value)
-                          }
-                          className="w-full p-0.5 text-xs firstMobile:text-[10px] border rounded h-6"
-                        />
-                      )}
-                    </div>
-                  ) : (
-                    <div className="h-6" />
-                  )}
-                </th>
-              );
-            })}
-          </tr>
-        )}
-      </thead>
-    </DndContext>
+      )}
+    </thead>
   );
 };
 

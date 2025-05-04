@@ -1425,34 +1425,34 @@ const ProjectDetails = () => {
   });
 
   return (
-    <div className="w-full max-w-[1200px] mx-auto p-8 space-y-8">
-      <div className="glass-card bg-white rounded-xl shadow-lg p-6">
+    <div className="w-full max-w-[1200px] mx-auto p-2 md:p-8 space-y-4 md:space-y-8">
+      <div className="glass-card bg-white rounded-xl shadow-lg p-3 md:p-6">
         {/* Header com Botão Voltar e Título */}
-        <div className="flex items-center mb-6 relative">
+        <div className="flex flex-col md:flex-row items-center mb-4 md:mb-6 relative">
           <div
-            className="flex items-center cursor-pointer hover:text-blue-600 transition-colors absolute left-0"
+            className="flex items-center cursor-pointer hover:text-blue-600 transition-colors mb-4 md:mb-0 md:absolute md:left-0 self-start"
             onClick={() => navigate(-1)}
           >
             <IoIosArrowBack size={24} className="mr-2" />
             <span className="text-lg font-semibold">Voltar</span>
           </div>
 
-          <h1 className="text-3xl font-bold flex-1 text-center bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
+          <h1 className="text-2xl md:text-3xl font-bold flex-1 text-center bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
             Detalhes do Projeto
           </h1>
         </div>
 
         {/* Container Principal */}
-        <div className="bg-white rounded-xl shadow-sm p-6 space-y-8">
+        <div className="bg-white rounded-xl shadow-sm p-4 md:p-6 space-y-4 md:space-y-8">
           {/* Grid de Informações Básicas */}
-          <div className="flex gap-8">
+          <div className="flex flex-col md:flex-row gap-4 md:gap-8">
             {/* Primeira Div - Informações do Projeto */}
-            <div className="w-2/3 bg-gray-50 rounded-xl p-6 space-y-8">
-              <h3 className="text-lg font-semibold text-gray-700 border-b pb-2 flex items-center gap-2">
+            <div className="w-full md:w-2/3 bg-gray-50 rounded-xl p-4 md:p-6 space-y-4 md:space-y-8">
+              <h3 className="text-base md:text-lg font-semibold text-gray-700 border-b pb-2 flex items-center gap-2">
                 <FaInfoCircle className="text-blue-600" />
                 Informações do Projeto
               </h3>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {/* Nome do Projeto */}
                 <div className="bg-white p-3 rounded-lg shadow-sm h-[85px]">
                   <h3 className="text-sm font-semibold text-gray-700 mb-2 border-b pb-1 flex items-center gap-2">
@@ -1646,8 +1646,8 @@ const ProjectDetails = () => {
             </div>
 
             {/* Segunda Div - Informações Financeiras */}
-            <div className="w-1/3 bg-green-50 rounded-xl p-6 space-y-8">
-              <h3 className="text-lg font-semibold text-gray-700 border-b pb-2 flex items-center gap-2">
+            <div className="w-full md:w-1/3 bg-green-50 rounded-xl p-4 md:p-6 space-y-4 md:space-y-8">
+              <h3 className="text-base md:text-lg font-semibold text-gray-700 border-b pb-2 flex items-center gap-2">
                 <FaMoneyBillWave className="text-green-600" />
                 Informações Financeiras
               </h3>
@@ -1763,21 +1763,21 @@ const ProjectDetails = () => {
             ? project.payment_status.status === "Pago"
             : project.payment_status === "Pago") &&
             project.project_status === "Finalizado" && (
-              <div className="bg-white rounded-xl p-6 space-y-4 border border-gray-200">
-                <h3 className="text-lg font-semibold text-gray-700">
+              <div className="bg-white rounded-xl p-4 md:p-6 space-y-4 border border-gray-200">
+                <h3 className="text-base md:text-lg font-semibold text-gray-700">
                   Link do Projeto
                 </h3>
-                <div className="flex gap-4 items-center">
+                <div className="flex flex-col md:flex-row gap-4 items-center">
                   <input
                     type="text"
                     value={link}
                     onChange={(e) => setLink(e.target.value)}
                     placeholder="Insira o link do projeto"
-                    className="flex-1 px-4 py-2 rounded-lg border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
+                    className="w-full md:flex-1 px-4 py-2 rounded-lg border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
                   />
                   <button
                     onClick={handleShareLink}
-                    className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors w-[250px]"
+                    className="w-full md:w-[250px] px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                   >
                     Compartilhar
                   </button>
@@ -1800,7 +1800,7 @@ const ProjectDetails = () => {
 
           {/* Seção de Arquivos */}
           <div className="space-y-4">
-            <h2 className="text-2xl font-semibold text-blue-600 flex items-center gap-2">
+            <h2 className="text-xl md:text-2xl font-semibold text-blue-600 flex items-center gap-2">
               <FaFileAlt className="text-blue-600" />
               Arquivos
             </h2>
@@ -1808,10 +1808,10 @@ const ProjectDetails = () => {
               <table className="w-full">
                 <thead className="bg-white border-b border-gray-200">
                   <tr>
-                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-600">
+                    <th className="px-4 md:px-6 py-3 text-left text-sm font-semibold text-gray-600">
                       Nome do Arquivo
                     </th>
-                    <th className="px-6 py-3 text-center text-sm font-semibold text-gray-600">
+                    <th className="px-4 md:px-6 py-3 text-center text-sm font-semibold text-gray-600">
                       <div className="flex items-center justify-center gap-2">
                         Páginas
                         {(project.collection === "b2bdocprojects" ||
@@ -1832,13 +1832,13 @@ const ProjectDetails = () => {
                         )}
                       </div>
                     </th>
-                    <th className="px-6 py-3 text-center text-sm font-semibold text-gray-600">
+                    <th className="px-4 md:px-6 py-3 text-center text-sm font-semibold text-gray-600">
                       Língua de Origem
                     </th>
-                    <th className="px-6 py-3 text-center text-sm font-semibold text-gray-600">
+                    <th className="px-4 md:px-6 py-3 text-center text-sm font-semibold text-gray-600">
                       Língua de Destino
                     </th>
-                    <th className="px-6 py-3 text-right text-sm font-semibold text-gray-600">
+                    <th className="px-4 md:px-6 py-3 text-right text-sm font-semibold text-gray-600">
                       Valor (U$)
                     </th>
                   </tr>
@@ -1849,7 +1849,7 @@ const ProjectDetails = () => {
                       key={`${index}-${file.name}`}
                       className="hover:bg-gray-50 transition-colors"
                     >
-                      <td className="px-6 py-4">
+                      <td className="px-4 md:px-6 py-4">
                         <span
                           onClick={async () => {
                             try {
@@ -1869,16 +1869,16 @@ const ProjectDetails = () => {
                           {file.name}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-center">
+                      <td className="px-4 md:px-6 py-4 text-center">
                         {file.pageCount}
                       </td>
-                      <td className="px-6 py-4 text-center">
+                      <td className="px-4 md:px-6 py-4 text-center">
                         {project.sourceLanguage || "N/A"}
                       </td>
-                      <td className="px-6 py-4 text-center">
+                      <td className="px-4 md:px-6 py-4 text-center">
                         {project.targetLanguage || "N/A"}
                       </td>
-                      <td className="px-6 py-4 text-right">
+                      <td className="px-4 md:px-6 py-4 text-right">
                         U$ {(Number(file.valuePerPage) || 0).toFixed(2)}
                       </td>
                     </tr>
@@ -1888,7 +1888,7 @@ const ProjectDetails = () => {
             </div>
 
             {/* Totais */}
-            <div className="flex justify-between items-center px-6 py-4 bg-white rounded-xl border border-gray-200">
+            <div className="flex flex-col md:flex-row justify-between items-center px-4 md:px-6 py-4 bg-white rounded-xl border border-gray-200 gap-2">
               <p className="text-gray-700 font-medium">
                 <strong>Total de Páginas:</strong> {totalPages}
               </p>

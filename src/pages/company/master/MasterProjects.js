@@ -10,15 +10,13 @@ import {
   serverTimestamp,
 } from "firebase/firestore";
 import { useAuth } from "../../../contexts/AuthContext";
-import NavigationLinks from "../../../components/NavigationLinks";
 import { FaDownload } from "react-icons/fa";
-import { getStorage, ref, getDownloadURL } from "firebase/storage";
 import "../../../styles/Pagination.css";
-import PageLayout from "../../../components/PageLayout";
 import DataTable from "../../../components/DataTable";
 import "../../../styles/Table.css";
 import Pagination from "../../../components/Pagination";
 import Filter from "../../../components/Filter";
+import { saveAs } from "file-saver";
 
 const MasterProjects = ({ style, isMobile }) => {
   const { user, loading } = useAuth();
@@ -31,27 +29,17 @@ const MasterProjects = ({ style, isMobile }) => {
   const [paymentFilter, setPaymentFilter] = useState("");
   const [clientTypeFilter, setClientTypeFilter] = useState("");
   const [isFiltersExpanded, setIsFiltersExpanded] = useState(false);
-  const [error, setError] = useState(null);
+  // eslint-disable-next-line no-unused-vars
   const location = useLocation();
-  const [activeLink, setActiveLink] = useState(() => {
-    if (location.pathname.includes("projects-budget")) return "projectsBudget";
-    if (location.pathname.includes("projects-approval"))
-      return "projectsApproval";
-    if (location.pathname.includes("projects-approved"))
-      return "projectsCanceled";
-    if (location.pathname.includes("ongoing")) return "ongoing";
-    if (location.pathname.includes("projects-done")) return "projectsDone";
-    if (location.pathname.includes("projects-paid")) return "projectsPaid";
-    if (location.pathname.includes("payments")) return "payments";
-    if (location.pathname === "/company/master/projects")
-      return "masterProjects";
-    return "masterProjects";
-  });
   const [clientTypes, setClientTypes] = useState({});
+  // eslint-disable-next-line no-unused-vars
   const [unreadCount, setUnreadCount] = useState(0);
+  // eslint-disable-next-line no-unused-vars
   const [unreadBudgetCount, setUnreadBudgetCount] = useState(0);
+  // eslint-disable-next-line no-unused-vars
   const [unreadApprovalCount, setUnreadApprovalCount] = useState(0);
-  const [, setShowStatusDropdown] = useState(false);
+  // eslint-disable-next-line no-unused-vars
+  const [showStatusDropdown, setShowStatusDropdown] = useState(false);
   const [showFilesModal, setShowFilesModal] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [showColumnSelector, setShowColumnSelector] = useState(false);
@@ -425,23 +413,34 @@ const MasterProjects = ({ style, isMobile }) => {
     }, 0);
   };
 
-  const getFileDownloadUrl = async (fileUrl) => {
+  const handleFileDownload = async (fileUrl) => {
     try {
-      const storage = getStorage();
       // Extrair o caminho do arquivo da URL completa
       const filePath = fileUrl.split("/o/")[1]?.split("?")[0];
       if (!filePath) return fileUrl;
 
       // Decodificar o caminho do arquivo
       const decodedPath = decodeURIComponent(filePath);
-      const fileRef = ref(storage, decodedPath);
 
-      // Gerar nova URL de download
-      const url = await getDownloadURL(fileRef);
-      return url;
+      // Usar o endpoint local como proxy
+      const proxyUrl = `/api/download?path=${encodeURIComponent(decodedPath)}`;
+
+      // Fazer a requisição para o proxy
+      const response = await fetch(proxyUrl);
+      if (!response.ok) throw new Error("Falha ao baixar arquivo");
+
+      // Obter o blob da resposta
+      const blob = await response.blob();
+
+      // Extrair o nome do arquivo
+      const fileName = decodedPath.split("/").pop();
+
+      // Forçar o download usando saveAs
+      saveAs(blob, fileName);
     } catch (error) {
-      console.error("Erro ao obter URL do arquivo:", error);
-      return fileUrl;
+      console.error("Erro ao baixar arquivo:", error);
+      // Se houver erro, tentar abrir em uma nova aba como fallback
+      window.open(fileUrl, "_blank");
     }
   };
 
@@ -672,12 +671,11 @@ const MasterProjects = ({ style, isMobile }) => {
                       onClick={async (e) => {
                         e.preventDefault();
                         try {
-                          const url = await getFileDownloadUrl(file.fileUrl);
-                          window.open(url, "_blank");
+                          await handleFileDownload(file.fileUrl);
                         } catch (error) {
-                          console.error("Erro ao abrir arquivo:", error);
+                          console.error("Erro ao baixar arquivo:", error);
                           alert(
-                            "Erro ao acessar o arquivo. Por favor, tente novamente."
+                            "Erro ao baixar o arquivo. Por favor, tente novamente."
                           );
                         }
                       }}
@@ -946,66 +944,6 @@ const MasterProjects = ({ style, isMobile }) => {
     setTranslationStatusFilter(e.target.value);
   };
 
-  const renderStatusBadge = (status) => {
-    const statusConfig = {
-      "Em Andamento": {
-        bg: "bg-blue-50",
-        text: "text-blue-700",
-        border: "border-blue-200",
-      },
-      Finalizado: {
-        bg: "bg-green-50",
-        text: "text-green-700",
-        border: "border-green-200",
-      },
-      "Em Revisão": {
-        bg: "bg-yellow-50",
-        text: "text-yellow-700",
-        border: "border-yellow-200",
-      },
-      Cancelado: {
-        bg: "bg-red-50",
-        text: "text-red-700",
-        border: "border-red-200",
-      },
-      "Em Análise": {
-        bg: "bg-yellow-50",
-        text: "text-yellow-700",
-        border: "border-yellow-200",
-      },
-      "Ag. Orçamento": {
-        bg: "bg-orange-50",
-        text: "text-orange-700",
-        border: "border-orange-200",
-      },
-      "Ag. Aprovação": {
-        bg: "bg-amber-50",
-        text: "text-amber-700",
-        border: "border-amber-200",
-      },
-      "Ag. Pagamento": {
-        bg: "bg-purple-50",
-        text: "text-purple-700",
-        border: "border-purple-200",
-      },
-      "N/A": {
-        bg: "bg-gray-50",
-        text: "text-gray-700",
-        border: "border-gray-200",
-      },
-    };
-
-    const config = statusConfig[status] || statusConfig["N/A"];
-
-    return (
-      <div
-        className={`w-full px-2 py-1 rounded-full border ${config.bg} ${config.text} ${config.border} text-center text-xs font-medium`}
-      >
-        {status || "N/A"}
-      </div>
-    );
-  };
-
   const renderPaymentStatusBadge = (status) => {
     const statusConfig = {
       Pago: {
@@ -1102,10 +1040,10 @@ const MasterProjects = ({ style, isMobile }) => {
   };
 
   return (
-    <div className="w-full px-4">
+    <div className="w-full px-2 md:px-4">
       {!loading && (
         <div className="w-full">
-          <div className="flex flex-col md:flex-row items-end gap-2.5 mb-8 px-10">
+          <div className="flex flex-col md:flex-row items-end gap-2.5 mb-8 px-2 md:px-10">
             {/* Versão Mobile - Aba Expansível */}
             <div className="w-full lg:hidden">
               <button
@@ -1434,146 +1372,152 @@ const MasterProjects = ({ style, isMobile }) => {
             </div>
           </div>
 
-          <DataTable
-            columns={columns}
-            data={currentRows.map((row) => ({
-              ...row,
-              client:
-                clientTypes[row.userEmail]?.registeredBy ||
-                row.userEmail ||
-                "N/A",
-              projectName:
-                row.projectName && row.projectName.length > 20
-                  ? `${row.projectName.slice(0, 20)}...`
-                  : row.projectName || "Sem Nome",
-              createdAt: new Date(
-                row.createdAt.seconds * 1000
-              ).toLocaleDateString("pt-BR"),
-              monthYear: row.createdAt
-                ? new Date(row.createdAt.seconds * 1000).toLocaleDateString(
-                    "pt-BR",
-                    {
-                      month: "2-digit",
-                      year: "2-digit",
-                    }
-                  )
-                : "Sem Data",
-              pages: calculateTotalPages(row.files) || "0",
-              filesDisplay: (
-                <div className="flex items-center justify-center gap-1">
-                  <span className="text-xs font-medium">
-                    {row.files?.length || "0"}
-                  </span>
-                  <FaDownload
-                    className="text-blue-600 hover:text-blue-800 cursor-pointer"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setSelectedFiles(row.files);
-                      setShowFilesModal(true);
-                    }}
-                    size={14}
-                  />
-                </div>
-              ),
-              totalValue: (
-                <span className="text-xs font-medium">
-                  {`U$ ${Number(
-                    row.totalProjectValue ||
-                      row.totalValue ||
-                      calculateTotalValue(row.files)
-                  ).toFixed(2)}`}
-                </span>
-              ),
-              paymentStatus: renderPaymentStatusBadge(
-                typeof row.payment_status === "object"
-                  ? row.payment_status.status || "N/A"
-                  : row.payment_status || "N/A"
-              ),
-              deadline: (
-                <span className="text-xs font-medium">
-                  {formatDeadline(row.deadline, row.deadlineDate)}
-                </span>
-              ),
-              clientType: (
-                <span className="text-xs font-medium">
-                  {(() => {
-                    const userInfo = clientTypes[row.userEmail];
-                    if (!userInfo) return "N/A";
-                    if (
-                      userInfo.userType === "colaborator" &&
-                      userInfo.registeredBy
-                    ) {
-                      const registeredByInfo =
-                        clientTypes[userInfo.registeredBy];
-                      if (
-                        registeredByInfo &&
-                        registeredByInfo.userType === "b2b"
+          <div className="w-full overflow-x-auto">
+            <div className="w-full">
+              <DataTable
+                columns={columns}
+                data={currentRows.map((row) => ({
+                  ...row,
+                  client:
+                    clientTypes[row.userEmail]?.registeredBy ||
+                    row.userEmail ||
+                    "N/A",
+                  projectName:
+                    row.projectName && row.projectName.length > 20
+                      ? `${row.projectName.slice(0, 20)}...`
+                      : row.projectName || "Sem Nome",
+                  createdAt: new Date(
+                    row.createdAt.seconds * 1000
+                  ).toLocaleDateString("pt-BR"),
+                  monthYear: row.createdAt
+                    ? new Date(row.createdAt.seconds * 1000).toLocaleDateString(
+                        "pt-BR",
+                        {
+                          month: "2-digit",
+                          year: "2-digit",
+                        }
                       )
-                        return "B2B";
-                      if (
-                        registeredByInfo &&
-                        (registeredByInfo.clientType === "Cliente" ||
-                          registeredByInfo.clientType === "Colab")
-                      )
-                        return "B2C";
-                    } else if (
-                      userInfo.clientType === "Colab" ||
-                      userInfo.clientType === "Cliente"
-                    ) {
-                      return "B2C";
-                    }
-                    return userInfo.clientType || "N/A";
-                  })()}
-                </span>
-              ),
-              projectStatus: renderProjectStatusBadge(
-                row.project_status || "N/A"
-              ),
-              translationStatus: (
-                <select
-                  value={row.translation_status || "N/A"}
-                  onChange={(e) => {
-                    e.stopPropagation();
-                    updateProjectStatus(row.id, e.target.value);
-                  }}
-                  onClick={(e) => e.stopPropagation()}
-                  disabled={row.collection === "b2bdocprojects"}
-                  className={`w-36 !h-6 !py-0 !text-xs font-medium rounded-full text-center ${
-                    row.translation_status === "Finalizado"
-                      ? "bg-green-50 text-green-700 border border-green-200"
-                      : row.translation_status === "Em Andamento"
-                      ? "bg-blue-50 text-blue-700 border border-blue-200"
-                      : row.translation_status === "Em Revisão"
-                      ? "bg-yellow-50 text-yellow-700 border border-yellow-200"
-                      : row.translation_status === "Em Certificação"
-                      ? "bg-orange-50 text-orange-700 border border-orange-200"
-                      : row.translation_status === "Cancelado"
-                      ? "bg-red-50 text-red-700 border border-red-200"
-                      : row.translation_status === "N/A"
-                      ? "bg-gray-50 text-gray-700 border border-gray-200"
-                      : "bg-blue-50 text-blue-700 border border-blue-200"
-                  }`}
-                >
-                  {row.collection === "b2bdocprojects" ? (
-                    <option value="Ag. Orçamento">Ag. Orçamento</option>
-                  ) : (
-                    <>
-                      <option value="N/A">N/A</option>
-                      <option value="Em Andamento">Em Andamento</option>
-                      <option value="Em Revisão">Em Revisão</option>
-                      <option value="Em Certificação">Em Certificação</option>
-                      <option value="Finalizado">Finalizado</option>
-                      <option value="Cancelado">Cancelado</option>
-                    </>
-                  )}
-                </select>
-              ),
-            }))}
-            initialColumnOrder={columns.map((col) => col.id)}
-            fixedColumns={fixedColumns}
-            onRowClick={handleRowClick}
-            getRowClassName={getRowClassName}
-          />
+                    : "Sem Data",
+                  pages: calculateTotalPages(row.files) || "0",
+                  filesDisplay: (
+                    <div className="flex items-center justify-center gap-1">
+                      <span className="text-xs font-medium">
+                        {row.files?.length || "0"}
+                      </span>
+                      <FaDownload
+                        className="text-blue-600 hover:text-blue-800 cursor-pointer"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedFiles(row.files);
+                          setShowFilesModal(true);
+                        }}
+                        size={14}
+                      />
+                    </div>
+                  ),
+                  totalValue: (
+                    <span className="text-xs font-medium">
+                      {`U$ ${Number(
+                        row.totalProjectValue ||
+                          row.totalValue ||
+                          calculateTotalValue(row.files)
+                      ).toFixed(2)}`}
+                    </span>
+                  ),
+                  paymentStatus: renderPaymentStatusBadge(
+                    typeof row.payment_status === "object"
+                      ? row.payment_status.status || "N/A"
+                      : row.payment_status || "N/A"
+                  ),
+                  deadline: (
+                    <span className="text-xs font-medium">
+                      {formatDeadline(row.deadline, row.deadlineDate)}
+                    </span>
+                  ),
+                  clientType: (
+                    <span className="text-xs font-medium">
+                      {(() => {
+                        const userInfo = clientTypes[row.userEmail];
+                        if (!userInfo) return "N/A";
+                        if (
+                          userInfo.userType === "colaborator" &&
+                          userInfo.registeredBy
+                        ) {
+                          const registeredByInfo =
+                            clientTypes[userInfo.registeredBy];
+                          if (
+                            registeredByInfo &&
+                            registeredByInfo.userType === "b2b"
+                          )
+                            return "B2B";
+                          if (
+                            registeredByInfo &&
+                            (registeredByInfo.clientType === "Cliente" ||
+                              registeredByInfo.clientType === "Colab")
+                          )
+                            return "B2C";
+                        } else if (
+                          userInfo.clientType === "Colab" ||
+                          userInfo.clientType === "Cliente"
+                        ) {
+                          return "B2C";
+                        }
+                        return userInfo.clientType || "N/A";
+                      })()}
+                    </span>
+                  ),
+                  projectStatus: renderProjectStatusBadge(
+                    row.project_status || "N/A"
+                  ),
+                  translationStatus: (
+                    <select
+                      value={row.translation_status || "N/A"}
+                      onChange={(e) => {
+                        e.stopPropagation();
+                        updateProjectStatus(row.id, e.target.value);
+                      }}
+                      onClick={(e) => e.stopPropagation()}
+                      disabled={row.collection === "b2bdocprojects"}
+                      className={`w-36 !h-6 !py-0 !text-xs font-medium rounded-full text-center mr-2 ${
+                        row.translation_status === "Finalizado"
+                          ? "bg-green-50 text-green-700 border border-green-200"
+                          : row.translation_status === "Em Andamento"
+                          ? "bg-blue-50 text-blue-700 border border-blue-200"
+                          : row.translation_status === "Em Revisão"
+                          ? "bg-yellow-50 text-yellow-700 border border-yellow-200"
+                          : row.translation_status === "Em Certificação"
+                          ? "bg-orange-50 text-orange-700 border border-orange-200"
+                          : row.translation_status === "Cancelado"
+                          ? "bg-red-50 text-red-700 border border-red-200"
+                          : row.translation_status === "N/A"
+                          ? "bg-gray-50 text-gray-700 border border-gray-200"
+                          : "bg-blue-50 text-blue-700 border border-blue-200"
+                      }`}
+                    >
+                      {row.collection === "b2bdocprojects" ? (
+                        <option value="Ag. Orçamento">Ag. Orçamento</option>
+                      ) : (
+                        <>
+                          <option value="N/A">N/A</option>
+                          <option value="Em Andamento">Em Andamento</option>
+                          <option value="Em Revisão">Em Revisão</option>
+                          <option value="Em Certificação">
+                            Em Certificação
+                          </option>
+                          <option value="Finalizado">Finalizado</option>
+                          <option value="Cancelado">Cancelado</option>
+                        </>
+                      )}
+                    </select>
+                  ),
+                }))}
+                initialColumnOrder={columns.map((col) => col.id)}
+                fixedColumns={fixedColumns}
+                onRowClick={handleRowClick}
+                getRowClassName={getRowClassName}
+              />
+            </div>
+          </div>
 
           <Pagination
             currentPage={currentPage}

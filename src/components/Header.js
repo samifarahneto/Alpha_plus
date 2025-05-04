@@ -211,7 +211,7 @@ const Header = () => {
               <img
                 src={logo}
                 alt="Logo"
-                className="h-[45px] md:h-[65px] object-contain"
+                className="h-[60px] w-auto object-contain"
               />
             </Link>
           </div>
@@ -255,8 +255,12 @@ const Header = () => {
       </div>
 
       {/* Mobile Menu */}
-      <div className={`md:hidden ${isMenuOpen ? "block" : "hidden"}`}>
-        <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-white shadow-md">
+      <div
+        className={`md:hidden ${
+          isMenuOpen ? "block" : "hidden"
+        } fixed top-[70px] left-0 right-0 bg-white shadow-md z-50`}
+      >
+        <div className="flex flex-col space-y-4 p-4">
           {renderHeaderContent()}
         </div>
       </div>
