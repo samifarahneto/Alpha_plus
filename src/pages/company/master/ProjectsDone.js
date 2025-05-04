@@ -1,33 +1,50 @@
 /* eslint-disable no-undef */
 import React, { useEffect, useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { getFirestore, collection, onSnapshot } from "firebase/firestore";
 
 import { useAuth } from "../../../contexts/AuthContext";
-import MasterNavigation from "./MasterNavigation";
+import DataTable from "../../../components/DataTable";
+import Pagination from "../../../components/Pagination";
 
 const ProjectsDone = () => {
   const [projects, setProjects] = useState([]);
-  const [allProjects, setAllProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const location = useLocation();
-  const [activeLink, setActiveLink] = useState(() => {
-    if (location.pathname.includes("projects-budget")) return "projectsBudget";
-    if (location.pathname.includes("projects-approval"))
-      return "projectsApproval";
-    if (location.pathname === "/company/master/projects")
-      return "masterProjects";
-    if (location.pathname === "/company/master/projects-done")
-      return "projectsDone";
-    return "projectsDone";
-  });
   const [clientTypes, setClientTypes] = useState({});
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [unreadCount, setUnreadCount] = useState(0);
-  const [unreadBudgetCount, setUnreadBudgetCount] = useState(0);
-  const [unreadApprovalCount, setUnreadApprovalCount] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(() => {
+    const savedRowsPerPage = localStorage.getItem("projectsDoneRowsPerPage");
+    return savedRowsPerPage ? parseInt(savedRowsPerPage) : 10;
+  });
+  const [sortConfig] = useState(() => {
+    const savedSortConfig = localStorage.getItem("projectsDoneSortConfig");
+    return savedSortConfig
+      ? JSON.parse(savedSortConfig)
+      : { key: "createdAt", direction: "desc" };
+  });
+
+  const columns = [
+    { id: "client", label: "Cliente", fixed: true },
+    { id: "clientOrigin", label: "Cliente Origem" },
+    { id: "type", label: "Tipo" },
+    { id: "origin", label: "Origem" },
+    { id: "projectName", label: "Nome do Projeto", fixed: true },
+    { id: "createdAt", label: "Data" },
+    { id: "monthYear", label: "Mês/Ano" },
+    { id: "sourceLanguage", label: "Origem" },
+    { id: "targetLanguage", label: "Destino" },
+    { id: "convertCurrency", label: "Conv." },
+    { id: "totalValue", label: "Valor (U$)" },
+    { id: "paymentStatus", label: "Status Pgto" },
+    { id: "deadline", label: "Prazo" },
+    { id: "status", label: "Status", fixed: true },
+  ];
+
+  const fixedColumns = columns.filter((col) => col.fixed).map((col) => col.id);
+  const initialColumnOrder = columns.map((col) => col.id);
 
   // Primeiro useEffect para carregar os tipos de usuários
   useEffect(() => {
@@ -92,31 +109,6 @@ const ProjectsDone = () => {
         return onSnapshot(
           collectionRef,
           (snapshot) => {
-            setAllProjects((prevProjects) => {
-              const newProjects = [...prevProjects];
-              snapshot.docChanges().forEach((change) => {
-                const projectData = {
-                  id: change.doc.id,
-                  ...change.doc.data(),
-                  files: change.doc.data().files || [],
-                  collection: collectionName,
-                };
-
-                const index = newProjects.findIndex(
-                  (p) => p.id === change.doc.id
-                );
-
-                if (change.type === "added" && index === -1) {
-                  newProjects.push(projectData);
-                } else if (change.type === "modified" && index !== -1) {
-                  newProjects[index] = projectData;
-                } else if (change.type === "removed" && index !== -1) {
-                  newProjects.splice(index, 1);
-                }
-              });
-              return newProjects;
-            });
-
             // Filtrar apenas projetos com translation_status ou project_status "Finalizado"
             const filteredProjects = snapshot.docs
               .filter(
@@ -155,55 +147,6 @@ const ProjectsDone = () => {
     }
   }, [clientTypes, user]);
 
-  // Terceiro useEffect para processar os contadores
-  useEffect(() => {
-    if (!allProjects) return;
-
-    // Processar todos os contadores em um único bloco
-    const processCounters = () => {
-      // Contagem para "Todos Projetos" - projetos não lidos em todas as coleções
-      const unreadProjects = allProjects.filter((project) => {
-        const hasUnreadFiles = project.files?.some((file) => !file.isRead);
-        const isProjectUnread = project.isRead === false;
-        return hasUnreadFiles || isProjectUnread;
-      });
-
-      // Contagem para "Aguardando Orçamento" - projetos nas coleções b2bdocprojects e b2cdocprojects com status "Ag. Orçamento"
-      const budgetProjects = allProjects.filter(
-        (project) =>
-          (project.collection === "b2bdocprojects" ||
-            project.collection === "b2cdocprojects") &&
-          project.project_status === "Ag. Orçamento"
-      );
-
-      // Contagem para "Aguardando Aprovação" - projetos nas coleções b2bapproval e b2capproval com status "Ag. Aprovação"
-      const approvalProjects = allProjects.filter(
-        (project) =>
-          (project.collection === "b2bapproval" ||
-            project.collection === "b2capproval") &&
-          project.project_status === "Ag. Aprovação"
-      );
-
-      // Atualizar todos os contadores de uma vez
-      setUnreadCount(unreadProjects.length);
-      setUnreadBudgetCount(budgetProjects.length);
-      setUnreadApprovalCount(approvalProjects.length);
-
-      console.log("Contagem de notificações:", {
-        unreadProjects: unreadProjects.length,
-        budgetProjects: budgetProjects.length,
-        approvalProjects: approvalProjects.length,
-        total:
-          unreadProjects.length +
-          budgetProjects.length +
-          approvalProjects.length,
-        collections: allProjects.map((p) => p.collection),
-      });
-    };
-
-    processCounters();
-  }, [allProjects]);
-
   const calculateTotalValue = (files) => {
     if (!files || !Array.isArray(files)) return "0.00";
     return files
@@ -214,240 +157,214 @@ const ProjectsDone = () => {
       .toFixed(2);
   };
 
-  const handleRowClick = async (projectId, collection) => {
-    navigate(`/company/master/project/${projectId}?collection=${collection}`);
+  const handleRowClick = (row) => {
+    navigate(`/company/master/project/${row.id}?collection=${row.collection}`);
   };
 
-  return (
-    <div className="w-full max-w-full p-8 space-y-8">
-      <div className="glass-card">
-        <h2 className="text-3xl font-bold text-center mb-8 bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
-          Projetos Concluídos
-        </h2>
+  const sortData = (data, config) => {
+    if (!config.key) return data;
+    return [...data].sort((a, b) => {
+      if (a[config.key] < b[config.key]) {
+        return config.direction === "asc" ? -1 : 1;
+      }
+      if (a[config.key] > b[config.key]) {
+        return config.direction === "asc" ? 1 : -1;
+      }
+      return 0;
+    });
+  };
 
-        <MasterNavigation
-          activeLink={activeLink}
-          setActiveLink={setActiveLink}
-          unreadCount={unreadCount}
-          unreadBudgetCount={unreadBudgetCount}
-          unreadApprovalCount={unreadApprovalCount}
-        />
+  const renderStatusBadge = (status) => {
+    const statusConfig = {
+      Finalizado: {
+        bg: "bg-green-50",
+        text: "text-green-700",
+        border: "border-green-200",
+      },
+      "Em Andamento": {
+        bg: "bg-blue-50",
+        text: "text-blue-700",
+        border: "border-blue-200",
+      },
+      "Em Revisão": {
+        bg: "bg-yellow-50",
+        text: "text-yellow-700",
+        border: "border-yellow-200",
+      },
+      "Em Certificação": {
+        bg: "bg-orange-50",
+        text: "text-orange-700",
+        border: "border-orange-200",
+      },
+      Cancelado: {
+        bg: "bg-gray-50",
+        text: "text-gray-700",
+        border: "border-gray-200",
+      },
+      "N/A": {
+        bg: "bg-gray-50",
+        text: "text-gray-700",
+        border: "border-gray-200",
+      },
+    };
 
-        {loading && (
-          <div className="text-center p-8">
-            <p className="text-gray-600">Carregando projetos...</p>
-          </div>
-        )}
+    const config = statusConfig[status] || statusConfig["N/A"];
 
-        {error && (
-          <div className="text-center p-5 bg-red-50 text-red-600 rounded-lg shadow-sm my-5">
-            <p>Erro ao carregar os projetos: {error}</p>
-          </div>
-        )}
-
-        {!loading && !error && (
-          <div className="overflow-hidden rounded-2xl shadow-lg border border-gray-100">
-            <table className="table-default">
-              <thead className="table-header">
-                <tr>
-                  <th className="table-header-cell !py-2 whitespace-nowrap max-w-[120px] text-center">
-                    Cliente
-                  </th>
-                  <th className="table-header-cell !py-2 whitespace-nowrap max-w-[120px] text-center">
-                    Cliente Origem
-                  </th>
-                  <th className="table-header-cell !py-2 whitespace-nowrap max-w-[120px] text-center">
-                    Tipo
-                  </th>
-                  <th className="table-header-cell !py-2 whitespace-nowrap max-w-[120px] text-center">
-                    Origem
-                  </th>
-                  <th className="table-header-cell !py-2 whitespace-nowrap max-w-[120px] text-center">
-                    Nome do Projeto
-                  </th>
-                  <th className="table-header-cell !py-2 whitespace-nowrap max-w-[120px] text-center">
-                    Data
-                  </th>
-                  <th className="table-header-cell !py-2 whitespace-nowrap max-w-[120px] text-center">
-                    Mês/Ano
-                  </th>
-                  <th className="table-header-cell !py-2 whitespace-nowrap max-w-[120px] text-center">
-                    Origem
-                  </th>
-                  <th className="table-header-cell !py-2 whitespace-nowrap max-w-[120px] text-center">
-                    Destino
-                  </th>
-                  <th className="table-header-cell !py-2 whitespace-nowrap max-w-[120px] text-center">
-                    Conv.
-                  </th>
-                  <th className="table-header-cell !py-2 whitespace-nowrap max-w-[120px] text-center">
-                    Valor (U$)
-                  </th>
-                  <th className="table-header-cell !py-2 whitespace-nowrap max-w-[120px] text-center">
-                    Status Pgto
-                  </th>
-                  <th className="table-header-cell !py-2 whitespace-nowrap max-w-[120px] text-center">
-                    Prazo
-                  </th>
-                  <th className="table-header-cell !py-2 whitespace-nowrap max-w-[120px] text-center">
-                    Status
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="table-body">
-                {projects.map((project) => (
-                  <tr
-                    key={project.id}
-                    onClick={() =>
-                      handleRowClick(project.id, project.collection)
-                    }
-                    className="table-row"
-                  >
-                    <td className="table-cell !py-1.5 whitespace-nowrap max-w-[120px] text-center font-medium">
-                      {clientTypes[project.userEmail]?.nomeCompleto?.length > 20
-                        ? `${clientTypes[project.userEmail]?.nomeCompleto.slice(
-                            0,
-                            20
-                          )}...`
-                        : clientTypes[project.userEmail]?.nomeCompleto ||
-                          "Nome não disponível"}
-                    </td>
-                    <td className="table-cell !py-1.5 whitespace-nowrap max-w-[120px] text-center font-medium">
-                      {project.userEmail?.length > 20
-                        ? `${project.userEmail.slice(0, 20)}...`
-                        : project.userEmail}
-                    </td>
-                    <td className="table-cell !py-1.5 whitespace-nowrap max-w-[120px] text-center">
-                      {(() => {
-                        const userInfo = clientTypes[project.userEmail];
-                        if (!userInfo) return "Desconhecido";
-
-                        if (
-                          userInfo.userType === "colaborator" &&
-                          userInfo.registeredBy
-                        ) {
-                          const registeredByInfo =
-                            clientTypes[userInfo.registeredBy];
-                          if (
-                            registeredByInfo &&
-                            registeredByInfo.userType === "b2b"
-                          ) {
-                            return "B2B";
-                          } else if (
-                            registeredByInfo &&
-                            (registeredByInfo.clientType === "Cliente" ||
-                              registeredByInfo.clientType === "Colab")
-                          ) {
-                            return "B2C";
-                          }
-                        }
-
-                        if (
-                          userInfo.clientType === "Colab" ||
-                          userInfo.clientType === "Cliente"
-                        ) {
-                          return "B2C";
-                        }
-
-                        return userInfo.clientType || "Desconhecido";
-                      })()}
-                    </td>
-                    <td className="table-cell !py-1.5 whitespace-nowrap max-w-[120px] text-center">
-                      {(() => {
-                        const text =
-                          clientTypes[project.userEmail]?.registeredBy &&
-                          clientTypes[
-                            project.userEmail
-                          ]?.registeredBy.trim() !== ""
-                            ? clientTypes[project.userEmail]?.registeredBy
-                            : project.userEmail || "N/A";
-                        return text.length > 20
-                          ? `${text.slice(0, 20)}...`
-                          : text;
-                      })()}
-                    </td>
-                    <td className="table-cell !py-1.5 whitespace-nowrap max-w-[120px] text-center font-medium">
-                      {project.projectName && project.projectName.length > 10
-                        ? `${project.projectName.slice(0, 10)}...`
-                        : project.projectName || "Sem Nome"}
-                    </td>
-                    <td className="table-cell !py-1.5 whitespace-nowrap max-w-[120px] text-center">
-                      {new Date(
-                        project.createdAt.seconds * 1000
-                      ).toLocaleDateString("pt-BR")}
-                    </td>
-                    <td className="table-cell !py-1.5 whitespace-nowrap max-w-[120px] text-center">
-                      {project.createdAt
-                        ? new Date(
-                            project.createdAt.seconds * 1000
-                          ).toLocaleDateString("pt-BR", {
-                            month: "2-digit",
-                            year: "2-digit",
-                          })
-                        : "Sem Data"}
-                    </td>
-                    <td className="table-cell !py-1.5 whitespace-nowrap max-w-[120px] text-center">
-                      {project.sourceLanguage}
-                    </td>
-                    <td className="table-cell !py-1.5 whitespace-nowrap max-w-[120px] text-center">
-                      {project.targetLanguage}
-                    </td>
-                    <td className="table-cell !py-1.5 whitespace-nowrap max-w-[120px] text-center">
-                      {project.convertCurrency ? "Sim" : "Não"}
-                    </td>
-                    <td className="table-cell !py-1.5 whitespace-nowrap max-w-[120px] text-center">
-                      U${" "}
-                      {Number(
-                        project.totalProjectValue ||
-                          project.totalValue ||
-                          calculateTotalValue(project.files)
-                      ).toFixed(2)}
-                    </td>
-                    <td className="table-cell !py-1.5 whitespace-nowrap max-w-[120px] text-center">
-                      <span
-                        className={`status-badge ${
-                          project.isPaid ? "status-approved" : "status-pending"
-                        }`}
-                      >
-                        {project.isPaid ? "PAGO" : "PENDENTE"}
-                      </span>
-                    </td>
-                    <td className="table-cell !py-1.5 whitespace-nowrap max-w-[120px] text-center">
-                      {project.deadlineDate
-                        ? new Date(project.deadlineDate).toLocaleDateString(
-                            "pt-BR",
-                            {
-                              day: "2-digit",
-                              month: "2-digit",
-                              year: "numeric",
-                            }
-                          )
-                        : "Sem Prazo"}
-                    </td>
-                    <td className="table-cell !py-1.5 whitespace-nowrap max-w-[120px] text-center">
-                      <span
-                        className={`status-badge ${
-                          project.project_status === "Finalizado"
-                            ? "status-approved"
-                            : project.project_status === "Em Andamento"
-                            ? "status-ongoing"
-                            : project.project_status === "Em Revisão"
-                            ? "status-review"
-                            : project.project_status === "Em Certificação"
-                            ? "status-certification"
-                            : "status-default"
-                        }`}
-                      >
-                        {project.project_status || "Sem Status"}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+    return (
+      <div
+        className={`w-full px-2 py-1 rounded-full border ${config.bg} ${config.text} ${config.border} text-center text-xs font-medium`}
+      >
+        {status || "N/A"}
       </div>
+    );
+  };
+
+  const renderPaymentStatusBadge = (status) => {
+    const statusConfig = {
+      Pago: {
+        bg: "bg-green-50",
+        text: "text-green-700",
+        border: "border-green-200",
+      },
+      Pendente: {
+        bg: "bg-yellow-50",
+        text: "text-yellow-700",
+        border: "border-yellow-200",
+      },
+      Reembolso: {
+        bg: "bg-red-50",
+        text: "text-red-700",
+        border: "border-red-200",
+      },
+      Divergência: {
+        bg: "bg-orange-50",
+        text: "text-orange-700",
+        border: "border-orange-200",
+      },
+      "N/A": {
+        bg: "bg-gray-50",
+        text: "text-gray-700",
+        border: "border-gray-200",
+      },
+    };
+
+    const config = statusConfig[status] || statusConfig["N/A"];
+
+    return (
+      <div
+        className={`w-full px-2 py-1 rounded-full border ${config.bg} ${config.text} ${config.border} text-center text-xs font-medium`}
+      >
+        {status || "N/A"}
+      </div>
+    );
+  };
+
+  const paginatedData = React.useMemo(() => {
+    if (!projects || !Array.isArray(projects)) return [];
+
+    const sortedData = sortData(projects, sortConfig);
+    const startIndex = (currentPage - 1) * rowsPerPage;
+    const endIndex = startIndex + rowsPerPage;
+    return sortedData.slice(startIndex, endIndex);
+  }, [projects, currentPage, rowsPerPage, sortConfig]);
+
+  const formattedData = React.useMemo(() => {
+    return paginatedData.map((row) => ({
+      client: clientTypes[row.userEmail]?.nomeCompleto || "N/A",
+      clientOrigin: row.userEmail || "N/A",
+      type: (() => {
+        const userInfo = clientTypes[row.userEmail];
+        if (!userInfo) return "Desconhecido";
+        if (userInfo.userType === "colaborator" && userInfo.registeredBy) {
+          const registeredByInfo = clientTypes[userInfo.registeredBy];
+          if (registeredByInfo && registeredByInfo.userType === "b2b")
+            return "B2B";
+          if (
+            registeredByInfo &&
+            (registeredByInfo.clientType === "Cliente" ||
+              registeredByInfo.clientType === "Colab")
+          )
+            return "B2C";
+        }
+        if (
+          userInfo.clientType === "Colab" ||
+          userInfo.clientType === "Cliente"
+        )
+          return "B2C";
+        return userInfo.clientType || "Desconhecido";
+      })(),
+      origin:
+        clientTypes[row.userEmail]?.registeredBy || row.userEmail || "N/A",
+      projectName: row.projectName || "Sem Nome",
+      createdAt: row.createdAt?.seconds
+        ? new Date(row.createdAt.seconds * 1000).toLocaleDateString("pt-BR")
+        : "Sem Data",
+      monthYear: row.createdAt?.seconds
+        ? new Date(row.createdAt.seconds * 1000).toLocaleDateString("pt-BR", {
+            month: "2-digit",
+            year: "2-digit",
+          })
+        : "Sem Data",
+      sourceLanguage: row.sourceLanguage || "N/A",
+      targetLanguage: row.targetLanguage || "N/A",
+      convertCurrency: row.convertCurrency ? "Sim" : "Não",
+      totalValue: `U$ ${Number(
+        row.totalProjectValue ||
+          row.totalValue ||
+          calculateTotalValue(row.files)
+      ).toFixed(2)}`,
+      paymentStatus: renderPaymentStatusBadge(row.payment_status || "N/A"),
+      deadline: row.deadlineDate
+        ? new Date(row.deadlineDate).toLocaleDateString("pt-BR")
+        : "Sem Prazo",
+      status: renderStatusBadge(row.project_status || "N/A"),
+    }));
+  }, [paginatedData, clientTypes]);
+
+  return (
+    <div className="w-full px-2 md:px-4">
+      {loading && (
+        <div className="text-center p-8">
+          <p className="text-gray-600">Carregando projetos...</p>
+        </div>
+      )}
+
+      {error && (
+        <div className="text-center p-5 bg-red-50 text-red-600 rounded-lg shadow-sm my-5">
+          <p>Erro ao carregar os projetos: {error}</p>
+        </div>
+      )}
+
+      {!loading && !error && (
+        <div className="w-full">
+          <div className="w-full overflow-x-auto">
+            <div className="w-full">
+              <DataTable
+                columns={columns}
+                data={formattedData}
+                initialColumnOrder={initialColumnOrder}
+                fixedColumns={fixedColumns}
+                onRowClick={handleRowClick}
+              />
+            </div>
+          </div>
+
+          <Pagination
+            currentPage={currentPage}
+            totalPages={Math.max(
+              1,
+              Math.ceil((projects?.length || 0) / rowsPerPage)
+            )}
+            onPageChange={setCurrentPage}
+            rowsPerPage={rowsPerPage}
+            onRowsPerPageChange={(value) => {
+              setRowsPerPage(value);
+              localStorage.setItem("projectsDoneRowsPerPage", value);
+            }}
+            totalItems={projects?.length || 0}
+          />
+        </div>
+      )}
     </div>
   );
 };

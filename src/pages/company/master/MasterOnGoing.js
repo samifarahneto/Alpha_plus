@@ -1,30 +1,40 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { getFirestore, collection, onSnapshot } from "firebase/firestore";
 import { useAuth } from "../../../contexts/AuthContext";
-import MasterNavigation from "./MasterNavigation";
+import DataTable from "../../../components/DataTable";
+import Pagination from "../../../components/Pagination";
 
-const MasterOnGoing = ({ style, isMobile }) => {
+const MasterOnGoing = () => {
   const [projects, setProjects] = useState([]);
-  const [allProjects, setAllProjects] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const location = useLocation();
-  const [activeLink, setActiveLink] = useState(() => {
-    if (location.pathname.includes("projects-budget")) return "projectsBudget";
-    if (location.pathname.includes("projects-approval"))
-      return "projectsApproval";
-    if (location.pathname === "/company/master/projects")
-      return "masterProjects";
-    if (location.pathname === "/company/master/ongoing") return "ongoing";
-    return "ongoing";
-  });
-  const [clientTypes, setClientTypes] = useState({});
   const navigate = useNavigate();
+  const [clientTypes, setClientTypes] = useState({});
   const { user } = useAuth();
-  const [unreadCount, setUnreadCount] = useState(0);
-  const [unreadBudgetCount, setUnreadBudgetCount] = useState(0);
-  const [unreadApprovalCount, setUnreadApprovalCount] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(() => {
+    const savedRowsPerPage = localStorage.getItem("masterOnGoingRowsPerPage");
+    return savedRowsPerPage ? parseInt(savedRowsPerPage) : 10;
+  });
+  const [sortConfig] = useState(() => {
+    const savedSortConfig = localStorage.getItem("masterOnGoingSortConfig");
+    return savedSortConfig
+      ? JSON.parse(savedSortConfig)
+      : { key: "createdAt", direction: "desc" };
+  });
+
+  const columns = [
+    { id: "client", label: "Cliente", fixed: true },
+    { id: "type", label: "Tipo" },
+    { id: "projectName", label: "Nome do Projeto", fixed: true },
+    { id: "createdAt", label: "Data de Criação" },
+    { id: "deadline", label: "Prazo" },
+    { id: "totalValue", label: "Valor Total (U$)" },
+    { id: "status", label: "Status", fixed: true },
+  ];
+
+  const fixedColumns = columns.filter((col) => col.fixed).map((col) => col.id);
+  const initialColumnOrder = columns.map((col) => col.id);
 
   // Primeiro useEffect para carregar os tipos de usuários
   useEffect(() => {
@@ -55,7 +65,6 @@ const MasterOnGoing = ({ style, isMobile }) => {
       },
       (error) => {
         console.error("Erro ao carregar usuários:", error);
-        setError(error.message);
       }
     );
 
@@ -67,17 +76,14 @@ const MasterOnGoing = ({ style, isMobile }) => {
     if (!clientTypes || !user) return;
 
     setLoading(true);
-    setError(null);
 
     const firestore = getFirestore();
     const collections = [
-      // Coleções B2B
       "b2bprojects",
       "b2bprojectspaid",
       "b2bapproved",
       "b2bdocprojects",
       "b2bapproval",
-      // Coleções B2C
       "b2cprojectspaid",
       "b2cdocprojects",
       "b2capproval",
@@ -89,53 +95,28 @@ const MasterOnGoing = ({ style, isMobile }) => {
         return onSnapshot(
           collectionRef,
           (snapshot) => {
-            setAllProjects((prevProjects) => {
-              const newProjects = [...prevProjects];
-              snapshot.docChanges().forEach((change) => {
-                const projectData = {
-                  id: change.doc.id,
-                  ...change.doc.data(),
-                  files: change.doc.data().files || [],
-                  collection: collectionName,
-                };
-
-                const index = newProjects.findIndex(
-                  (p) => p.id === change.doc.id
-                );
-
-                if (change.type === "added" && index === -1) {
-                  newProjects.push(projectData);
-                } else if (change.type === "modified" && index !== -1) {
-                  newProjects[index] = projectData;
-                } else if (change.type === "removed" && index !== -1) {
-                  newProjects.splice(index, 1);
-                }
-              });
-              return newProjects;
-            });
-
-            // Filtrar apenas projetos com project_status específicos para a tabela
-            const filteredProjects = snapshot.docs
-              .filter((doc) => doc.data().project_status === "Em Andamento")
-              .map((doc) => ({
-                id: doc.id,
-                ...doc.data(),
-                files: doc.data().files || [],
-                collection: collectionName,
-              }));
-
             setProjects((prevProjects) => {
+              // Filtrar apenas projetos com status "Em Andamento"
+              const filteredProjects = snapshot.docs
+                .filter((doc) => doc.data().project_status === "Em Andamento")
+                .map((doc) => ({
+                  id: doc.id,
+                  ...doc.data(),
+                  files: doc.data().files || [],
+                  collection: collectionName,
+                }));
+
+              // Remover projetos da mesma coleção e adicionar os novos
               const otherCollectionsProjects = prevProjects.filter(
                 (p) => p.collection !== collectionName
               );
               return [...otherCollectionsProjects, ...filteredProjects];
             });
-
             setLoading(false);
           },
           (error) => {
             console.error(`Erro ao carregar coleção ${collectionName}:`, error);
-            setError(error.message);
+            setLoading(false);
           }
         );
       });
@@ -143,226 +124,175 @@ const MasterOnGoing = ({ style, isMobile }) => {
       return () => unsubscribeFunctions.forEach((unsubscribe) => unsubscribe());
     } catch (error) {
       console.error("Erro ao configurar listeners:", error);
-      setError(error.message);
       setLoading(false);
     }
   }, [clientTypes, user]);
 
-  // Terceiro useEffect para processar os contadores
-  useEffect(() => {
-    if (!allProjects) return;
+  const handleRowClick = (row) => {
+    navigate(`/company/master/project/${row.id}?collection=${row.collection}`);
+  };
 
-    // Processar todos os contadores em um único bloco
-    const processCounters = () => {
-      // Contagem para "Todos Projetos" - projetos não lidos em todas as coleções
-      const unreadProjects = allProjects.filter((project) => {
-        const hasUnreadFiles = project.files?.some((file) => !file.isRead);
-        const isProjectUnread = project.isRead === false;
-        return hasUnreadFiles || isProjectUnread;
-      });
-
-      // Contagem para "Aguardando Orçamento" - projetos nas coleções b2bdocprojects e b2cdocprojects com status "Ag. Orçamento"
-      const budgetProjects = allProjects.filter(
-        (project) =>
-          (project.collection === "b2bdocprojects" ||
-            project.collection === "b2cdocprojects") &&
-          project.project_status === "Ag. Orçamento"
-      );
-
-      // Contagem para "Aguardando Aprovação" - projetos nas coleções b2bapproval e b2capproval com status "Ag. Aprovação"
-      const approvalProjects = allProjects.filter(
-        (project) =>
-          (project.collection === "b2bapproval" ||
-            project.collection === "b2capproval") &&
-          project.project_status === "Ag. Aprovação"
-      );
-
-      // Atualizar todos os contadores de uma vez
-      setUnreadCount(unreadProjects.length);
-      setUnreadBudgetCount(budgetProjects.length);
-      setUnreadApprovalCount(approvalProjects.length);
-
-      console.log("Contagem de notificações:", {
-        unreadProjects: unreadProjects.length,
-        budgetProjects: budgetProjects.length,
-        approvalProjects: approvalProjects.length,
-        total:
-          unreadProjects.length +
-          budgetProjects.length +
-          approvalProjects.length,
-        collections: allProjects.map((p) => p.collection),
-      });
-    };
-
-    processCounters();
-  }, [allProjects]);
+  const sortData = (data, config) => {
+    if (!config.key) return data;
+    return [...data].sort((a, b) => {
+      if (a[config.key] < b[config.key]) {
+        return config.direction === "asc" ? -1 : 1;
+      }
+      if (a[config.key] > b[config.key]) {
+        return config.direction === "asc" ? 1 : -1;
+      }
+      return 0;
+    });
+  };
 
   const calculateTotalValue = (files) => {
-    if (!files || !Array.isArray(files)) return "0.00";
-    return files
-      .reduce((acc, file) => {
-        const fileTotal = Number(file.total) || 0;
-        return acc + fileTotal;
-      }, 0)
-      .toFixed(2);
+    if (!files || !Array.isArray(files)) return 0;
+    return files.reduce((total, file) => {
+      const fileTotal = Number(file.total) || 0;
+      return total + fileTotal;
+    }, 0);
   };
 
-  const handleRowClick = async (projectId, collection) => {
-    navigate(`/company/master/project/${projectId}?collection=${collection}`);
+  const renderProjectStatusBadge = (status) => {
+    const statusConfig = {
+      "Em Andamento": {
+        bg: "bg-blue-50",
+        text: "text-blue-700",
+        border: "border-blue-200",
+      },
+      Finalizado: {
+        bg: "bg-green-50",
+        text: "text-green-700",
+        border: "border-green-200",
+      },
+      "Em Revisão": {
+        bg: "bg-yellow-50",
+        text: "text-yellow-700",
+        border: "border-yellow-200",
+      },
+      Cancelado: {
+        bg: "bg-red-50",
+        text: "text-red-700",
+        border: "border-red-200",
+      },
+      "Em Análise": {
+        bg: "bg-yellow-50",
+        text: "text-yellow-700",
+        border: "border-yellow-200",
+      },
+      "Ag. Orçamento": {
+        bg: "bg-orange-50",
+        text: "text-orange-700",
+        border: "border-orange-200",
+      },
+      "Ag. Aprovação": {
+        bg: "bg-amber-50",
+        text: "text-amber-700",
+        border: "border-amber-200",
+      },
+      "Ag. Pagamento": {
+        bg: "bg-purple-50",
+        text: "text-purple-700",
+        border: "border-purple-200",
+      },
+      "N/A": {
+        bg: "bg-gray-50",
+        text: "text-gray-700",
+        border: "border-gray-200",
+      },
+    };
+
+    const config = statusConfig[status] || statusConfig["N/A"];
+
+    return (
+      <div
+        className={`w-full px-2 py-1 rounded-full border ${config.bg} ${config.text} ${config.border} text-center text-xs font-medium`}
+      >
+        {status || "N/A"}
+      </div>
+    );
   };
+
+  const paginatedData = React.useMemo(() => {
+    if (!projects || !Array.isArray(projects)) return [];
+
+    const sortedData = sortData(projects, sortConfig);
+    const startIndex = (currentPage - 1) * rowsPerPage;
+    const endIndex = startIndex + rowsPerPage;
+    return sortedData.slice(startIndex, endIndex);
+  }, [projects, currentPage, rowsPerPage, sortConfig]);
+
+  const formattedData = React.useMemo(() => {
+    return paginatedData.map((row) => ({
+      client: clientTypes[row.userEmail]?.nomeCompleto || "N/A",
+      type: (() => {
+        const userInfo = clientTypes[row.userEmail];
+        if (!userInfo) return "Desconhecido";
+        if (userInfo.userType === "colaborator" && userInfo.registeredBy) {
+          const registeredByInfo = clientTypes[userInfo.registeredBy];
+          if (registeredByInfo && registeredByInfo.userType === "b2b")
+            return "B2B";
+          if (
+            registeredByInfo &&
+            (registeredByInfo.clientType === "Cliente" ||
+              registeredByInfo.clientType === "Colab")
+          )
+            return "B2C";
+        }
+        if (
+          userInfo.clientType === "Colab" ||
+          userInfo.clientType === "Cliente"
+        )
+          return "B2C";
+        return userInfo.clientType || "Desconhecido";
+      })(),
+      projectName:
+        row.projectName && row.projectName.length > 20
+          ? `${row.projectName.slice(0, 20)}...`
+          : row.projectName || "Sem Nome",
+      createdAt: row.createdAt?.seconds
+        ? new Date(row.createdAt.seconds * 1000).toLocaleDateString("pt-BR")
+        : "Sem Data",
+      deadline: row.deadlineDate
+        ? new Date(row.deadlineDate).toLocaleDateString("pt-BR")
+        : "A definir",
+      totalValue: `U$ ${calculateTotalValue(row.files).toFixed(2)}`,
+      status: renderProjectStatusBadge(row.project_status || "Em Andamento"),
+    }));
+  }, [paginatedData, clientTypes]);
 
   return (
-    <div className="w-full max-w-full p-8 space-y-8">
-      <div className="glass-card">
-        <h2 className="text-3xl font-bold text-center mb-8 bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
-          Projetos em Andamento
-        </h2>
-
-        <MasterNavigation
-          activeLink={activeLink}
-          setActiveLink={setActiveLink}
-          unreadCount={unreadCount}
-          unreadBudgetCount={unreadBudgetCount}
-          unreadApprovalCount={unreadApprovalCount}
-        />
-
-        {loading && (
-          <div className="text-center p-8">
-            <p className="text-gray-600">Carregando projetos...</p>
+    <div className="w-full px-2 md:px-4">
+      {!loading && (
+        <div className="w-full">
+          <div className="w-full overflow-x-auto">
+            <div className="w-full">
+              <DataTable
+                columns={columns}
+                data={formattedData}
+                initialColumnOrder={initialColumnOrder}
+                fixedColumns={fixedColumns}
+                onRowClick={handleRowClick}
+              />
+            </div>
           </div>
-        )}
 
-        {error && (
-          <div className="text-center p-5 bg-red-50 text-red-600 rounded-lg shadow-sm my-5">
-            <p>Erro ao carregar os projetos: {error}</p>
-          </div>
-        )}
-
-        {!loading && !error && (
-          <div className="overflow-hidden rounded-2xl shadow-lg border border-gray-100">
-            <table className="min-w-full bg-white divide-y divide-gray-200 shadow-sm rounded-lg">
-              <thead className="bg-gradient-to-b from-gray-50 to-gray-100">
-                <tr>
-                  <th className="px-4 py-2 text-xs font-medium text-gray-500 uppercase tracking-wider text-left whitespace-nowrap">
-                    Cliente
-                  </th>
-                  <th className="px-4 py-2 text-xs font-medium text-gray-500 uppercase tracking-wider text-center whitespace-nowrap">
-                    Tipo
-                  </th>
-                  <th className="px-4 py-2 text-xs font-medium text-gray-500 uppercase tracking-wider text-center whitespace-nowrap">
-                    Nome do Projeto
-                  </th>
-                  <th className="px-4 py-2 text-xs font-medium text-gray-500 uppercase tracking-wider text-center whitespace-nowrap">
-                    Data de Criação
-                  </th>
-                  <th className="px-4 py-2 text-xs font-medium text-gray-500 uppercase tracking-wider text-center whitespace-nowrap">
-                    Prazo
-                  </th>
-                  <th className="px-4 py-2 text-xs font-medium text-gray-500 uppercase tracking-wider text-center whitespace-nowrap">
-                    Valor Total (U$)
-                  </th>
-                  <th className="px-4 py-2 text-xs font-medium text-gray-500 uppercase tracking-wider text-center whitespace-nowrap">
-                    Status
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {projects.map((project) => (
-                  <tr
-                    key={project.id}
-                    onClick={() =>
-                      handleRowClick(project.id, project.collection)
-                    }
-                    className="hover:bg-blue-50/50 cursor-pointer transition-all duration-200"
-                  >
-                    <td className="px-4 py-1.5 whitespace-nowrap text-sm text-gray-700">
-                      {clientTypes[project.userEmail]?.nomeCompleto || "N/A"}
-                    </td>
-                    <td className="px-4 py-1.5 whitespace-nowrap text-sm text-gray-700 text-center">
-                      {(() => {
-                        const userInfo = clientTypes[project.userEmail];
-                        if (!userInfo) return "Desconhecido";
-
-                        if (
-                          userInfo.userType === "colaborator" &&
-                          userInfo.registeredBy
-                        ) {
-                          const registeredByInfo =
-                            clientTypes[userInfo.registeredBy];
-                          if (
-                            registeredByInfo &&
-                            registeredByInfo.userType === "b2b"
-                          ) {
-                            return "B2B";
-                          } else if (
-                            registeredByInfo &&
-                            (registeredByInfo.clientType === "Cliente" ||
-                              registeredByInfo.clientType === "Colab")
-                          ) {
-                            return "B2C";
-                          }
-                        }
-
-                        if (
-                          userInfo.clientType === "Colab" ||
-                          userInfo.clientType === "Cliente"
-                        ) {
-                          return "B2C";
-                        }
-
-                        return userInfo.clientType || "Desconhecido";
-                      })()}
-                    </td>
-                    <td className="px-4 py-1.5 whitespace-nowrap text-sm text-gray-700 text-center">
-                      {project.projectName || "Sem Nome"}
-                    </td>
-                    <td className="px-4 py-1.5 whitespace-nowrap text-sm text-gray-700 text-center">
-                      {project.createdAt
-                        ? new Date(
-                            project.createdAt.seconds * 1000
-                          ).toLocaleDateString("pt-BR")
-                        : "N/A"}
-                    </td>
-                    <td className="px-4 py-1.5 whitespace-nowrap text-sm text-gray-700 text-center">
-                      {project.deadlineDate
-                        ? new Date(project.deadlineDate).toLocaleDateString(
-                            "pt-BR"
-                          )
-                        : "A definir"}
-                    </td>
-                    <td className="px-4 py-1.5 whitespace-nowrap text-sm text-gray-700 text-center font-medium">
-                      U$ {calculateTotalValue(project.files)}
-                    </td>
-                    <td className="px-4 py-1.5 whitespace-nowrap text-sm text-center">
-                      <span
-                        className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                          project.project_status === "Finalizado"
-                            ? "bg-green-100 text-green-700"
-                            : project.project_status === "Em Andamento"
-                            ? "bg-blue-100 text-blue-700"
-                            : project.project_status === "Em Revisão"
-                            ? "bg-yellow-100 text-yellow-700"
-                            : project.project_status === "Em Certificação"
-                            ? "bg-orange-100 text-orange-700"
-                            : project.project_status === "Cancelado"
-                            ? "bg-gray-100 text-gray-700"
-                            : project.project_status === "Ag. Orçamento"
-                            ? "bg-purple-100 text-purple-700"
-                            : project.project_status === "Ag. Aprovação"
-                            ? "bg-indigo-100 text-indigo-700"
-                            : "bg-gray-100 text-gray-700"
-                        }`}
-                      >
-                        {project.project_status || "Sem Status"}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+          <Pagination
+            currentPage={currentPage}
+            totalPages={Math.max(
+              1,
+              Math.ceil((projects?.length || 0) / rowsPerPage)
+            )}
+            onPageChange={setCurrentPage}
+            rowsPerPage={rowsPerPage}
+            onRowsPerPageChange={(value) => {
+              setRowsPerPage(value);
+              localStorage.setItem("masterOnGoingRowsPerPage", value);
+            }}
+            totalItems={projects?.length || 0}
+          />
+        </div>
+      )}
     </div>
   );
 };

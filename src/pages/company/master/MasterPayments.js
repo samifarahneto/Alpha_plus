@@ -1,32 +1,39 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { getFirestore, collection, onSnapshot } from "firebase/firestore";
-
 import { useAuth } from "../../../contexts/AuthContext";
-import NavigationLinks from "../../../components/NavigationLinks";
-import PageLayout from "../../../components/PageLayout";
+import DataTable from "../../../components/DataTable";
+import Pagination from "../../../components/Pagination";
 
-const MasterPayments = ({ style, isMobile }) => {
-  const [payments, setPayments] = useState([]);
-  const [allProjects, setAllProjects] = useState([]);
+const MasterPayments = () => {
+  const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const location = useLocation();
-  const [activeLink, setActiveLink] = useState(() => {
-    if (location.pathname.includes("projects-budget")) return "projectsBudget";
-    if (location.pathname.includes("projects-approval"))
-      return "projectsApproval";
-    if (location.pathname === "/company/master/projects")
-      return "masterProjects";
-    if (location.pathname === "/company/master/payments") return "payments";
-    return "payments";
-  });
-  const [clientTypes, setClientTypes] = useState({});
   const navigate = useNavigate();
+  const [clientTypes, setClientTypes] = useState({});
   const { user } = useAuth();
-  const [unreadCount, setUnreadCount] = useState(0);
-  const [unreadBudgetCount, setUnreadBudgetCount] = useState(0);
-  const [unreadApprovalCount, setUnreadApprovalCount] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(() => {
+    const savedRowsPerPage = localStorage.getItem("masterPaymentsRowsPerPage");
+    return savedRowsPerPage ? parseInt(savedRowsPerPage) : 10;
+  });
+  const [sortConfig] = useState(() => {
+    const savedSortConfig = localStorage.getItem("masterPaymentsSortConfig");
+    return savedSortConfig
+      ? JSON.parse(savedSortConfig)
+      : { key: "createdAt", direction: "desc" };
+  });
+
+  const columns = [
+    { id: "client", label: "Cliente", fixed: true },
+    { id: "type", label: "Tipo", fixed: true },
+    { id: "projectName", label: "Nome do Projeto", fixed: true },
+    { id: "createdAt", label: "Data de Criação" },
+    { id: "totalValue", label: "Valor Total (U$)" },
+    { id: "status", label: "Status", fixed: true },
+  ];
+
+  const fixedColumns = columns.filter((col) => col.fixed).map((col) => col.id);
+  const initialColumnOrder = columns.map((col) => col.id);
 
   // Primeiro useEffect para carregar os tipos de usuários
   useEffect(() => {
@@ -57,7 +64,6 @@ const MasterPayments = ({ style, isMobile }) => {
       },
       (error) => {
         console.error("Erro ao carregar usuários:", error);
-        setError(error.message);
       }
     );
 
@@ -69,17 +75,14 @@ const MasterPayments = ({ style, isMobile }) => {
     if (!clientTypes || !user) return;
 
     setLoading(true);
-    setError(null);
 
     const firestore = getFirestore();
     const collections = [
-      // Coleções B2B
       "b2bprojects",
       "b2bprojectspaid",
       "b2bapproved",
       "b2bdocprojects",
       "b2bapproval",
-      // Coleções B2C
       "b2cprojectspaid",
       "b2cdocprojects",
       "b2capproval",
@@ -91,46 +94,16 @@ const MasterPayments = ({ style, isMobile }) => {
         return onSnapshot(
           collectionRef,
           (snapshot) => {
-            setAllProjects((prevProjects) => {
-              const newProjects = [...prevProjects];
-              snapshot.docChanges().forEach((change) => {
-                const projectData = {
-                  id: change.doc.id,
-                  ...change.doc.data(),
-                  files: change.doc.data().files || [],
-                  collection: collectionName,
-                };
-
-                const index = newProjects.findIndex(
-                  (p) => p.id === change.doc.id
-                );
-
-                if (change.type === "added" && index === -1) {
-                  newProjects.push(projectData);
-                } else if (change.type === "modified" && index !== -1) {
-                  newProjects[index] = projectData;
-                } else if (change.type === "removed" && index !== -1) {
-                  newProjects.splice(index, 1);
-                }
-              });
-              return newProjects;
-            });
-
-            // Filtrar apenas projetos com payment_status "Pendente" ou "Divergência" das coleções de pagamento
-            if (
-              [
-                "b2bapproved",
-                "b2bprojectspaid",
-                "b2capproved",
-                "b2cprojectspaid",
-              ].includes(collectionName)
-            ) {
+            setProjects((prevProjects) => {
+              // Filtrar apenas projetos com payment_status "Pendente" ou "Divergência"
               const filteredProjects = snapshot.docs
-                .filter(
-                  (doc) =>
-                    doc.data().payment_status === "Pendente" ||
-                    doc.data().payment_status === "Divergência"
-                )
+                .filter((doc) => {
+                  const data = doc.data();
+                  return (
+                    data.payment_status === "Pendente" ||
+                    data.payment_status === "Divergência"
+                  );
+                })
                 .map((doc) => ({
                   id: doc.id,
                   ...doc.data(),
@@ -138,19 +111,17 @@ const MasterPayments = ({ style, isMobile }) => {
                   collection: collectionName,
                 }));
 
-              setPayments((prevProjects) => {
-                const otherCollectionsProjects = prevProjects.filter(
-                  (p) => p.collection !== collectionName
-                );
-                return [...otherCollectionsProjects, ...filteredProjects];
-              });
-            }
-
+              // Remover projetos da mesma coleção e adicionar os novos
+              const otherCollectionsProjects = prevProjects.filter(
+                (p) => p.collection !== collectionName
+              );
+              return [...otherCollectionsProjects, ...filteredProjects];
+            });
             setLoading(false);
           },
           (error) => {
             console.error(`Erro ao carregar coleção ${collectionName}:`, error);
-            setError(error.message);
+            setLoading(false);
           }
         );
       });
@@ -158,204 +129,147 @@ const MasterPayments = ({ style, isMobile }) => {
       return () => unsubscribeFunctions.forEach((unsubscribe) => unsubscribe());
     } catch (error) {
       console.error("Erro ao configurar listeners:", error);
-      setError(error.message);
       setLoading(false);
     }
   }, [clientTypes, user]);
 
-  // Terceiro useEffect para processar os contadores
-  useEffect(() => {
-    if (!allProjects) return;
+  const handleRowClick = (row) => {
+    navigate(`/company/master/project/${row.id}?collection=${row.collection}`);
+  };
 
-    // Processar todos os contadores em um único bloco
-    const processCounters = () => {
-      // Contagem para "Todos Projetos" - projetos não lidos em todas as coleções
-      const unreadProjects = allProjects.filter((project) => {
-        const hasUnreadFiles = project.files?.some((file) => !file.isRead);
-        const isProjectUnread = project.isRead === false;
-        return hasUnreadFiles || isProjectUnread;
-      });
-
-      // Contagem para "Aguardando Orçamento" - projetos nas coleções b2bdocprojects e b2cdocprojects com status "Ag. Orçamento"
-      const budgetProjects = allProjects.filter(
-        (project) =>
-          (project.collection === "b2bdocprojects" ||
-            project.collection === "b2cdocprojects") &&
-          project.project_status === "Ag. Orçamento"
-      );
-
-      // Contagem para "Aguardando Aprovação" - projetos nas coleções b2bapproval e b2capproval com status "Ag. Aprovação"
-      const approvalProjects = allProjects.filter(
-        (project) =>
-          (project.collection === "b2bapproval" ||
-            project.collection === "b2capproval") &&
-          project.project_status === "Ag. Aprovação"
-      );
-
-      // Atualizar todos os contadores de uma vez
-      setUnreadCount(unreadProjects.length);
-      setUnreadBudgetCount(budgetProjects.length);
-      setUnreadApprovalCount(approvalProjects.length);
-
-      console.log("Contagem de notificações:", {
-        unreadProjects: unreadProjects.length,
-        budgetProjects: budgetProjects.length,
-        approvalProjects: approvalProjects.length,
-        total:
-          unreadProjects.length +
-          budgetProjects.length +
-          approvalProjects.length,
-        collections: allProjects.map((p) => p.collection),
-      });
-    };
-
-    processCounters();
-  }, [allProjects]);
+  const sortData = (data, config) => {
+    if (!config.key) return data;
+    return [...data].sort((a, b) => {
+      if (a[config.key] < b[config.key]) {
+        return config.direction === "asc" ? -1 : 1;
+      }
+      if (a[config.key] > b[config.key]) {
+        return config.direction === "asc" ? 1 : -1;
+      }
+      return 0;
+    });
+  };
 
   const calculateTotalValue = (files) => {
-    if (!files || !Array.isArray(files)) return "0.00";
-    return files
-      .reduce((acc, file) => {
-        const fileTotal = Number(file.total) || 0;
-        return acc + fileTotal;
-      }, 0)
-      .toFixed(2);
+    if (!files || !Array.isArray(files)) return 0;
+    return files.reduce((total, file) => {
+      const fileTotal = Number(file.total) || 0;
+      return total + fileTotal;
+    }, 0);
   };
 
-  const handleRowClick = async (projectId, collection) => {
-    navigate(`/company/master/project/${projectId}?collection=${collection}`);
+  const renderStatusBadge = (status) => {
+    const statusConfig = {
+      Pendente: {
+        bg: "bg-yellow-50",
+        text: "text-yellow-700",
+        border: "border-yellow-200",
+      },
+      Divergência: {
+        bg: "bg-red-50",
+        text: "text-red-700",
+        border: "border-red-200",
+      },
+      "N/A": {
+        bg: "bg-gray-50",
+        text: "text-gray-700",
+        border: "border-gray-200",
+      },
+    };
+
+    const config = statusConfig[status] || statusConfig["N/A"];
+
+    return (
+      <div
+        className={`w-full px-2 py-1 rounded-full border ${config.bg} ${config.text} ${config.border} text-center text-xs font-medium`}
+      >
+        {status || "N/A"}
+      </div>
+    );
   };
+
+  const paginatedData = React.useMemo(() => {
+    if (!projects || !Array.isArray(projects)) return [];
+
+    const sortedData = sortData(projects, sortConfig);
+    const startIndex = (currentPage - 1) * rowsPerPage;
+    const endIndex = startIndex + rowsPerPage;
+    return sortedData.slice(startIndex, endIndex);
+  }, [projects, currentPage, rowsPerPage, sortConfig]);
+
+  const formattedData = React.useMemo(() => {
+    return paginatedData.map((row) => ({
+      client: clientTypes[row.userEmail]?.nomeCompleto || "N/A",
+      type: (() => {
+        const userInfo = clientTypes[row.userEmail];
+        if (!userInfo) return "Desconhecido";
+        if (userInfo.userType === "colaborator" && userInfo.registeredBy) {
+          const registeredByInfo = clientTypes[userInfo.registeredBy];
+          if (registeredByInfo && registeredByInfo.userType === "b2b")
+            return "B2B";
+          if (
+            registeredByInfo &&
+            (registeredByInfo.clientType === "Cliente" ||
+              registeredByInfo.clientType === "Colab")
+          )
+            return "B2C";
+        }
+        if (
+          userInfo.clientType === "Colab" ||
+          userInfo.clientType === "Cliente"
+        )
+          return "B2C";
+        return userInfo.clientType || "Desconhecido";
+      })(),
+      projectName:
+        row.projectName && row.projectName.length > 20
+          ? `${row.projectName.slice(0, 20)}...`
+          : row.projectName || "Sem Nome",
+      createdAt: row.createdAt?.seconds
+        ? new Date(row.createdAt.seconds * 1000).toLocaleDateString("pt-BR")
+        : "Sem Data",
+      totalValue: `U$ ${Number(
+        row.totalProjectValue ||
+          row.totalValue ||
+          calculateTotalValue(row.files)
+      ).toFixed(2)}`,
+      status: renderStatusBadge(row.payment_status || "N/A"),
+    }));
+  }, [paginatedData, clientTypes]);
 
   return (
-    <PageLayout>
-      <div className="glass-card w-full max-w-[100%] mx-0">
-        <h2 className="text-3xl font-bold text-center mb-8 bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
-          Pagamentos
-        </h2>
-
-        <NavigationLinks
-          activeLink={activeLink}
-          setActiveLink={setActiveLink}
-          unreadCount={unreadCount}
-          unreadBudgetCount={unreadBudgetCount}
-          unreadApprovalCount={unreadApprovalCount}
-        />
-
-        {!loading && !error && (
-          <div className="overflow-hidden rounded-2xl shadow-lg border border-gray-100">
-            <table className="table-default">
-              <thead className="table-header">
-                <tr>
-                  <th className="table-header-cell !py-2 whitespace-nowrap max-w-[120px] text-center">
-                    Cliente
-                  </th>
-                  <th className="table-header-cell !py-2 whitespace-nowrap max-w-[120px] text-center">
-                    Tipo
-                  </th>
-                  <th className="table-header-cell !py-2 whitespace-nowrap max-w-[120px] text-center">
-                    Nome do Projeto
-                  </th>
-                  <th className="table-header-cell !py-2 whitespace-nowrap max-w-[120px] text-center">
-                    Data de Criação
-                  </th>
-                  <th className="table-header-cell !py-2 whitespace-nowrap max-w-[120px] text-center">
-                    Valor Total (U$)
-                  </th>
-                  <th className="table-header-cell !py-2 whitespace-nowrap max-w-[120px] text-center">
-                    Status
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="table-body">
-                {payments.map((payment) => (
-                  <tr
-                    key={payment.id}
-                    onClick={() =>
-                      handleRowClick(payment.id, payment.collection)
-                    }
-                    className="table-row"
-                  >
-                    <td className="table-cell !py-1.5 whitespace-nowrap max-w-[120px] text-center font-medium">
-                      {clientTypes[payment.userEmail]?.nomeCompleto?.length > 20
-                        ? `${clientTypes[payment.userEmail]?.nomeCompleto.slice(
-                            0,
-                            20
-                          )}...`
-                        : clientTypes[payment.userEmail]?.nomeCompleto ||
-                          "Nome não disponível"}
-                    </td>
-                    <td className="table-cell !py-1.5 whitespace-nowrap max-w-[120px] text-center">
-                      {(() => {
-                        const userInfo = clientTypes[payment.userEmail];
-                        if (!userInfo) return "Desconhecido";
-
-                        if (
-                          userInfo.userType === "colaborator" &&
-                          userInfo.registeredBy
-                        ) {
-                          const registeredByInfo =
-                            clientTypes[userInfo.registeredBy];
-                          if (
-                            registeredByInfo &&
-                            registeredByInfo.userType === "b2b"
-                          ) {
-                            return "B2B";
-                          } else if (
-                            registeredByInfo &&
-                            (registeredByInfo.clientType === "Cliente" ||
-                              registeredByInfo.clientType === "Colab")
-                          ) {
-                            return "B2C";
-                          }
-                        }
-
-                        if (
-                          userInfo.clientType === "Colab" ||
-                          userInfo.clientType === "Cliente"
-                        ) {
-                          return "B2C";
-                        }
-
-                        return userInfo.clientType || "Desconhecido";
-                      })()}
-                    </td>
-                    <td className="table-cell !py-1.5 whitespace-nowrap max-w-[120px] text-center font-medium">
-                      {payment.projectName && payment.projectName.length > 20
-                        ? `${payment.projectName.slice(0, 20)}...`
-                        : payment.projectName || "Sem Nome"}
-                    </td>
-                    <td className="table-cell !py-1.5 whitespace-nowrap max-w-[120px] text-center">
-                      {new Date(
-                        payment.createdAt.seconds * 1000
-                      ).toLocaleDateString("pt-BR")}
-                    </td>
-                    <td className="table-cell !py-1.5 whitespace-nowrap max-w-[120px] text-center">
-                      U${" "}
-                      {Number(
-                        payment.totalProjectValue ||
-                          payment.totalValue ||
-                          calculateTotalValue(payment.files)
-                      ).toFixed(2)}
-                    </td>
-                    <td className="table-cell !py-1.5 whitespace-nowrap max-w-[120px] text-center">
-                      <span
-                        className={`status-badge ${
-                          payment.payment_status === "Divergência"
-                            ? "status-error"
-                            : "status-pending"
-                        }`}
-                      >
-                        {payment.payment_status || "Pendente"}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+    <div className="w-full px-2 md:px-4">
+      {!loading && (
+        <div className="w-full">
+          <div className="w-full overflow-x-auto">
+            <div className="w-full">
+              <DataTable
+                columns={columns}
+                data={formattedData}
+                initialColumnOrder={initialColumnOrder}
+                fixedColumns={fixedColumns}
+                onRowClick={handleRowClick}
+              />
+            </div>
           </div>
-        )}
-      </div>
-    </PageLayout>
+
+          <Pagination
+            currentPage={currentPage}
+            totalPages={Math.max(
+              1,
+              Math.ceil((projects?.length || 0) / rowsPerPage)
+            )}
+            onPageChange={setCurrentPage}
+            rowsPerPage={rowsPerPage}
+            onRowsPerPageChange={(value) => {
+              setRowsPerPage(value);
+              localStorage.setItem("masterPaymentsRowsPerPage", value);
+            }}
+            totalItems={projects?.length || 0}
+          />
+        </div>
+      )}
+    </div>
   );
 };
 

@@ -1,49 +1,43 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
-import {
-  getFirestore,
-  collection,
-  onSnapshot,
-  doc,
-  updateDoc,
-} from "firebase/firestore";
-import { IoMdArrowDropup } from "react-icons/io";
-import { IoMdArrowDropdown } from "react-icons/io";
-
-// import "../../styles/Menu.css";
+import { useNavigate } from "react-router-dom";
+import { getFirestore, collection, onSnapshot } from "firebase/firestore";
 import { useAuth } from "../../../contexts/AuthContext";
-import MasterNavigation from "./MasterNavigation";
+import DataTable from "../../../components/DataTable";
+import Pagination from "../../../components/Pagination";
 
 const ProjectsApproved = () => {
-  const [allUploads, setAllUploads] = useState([]);
-  const [filteredUploads, setFilteredUploads] = useState([]);
-  const [allProjects, setAllProjects] = useState([]);
-  const location = useLocation();
-  const [activeLink, setActiveLink] = useState(() => {
-    if (location.pathname.includes("projects-budget")) return "projectsBudget";
-    if (location.pathname.includes("projects-approval"))
-      return "projectsApproval";
-    if (location.pathname.includes("projects-approved"))
-      return "projectsCanceled";
-    if (location.pathname.includes("ongoing")) return "ongoing";
-    if (location.pathname.includes("projects-done")) return "projectsDone";
-    if (location.pathname.includes("projects-paid")) return "projectsPaid";
-    if (location.pathname.includes("payments")) return "payments";
-    if (location.pathname === "/company/master/projects")
-      return "masterProjects";
-    return "masterProjects";
-  });
-  const [currentSort, setCurrentSort] = useState({
-    field: "createdAt",
-    direction: "desc",
-  });
-  const [unreadCount, setUnreadCount] = useState(0);
-  const [unreadBudgetCount, setUnreadBudgetCount] = useState(0);
-  const [unreadApprovalCount, setUnreadApprovalCount] = useState(0);
-  const [clientTypes, setClientTypes] = useState({});
-
+  const [projects, setProjects] = useState([]);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const [clientTypes, setClientTypes] = useState({});
   const { user } = useAuth();
+  const [currentPage, setCurrentPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(() => {
+    const savedRowsPerPage = localStorage.getItem(
+      "projectsApprovedRowsPerPage"
+    );
+    return savedRowsPerPage ? parseInt(savedRowsPerPage) : 10;
+  });
+  const [sortConfig] = useState(() => {
+    const savedSortConfig = localStorage.getItem("projectsApprovedSortConfig");
+    return savedSortConfig
+      ? JSON.parse(savedSortConfig)
+      : { key: "createdAt", direction: "desc" };
+  });
+
+  const columns = [
+    { id: "projectName", label: "Nome do Projeto", fixed: true },
+    { id: "client", label: "Cliente", fixed: true },
+    { id: "type", label: "Tipo" },
+    { id: "createdAt", label: "Data" },
+    { id: "pages", label: "Páginas" },
+    { id: "files", label: "Arquivos" },
+    { id: "total", label: "Total" },
+    { id: "status", label: "Status", fixed: true },
+  ];
+
+  const fixedColumns = columns.filter((col) => col.fixed).map((col) => col.id);
+  const initialColumnOrder = columns.map((col) => col.id);
 
   // Primeiro useEffect para carregar os tipos de usuários
   useEffect(() => {
@@ -84,19 +78,10 @@ const ProjectsApproved = () => {
   useEffect(() => {
     if (!clientTypes || !user) return;
 
+    setLoading(true);
+
     const firestore = getFirestore();
-    const collections = [
-      // Coleções B2B
-      "b2bprojects",
-      "b2bprojectspaid",
-      "b2bapproved",
-      "b2bdocprojects",
-      "b2bapproval",
-      // Coleções B2C
-      "b2cprojectspaid",
-      "b2cdocprojects",
-      "b2capproval",
-    ];
+    const collections = ["b2bapproved", "b2capproved"];
 
     try {
       const unsubscribeFunctions = collections.map((collectionName) => {
@@ -104,7 +89,7 @@ const ProjectsApproved = () => {
         return onSnapshot(
           collectionRef,
           (snapshot) => {
-            setAllProjects((prevProjects) => {
+            setProjects((prevProjects) => {
               const newProjects = [...prevProjects];
               snapshot.docChanges().forEach((change) => {
                 const projectData = {
@@ -128,37 +113,11 @@ const ProjectsApproved = () => {
               });
               return newProjects;
             });
-
-            // Filtrar apenas projetos aprovados
-            const filteredProjects = snapshot.docs
-              .filter(
-                (doc) =>
-                  collectionName === "b2bapproved" ||
-                  collectionName === "b2capproved"
-              )
-              .map((doc) => ({
-                id: doc.id,
-                ...doc.data(),
-                files: doc.data().files || [],
-                collection: collectionName,
-              }));
-
-            setAllUploads((prevProjects) => {
-              const otherCollectionsProjects = prevProjects.filter(
-                (p) => p.collection !== collectionName
-              );
-              return [...otherCollectionsProjects, ...filteredProjects];
-            });
-
-            setFilteredUploads((prevProjects) => {
-              const otherCollectionsProjects = prevProjects.filter(
-                (p) => p.collection !== collectionName
-              );
-              return [...otherCollectionsProjects, ...filteredProjects];
-            });
+            setLoading(false);
           },
           (error) => {
             console.error(`Erro ao carregar coleção ${collectionName}:`, error);
+            setLoading(false);
           }
         );
       });
@@ -166,167 +125,25 @@ const ProjectsApproved = () => {
       return () => unsubscribeFunctions.forEach((unsubscribe) => unsubscribe());
     } catch (error) {
       console.error("Erro ao configurar listeners:", error);
+      setLoading(false);
     }
   }, [clientTypes, user]);
 
-  // Terceiro useEffect para processar os contadores
-  useEffect(() => {
-    if (!allProjects) return;
-
-    // Processar todos os contadores em um único bloco
-    const processCounters = () => {
-      // Contagem para "Todos Projetos" - projetos não lidos em todas as coleções
-      const unreadProjects = allProjects.filter((project) => {
-        const hasUnreadFiles = project.files?.some((file) => !file.isRead);
-        const isProjectUnread = project.isRead === false;
-        return hasUnreadFiles || isProjectUnread;
-      });
-
-      // Contagem para "Aguardando Orçamento" - projetos nas coleções b2bdocprojects e b2cdocprojects com status "Ag. Orçamento"
-      const budgetProjects = allProjects.filter(
-        (project) =>
-          (project.collection === "b2bdocprojects" ||
-            project.collection === "b2cdocprojects") &&
-          project.project_status === "Ag. Orçamento"
-      );
-
-      // Contagem para "Aguardando Aprovação" - projetos nas coleções b2bapproval e b2capproval com status "Ag. Aprovação"
-      const approvalProjects = allProjects.filter(
-        (project) =>
-          (project.collection === "b2bapproval" ||
-            project.collection === "b2capproval") &&
-          project.project_status === "Ag. Aprovação"
-      );
-
-      // Atualizar todos os contadores de uma vez
-      setUnreadCount(unreadProjects.length);
-      setUnreadBudgetCount(budgetProjects.length);
-      setUnreadApprovalCount(approvalProjects.length);
-
-      console.log("Contagem de notificações:", {
-        unreadProjects: unreadProjects.length,
-        budgetProjects: budgetProjects.length,
-        approvalProjects: approvalProjects.length,
-        total:
-          unreadProjects.length +
-          budgetProjects.length +
-          approvalProjects.length,
-        collections: allProjects.map((p) => p.collection),
-      });
-    };
-
-    processCounters();
-  }, [allProjects]);
-
-  const handleSort = (field) => {
-    setCurrentSort((prevSort) => {
-      const isSameField = prevSort.field === field;
-      const newDirection =
-        isSameField && prevSort.direction === "asc" ? "desc" : "asc";
-
-      const sortedData = [...filteredUploads].sort((a, b) => {
-        let valA, valB;
-
-        switch (field) {
-          case "projectName":
-            valA = (a.projectName || "").toLowerCase();
-            valB = (b.projectName || "").toLowerCase();
-            break;
-          case "clientName":
-            valA = (a.clientName || "").toLowerCase();
-            valB = (b.clientName || "").toLowerCase();
-            break;
-          case "createdAt":
-            valA = a.createdAt?.seconds
-              ? new Date(a.createdAt.seconds * 1000)
-              : new Date(0);
-            valB = b.createdAt?.seconds
-              ? new Date(b.createdAt.seconds * 1000)
-              : new Date(0);
-            break;
-          case "status":
-            valA = (a.status || "").toLowerCase();
-            valB = (b.status || "").toLowerCase();
-            break;
-          case "totalPages":
-            valA = calculateTotalPages(a.files);
-            valB = calculateTotalPages(b.files);
-            break;
-          case "files":
-            valA = a.files?.length || 0;
-            valB = b.files?.length || 0;
-            break;
-          case "total":
-            valA = calculateTotalValue(a);
-            valB = calculateTotalValue(b);
-            break;
-          case "clientType":
-            valA = getClientType(a);
-            valB = getClientType(b);
-            break;
-          default:
-            valA = (a[field] || "").toString().toLowerCase();
-            valB = (b[field] || "").toString().toLowerCase();
-        }
-
-        if (valA === valB) return 0;
-
-        if (newDirection === "asc") {
-          return valA > valB ? 1 : -1;
-        } else {
-          return valA < valB ? 1 : -1;
-        }
-      });
-
-      setFilteredUploads(sortedData);
-      return { field, direction: newDirection };
-    });
+  const handleRowClick = (row) => {
+    navigate(`/company/master/project/${row.id}?collection=${row.collection}`);
   };
 
-  const handleRowClick = async (uploadId) => {
-    const firestore = getFirestore();
-
-    // Encontrar o projeto em todas as listas
-    const selectedUpload = allUploads.find((upload) => upload.id === uploadId);
-
-    if (!selectedUpload) {
-      console.error("Projeto não encontrado");
-      return;
-    }
-
-    // Determinar a coleção correta
-    const collectionName = selectedUpload.collection;
-
-    const uploadDoc = doc(firestore, collectionName, uploadId);
-
-    // Atualiza os arquivos como lidos
-    const updatedFiles = selectedUpload.files.map((file) => ({
-      ...file,
-      isRead: true,
-    }));
-
-    // Atualiza o documento no Firestore
-    await updateDoc(uploadDoc, { files: updatedFiles });
-
-    // Atualiza o estado local
-    setAllUploads((prevUploads) =>
-      prevUploads.map((upload) =>
-        upload.id === uploadId ? { ...upload, files: updatedFiles } : upload
-      )
-    );
-
-    // Recalcula os projetos não lidos
-    const unreadProjects = allUploads.filter((upload) =>
-      upload.files.some((file) => !file.isRead)
-    ).length;
-
-    // Atualiza os contadores de não lidos
-    setUnreadCount(unreadProjects);
-
-    // Navega para a página do projeto clicado incluindo a coleção na URL
-    navigate(
-      `/company/master/project/${uploadId}?collection=${collectionName}`
-    );
+  const sortData = (data, config) => {
+    if (!config.key) return data;
+    return [...data].sort((a, b) => {
+      if (a[config.key] < b[config.key]) {
+        return config.direction === "asc" ? -1 : 1;
+      }
+      if (a[config.key] > b[config.key]) {
+        return config.direction === "asc" ? 1 : -1;
+      }
+      return 0;
+    });
   };
 
   const calculateTotalPages = (files) => {
@@ -339,214 +156,160 @@ const ProjectsApproved = () => {
 
   const calculateTotalValue = (project) => {
     if (!project) return 0;
-
-    // Se já tiver um valor total definido no projeto, use-o
     if (project.totalProjectValue) {
       return Number(project.totalProjectValue);
     }
-
-    // Caso contrário, some os valores dos arquivos
     if (!project.files || !Array.isArray(project.files)) return 0;
-
     return project.files.reduce((total, file) => {
       const fileTotal = Number(file.total) || Number(file.totalValue) || 0;
       return total + fileTotal;
     }, 0);
   };
 
-  const getClientType = (project) => {
-    if (!project || !project.userEmail || !clientTypes[project.userEmail])
-      return "N/A";
+  const paginatedData = React.useMemo(() => {
+    if (!projects || !Array.isArray(projects)) return [];
 
-    const userData = clientTypes[project.userEmail];
-    if (
-      userData.userType === "b2b" ||
-      (userData.userType === "colab" && userData.registeredByType === "b2b")
-    ) {
-      return "B2B";
-    } else if (
-      userData.userType === "b2c" ||
-      (userData.userType === "colab" && userData.registeredByType === "b2c")
-    ) {
-      return "B2C";
-    }
-    return "N/A";
+    const sortedData = sortData(projects, sortConfig);
+    const startIndex = (currentPage - 1) * rowsPerPage;
+    const endIndex = startIndex + rowsPerPage;
+    return sortedData.slice(startIndex, endIndex);
+  }, [projects, currentPage, rowsPerPage, sortConfig]);
+
+  const renderProjectStatusBadge = (status) => {
+    const statusConfig = {
+      "Em Andamento": {
+        bg: "bg-blue-50",
+        text: "text-blue-700",
+        border: "border-blue-200",
+      },
+      Finalizado: {
+        bg: "bg-green-50",
+        text: "text-green-700",
+        border: "border-green-200",
+      },
+      "Em Revisão": {
+        bg: "bg-yellow-50",
+        text: "text-yellow-700",
+        border: "border-yellow-200",
+      },
+      Cancelado: {
+        bg: "bg-red-50",
+        text: "text-red-700",
+        border: "border-red-200",
+      },
+      "Em Análise": {
+        bg: "bg-yellow-50",
+        text: "text-yellow-700",
+        border: "border-yellow-200",
+      },
+      "Ag. Orçamento": {
+        bg: "bg-orange-50",
+        text: "text-orange-700",
+        border: "border-orange-200",
+      },
+      "Ag. Aprovação": {
+        bg: "bg-amber-50",
+        text: "text-amber-700",
+        border: "border-amber-200",
+      },
+      "Ag. Pagamento": {
+        bg: "bg-purple-50",
+        text: "text-purple-700",
+        border: "border-purple-200",
+      },
+      Aprovado: {
+        bg: "bg-green-50",
+        text: "text-green-700",
+        border: "border-green-200",
+      },
+      "N/A": {
+        bg: "bg-gray-50",
+        text: "text-gray-700",
+        border: "border-gray-200",
+      },
+    };
+
+    const config = statusConfig[status] || statusConfig["N/A"];
+
+    return (
+      <div
+        className={`w-full px-2 py-1 rounded-full border ${config.bg} ${config.text} ${config.border} text-center text-xs font-medium`}
+      >
+        {status || "N/A"}
+      </div>
+    );
   };
 
+  const formattedData = React.useMemo(() => {
+    return paginatedData.map((row) => ({
+      projectName:
+        row.projectName && row.projectName.length > 20
+          ? `${row.projectName.slice(0, 20)}...`
+          : row.projectName || "Sem Nome",
+      client: clientTypes[row.userEmail]?.nomeCompleto || "N/A",
+      type: (() => {
+        const userInfo = clientTypes[row.userEmail];
+        if (!userInfo) return "Desconhecido";
+        if (userInfo.userType === "colaborator" && userInfo.registeredBy) {
+          const registeredByInfo = clientTypes[userInfo.registeredBy];
+          if (registeredByInfo && registeredByInfo.userType === "b2b")
+            return "B2B";
+          if (
+            registeredByInfo &&
+            (registeredByInfo.clientType === "Cliente" ||
+              registeredByInfo.clientType === "Colab")
+          )
+            return "B2C";
+        }
+        if (
+          userInfo.clientType === "Colab" ||
+          userInfo.clientType === "Cliente"
+        )
+          return "B2C";
+        return userInfo.clientType || "Desconhecido";
+      })(),
+      createdAt: row.createdAt?.seconds
+        ? new Date(row.createdAt.seconds * 1000).toLocaleDateString("pt-BR")
+        : "Sem Data",
+      pages: calculateTotalPages(row.files),
+      files: row.files?.length || 0,
+      total: `U$ ${calculateTotalValue(row).toFixed(2)}`,
+      status: renderProjectStatusBadge("Aprovado"),
+    }));
+  }, [paginatedData, clientTypes]);
+
   return (
-    <div className="w-full max-w-full p-8 space-y-8">
-      <div className="glass-card">
-        <h2 className="text-3xl font-bold text-center mb-8 bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
-          Projetos Aprovados
-        </h2>
+    <div className="w-full px-2 md:px-4">
+      {!loading && (
+        <div className="w-full">
+          <div className="w-full overflow-x-auto">
+            <div className="w-full">
+              <DataTable
+                columns={columns}
+                data={formattedData}
+                initialColumnOrder={initialColumnOrder}
+                fixedColumns={fixedColumns}
+                onRowClick={handleRowClick}
+              />
+            </div>
+          </div>
 
-        <MasterNavigation
-          activeLink={activeLink}
-          setActiveLink={setActiveLink}
-          unreadCount={unreadCount}
-          unreadBudgetCount={unreadBudgetCount}
-          unreadApprovalCount={unreadApprovalCount}
-        />
-
-        <div className="overflow-hidden rounded-2xl shadow-lg border border-gray-100">
-          <table className="table-default">
-            <thead className="table-header">
-              <tr>
-                <th
-                  onClick={() => handleSort("projectName")}
-                  className="table-header-cell !py-2 whitespace-nowrap max-w-[150px] truncate cursor-pointer text-center"
-                >
-                  Nome do Projeto
-                  {currentSort.field === "projectName" &&
-                    (currentSort.direction === "asc" ? (
-                      <IoMdArrowDropup className="inline ml-1" />
-                    ) : (
-                      <IoMdArrowDropdown className="inline ml-1" />
-                    ))}
-                </th>
-                <th
-                  onClick={() => handleSort("clientName")}
-                  className="table-header-cell !py-2 whitespace-nowrap max-w-[150px] truncate cursor-pointer text-center"
-                >
-                  Cliente
-                  {currentSort.field === "clientName" &&
-                    (currentSort.direction === "asc" ? (
-                      <IoMdArrowDropup className="inline ml-1" />
-                    ) : (
-                      <IoMdArrowDropdown className="inline ml-1" />
-                    ))}
-                </th>
-                <th
-                  onClick={() => handleSort("clientType")}
-                  className="table-header-cell !py-2 whitespace-nowrap max-w-[100px] truncate cursor-pointer text-center"
-                >
-                  Tipo
-                  {currentSort.field === "clientType" &&
-                    (currentSort.direction === "asc" ? (
-                      <IoMdArrowDropup className="inline ml-1" />
-                    ) : (
-                      <IoMdArrowDropdown className="inline ml-1" />
-                    ))}
-                </th>
-                <th
-                  onClick={() => handleSort("createdAt")}
-                  className="table-header-cell !py-2 whitespace-nowrap max-w-[100px] truncate cursor-pointer text-center"
-                >
-                  Data
-                  {currentSort.field === "createdAt" &&
-                    (currentSort.direction === "asc" ? (
-                      <IoMdArrowDropup className="inline ml-1" />
-                    ) : (
-                      <IoMdArrowDropdown className="inline ml-1" />
-                    ))}
-                </th>
-                <th
-                  onClick={() => handleSort("totalPages")}
-                  className="table-header-cell !py-2 whitespace-nowrap max-w-[100px] truncate cursor-pointer text-center"
-                >
-                  Páginas
-                  {currentSort.field === "totalPages" &&
-                    (currentSort.direction === "asc" ? (
-                      <IoMdArrowDropup className="inline ml-1" />
-                    ) : (
-                      <IoMdArrowDropdown className="inline ml-1" />
-                    ))}
-                </th>
-                <th
-                  onClick={() => handleSort("files")}
-                  className="table-header-cell !py-2 whitespace-nowrap max-w-[100px] truncate cursor-pointer text-center"
-                >
-                  Arquivos
-                  {currentSort.field === "files" &&
-                    (currentSort.direction === "asc" ? (
-                      <IoMdArrowDropup className="inline ml-1" />
-                    ) : (
-                      <IoMdArrowDropdown className="inline ml-1" />
-                    ))}
-                </th>
-                <th
-                  onClick={() => handleSort("total")}
-                  className="table-header-cell !py-2 whitespace-nowrap max-w-[100px] truncate cursor-pointer text-center"
-                >
-                  Total
-                  {currentSort.field === "total" &&
-                    (currentSort.direction === "asc" ? (
-                      <IoMdArrowDropup className="inline ml-1" />
-                    ) : (
-                      <IoMdArrowDropdown className="inline ml-1" />
-                    ))}
-                </th>
-                <th
-                  onClick={() => handleSort("status")}
-                  className="table-header-cell !py-2 whitespace-nowrap max-w-[100px] truncate cursor-pointer text-center"
-                >
-                  Status
-                  {currentSort.field === "status" &&
-                    (currentSort.direction === "asc" ? (
-                      <IoMdArrowDropup className="inline ml-1" />
-                    ) : (
-                      <IoMdArrowDropdown className="inline ml-1" />
-                    ))}
-                </th>
-              </tr>
-            </thead>
-            <tbody className="table-body">
-              {filteredUploads.map((upload) => (
-                <tr
-                  key={upload.id}
-                  onClick={() => handleRowClick(upload.id)}
-                  className={`table-row ${
-                    upload.files?.some((file) => !file.isRead)
-                      ? "bg-blue-50 hover:bg-blue-100"
-                      : ""
-                  }`}
-                >
-                  <td className="table-cell !py-1.5 whitespace-nowrap max-w-[150px] truncate text-center">
-                    {upload.projectName || "Sem Nome"}
-                  </td>
-                  <td className="table-cell !py-1.5 whitespace-nowrap max-w-[150px] truncate text-center">
-                    {upload.projectOwner || "N/A"}
-                  </td>
-                  <td className="table-cell !py-1.5 whitespace-nowrap max-w-[100px] truncate text-center">
-                    <span
-                      className={`px-2 py-1 text-xs font-medium rounded-full ${
-                        getClientType(upload) === "B2B"
-                          ? "bg-blue-100 text-blue-800"
-                          : getClientType(upload) === "B2C"
-                          ? "bg-green-100 text-green-800"
-                          : "bg-gray-100 text-gray-800"
-                      }`}
-                    >
-                      {getClientType(upload)}
-                    </span>
-                  </td>
-                  <td className="table-cell !py-1.5 whitespace-nowrap max-w-[100px] truncate text-center">
-                    {upload.createdAt
-                      ? new Date(
-                          upload.createdAt.seconds * 1000
-                        ).toLocaleDateString("pt-BR")
-                      : "N/A"}
-                  </td>
-                  <td className="table-cell !py-1.5 whitespace-nowrap max-w-[100px] truncate text-center">
-                    {calculateTotalPages(upload.files)}
-                  </td>
-                  <td className="table-cell !py-1.5 whitespace-nowrap max-w-[100px] truncate text-center">
-                    {upload.files?.length || 0}
-                  </td>
-                  <td className="table-cell !py-1.5 whitespace-nowrap max-w-[100px] truncate text-center">
-                    R$ {calculateTotalValue(upload).toFixed(2)}
-                  </td>
-                  <td className="table-cell !py-1.5 whitespace-nowrap max-w-[100px] truncate text-center">
-                    <span className="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
-                      Aprovado
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <Pagination
+            currentPage={currentPage}
+            totalPages={Math.max(
+              1,
+              Math.ceil((projects?.length || 0) / rowsPerPage)
+            )}
+            onPageChange={setCurrentPage}
+            rowsPerPage={rowsPerPage}
+            onRowsPerPageChange={(value) => {
+              setRowsPerPage(value);
+              localStorage.setItem("projectsApprovedRowsPerPage", value);
+            }}
+            totalItems={projects?.length || 0}
+          />
         </div>
-      </div>
+      )}
     </div>
   );
 };
