@@ -140,6 +140,35 @@ const EditPagesTable = memo(
   }
 );
 
+const renderBadge = (status, config) => {
+  const defaultConfig = {
+    true: {
+      bg: "bg-green-50",
+      text: "text-green-700",
+      border: "border-green-200",
+      label: "Ativado",
+    },
+    false: {
+      bg: "bg-red-50",
+      text: "text-red-700",
+      border: "border-red-200",
+      label: "Desativado",
+    },
+  };
+
+  const badgeConfig = config || defaultConfig;
+
+  const badge = badgeConfig[status] || badgeConfig["false"];
+
+  return (
+    <div
+      className={`w-full px-2 py-1 rounded-full border ${badge.bg} ${badge.text} ${badge.border} text-center text-xs font-medium`}
+    >
+      {badge.label}
+    </div>
+  );
+};
+
 const ProjectDetails = () => {
   const { projectId: urlProjectId } = useParams();
   const location = useLocation();
@@ -1445,8 +1474,22 @@ const ProjectDetails = () => {
     return name.length > 15 ? `${name.slice(0, 15)}...` : name;
   };
 
+  // Função para renderizar o nome do projeto com tooltip
+  const renderProjectName = (name) => {
+    const formattedName = formatProjectName(name);
+    if (name && name.length > 15) {
+      return (
+        <span className="text-gray-800 cursor-help" title={name}>
+          {formattedName}
+        </span>
+      );
+    }
+    return <span className="text-gray-800">{formattedName}</span>;
+  };
+
   const renderMobileView = () => (
-    <div className="w-full p-4 space-y-4">
+    <div className="w-full p-4 space-y-4 pb-20">
+      {/* Header com Botão Voltar */}
       <div className="flex items-center mb-4">
         <button
           onClick={() => navigate(-1)}
@@ -1457,16 +1500,16 @@ const ProjectDetails = () => {
         </button>
       </div>
 
+      {/* Informações do Projeto */}
       <Card title="Informações do Projeto" color="blue" className="mb-4">
-        <div className="space-y-4">
-          <div className="flex justify-between items-center">
-            <span className="text-gray-600">Nome do Projeto:</span>
+        <div className="space-y-3">
+          {/* Nome do Projeto */}
+          <div className="flex items-center justify-between">
+            <span className="text-gray-600 text-sm">Nome do Projeto:</span>
             <div className="flex items-center gap-2">
-              <span className="text-gray-800">
-                {formatProjectName(project.projectName)}
-              </span>
+              {renderProjectName(project.projectName)}
               <FaEdit
-                className="text-blue-600 cursor-pointer"
+                className="text-blue-600 cursor-pointer flex-shrink-0"
                 onClick={() => {
                   setNewProjectName(project.projectName || "");
                   setShowEditNameModal(true);
@@ -1475,19 +1518,23 @@ const ProjectDetails = () => {
             </div>
           </div>
 
-          <div className="flex justify-between items-center">
-            <span className="text-gray-600">Cliente:</span>
-            <span className="text-gray-800">{project.userEmail}</span>
+          {/* Cliente */}
+          <div className="flex items-center justify-between">
+            <span className="text-gray-600 text-sm">Cliente:</span>
+            <span className="text-gray-800 text-sm truncate">
+              {project.userEmail}
+            </span>
           </div>
 
-          <div className="flex justify-between items-center">
-            <span className="text-gray-600">Língua de Origem:</span>
+          {/* Língua de Origem */}
+          <div className="flex items-center justify-between">
+            <span className="text-gray-600 text-sm">Língua Origem:</span>
             <div className="flex items-center gap-2">
-              <span className="text-gray-800">
+              <span className="text-gray-800 text-sm truncate">
                 {project.sourceLanguage || "N/A"}
               </span>
               <FaEdit
-                className="text-blue-600 cursor-pointer"
+                className="text-blue-600 cursor-pointer flex-shrink-0"
                 onClick={() => {
                   setNewSourceLanguage(project.sourceLanguage || "");
                   setShowSourceLanguageModal(true);
@@ -1496,19 +1543,108 @@ const ProjectDetails = () => {
             </div>
           </div>
 
-          <div className="flex justify-between items-center">
-            <span className="text-gray-600">Língua de Destino:</span>
-            <span className="text-gray-800">
+          {/* Língua de Destino */}
+          <div className="flex items-center justify-between">
+            <span className="text-gray-600 text-sm">Língua Destino:</span>
+            <span className="text-gray-800 text-sm truncate">
               {project.targetLanguage || "N/A"}
+            </span>
+          </div>
+
+          {/* Conversão Monetária */}
+          <div className="flex items-center justify-between">
+            <span className="text-gray-600 text-sm">Conv. Monetária:</span>
+            <div className="flex items-center gap-2">
+              {renderBadge(
+                project.convertCurrency,
+                {
+                  true: {
+                    bg: "bg-green-50",
+                    text: "text-green-700",
+                    border: "border-green-200",
+                    label: "Com Conversão",
+                  },
+                  false: {
+                    bg: "bg-red-50",
+                    text: "text-red-700",
+                    border: "border-red-200",
+                    label: "Sem Conversão",
+                  },
+                },
+                "w-1/2"
+              )}
+              <FaEdit
+                className="text-blue-600 cursor-pointer flex-shrink-0"
+                onClick={() => {
+                  setNewConvertCurrency(project.convertCurrency || false);
+                  setShowConvertCurrencyModal(true);
+                }}
+              />
+            </div>
+          </div>
+
+          {/* Prioridade */}
+          <div className="flex items-center justify-between">
+            <span className="text-gray-600 text-sm">Prioridade:</span>
+            <div className="flex items-center gap-2">
+              {renderBadge(
+                project.isPriority,
+                {
+                  true: {
+                    bg: "bg-green-50",
+                    text: "text-green-700",
+                    border: "border-green-200",
+                    label: "Com Prioridade",
+                  },
+                  false: {
+                    bg: "bg-red-50",
+                    text: "text-red-700",
+                    border: "border-red-200",
+                    label: "Sem Prioridade",
+                  },
+                },
+                "w-1/2"
+              )}
+              <FaEdit
+                className="text-blue-600 cursor-pointer flex-shrink-0"
+                onClick={() => {
+                  setNewPriority(project.isPriority || false);
+                  setShowPriorityModal(true);
+                }}
+              />
+            </div>
+          </div>
+
+          {/* Prazo */}
+          <div className="flex items-center justify-between">
+            <span className="text-gray-600 text-sm">Prazo:</span>
+            <span className="text-gray-800 text-sm truncate">
+              {(
+                typeof project.payment_status === "object"
+                  ? project.payment_status.status === "Pago"
+                  : project.payment_status === "Pago"
+              )
+                ? project.deadlineDate || "Não definido"
+                : formatDate(project.deadline)}
+            </span>
+          </div>
+
+          {/* Data de Recebimento */}
+          <div className="flex items-center justify-between">
+            <span className="text-gray-600 text-sm">Data Receb.:</span>
+            <span className="text-gray-800 text-sm truncate">
+              {formatDate(project.createdAt)}
             </span>
           </div>
         </div>
       </Card>
 
+      {/* Informações Financeiras */}
       <Card title="Informações Financeiras" color="green" className="mb-4">
-        <div className="space-y-4">
-          <div className="flex justify-between items-center">
-            <span className="text-gray-600">Status de Pagamento:</span>
+        <div className="space-y-3">
+          {/* Status de Pagamento */}
+          <div className="flex items-center justify-between">
+            <span className="text-gray-600 text-sm">Status Pagto:</span>
             <select
               value={
                 typeof project.payment_status === "object"
@@ -1516,7 +1652,16 @@ const ProjectDetails = () => {
                   : project.payment_status || "Pendente"
               }
               onChange={(e) => handlePaymentStatusChange(e.target.value)}
-              className="px-3 py-1 rounded border border-gray-300"
+              className={`px-3 py-1 rounded border text-sm font-medium whitespace-nowrap ${
+                project.payment_status === "Pago"
+                  ? "bg-green-50 text-green-700 border-green-200"
+                  : project.payment_status === "Divergência"
+                  ? "bg-red-50 text-red-700 border-red-200"
+                  : project.payment_status === "Reembolsado" ||
+                    project.payment_status === "Em Reembolso"
+                  ? "bg-yellow-50 text-yellow-700 border-yellow-200"
+                  : "bg-gray-50 text-gray-700 border-gray-200"
+              }`}
             >
               <option value="Pendente">Pendente</option>
               <option value="Pago">Pago</option>
@@ -1526,23 +1671,145 @@ const ProjectDetails = () => {
             </select>
           </div>
 
-          <div className="flex justify-between items-center">
-            <span className="text-gray-600">Valor Total:</span>
-            <span className="text-gray-800 font-semibold">U$ {totalValue}</span>
+          {/* Nome do Aprovador */}
+          <div className="flex items-center justify-between">
+            <span className="text-gray-600 text-sm">Aprovador:</span>
+            <span className="text-gray-800 text-sm truncate">
+              {project.approvedByName || "N/A"}
+            </span>
+          </div>
+
+          {/* Data de Pagamento */}
+          <div className="flex items-center justify-between">
+            <span className="text-gray-600 text-sm">Data Pagto:</span>
+            <span className="text-gray-800 text-sm truncate">
+              {project.paidAt
+                ? new Date(project.paidAt).toLocaleDateString("pt-BR")
+                : "N/A"}
+            </span>
+          </div>
+
+          {/* Valor Total */}
+          <div className="flex items-center justify-between">
+            <span className="text-gray-600 text-sm">Valor Total:</span>
+            <span className="text-gray-800 text-sm font-semibold whitespace-nowrap">
+              U$ {totalValue}
+            </span>
+          </div>
+
+          {/* Detalhes do Reembolso */}
+          {project.payment_status &&
+            project.payment_status.status === "Reembolsado" && (
+              <div className="mt-4 p-3 bg-gray-50 rounded-lg space-y-3">
+                <h4 className="font-medium text-gray-700 mb-2 text-sm">
+                  Detalhes do Reembolso
+                </h4>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-600 text-sm">Valor Orig.:</span>
+                    <span className="text-gray-800 text-sm truncate">
+                      U${" "}
+                      {project.payment_status.originalAmount?.toFixed(2) ||
+                        "0.00"}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-600 text-sm">Valor Reemb.:</span>
+                    <span className="text-gray-800 text-sm truncate">
+                      U${" "}
+                      {project.payment_status.refundAmount?.toFixed(2) ||
+                        "0.00"}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-600 text-sm">Motivo:</span>
+                    <span className="text-gray-800 text-sm truncate">
+                      {project.payment_status.reason || "N/A"}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-600 text-sm">Data:</span>
+                    <span className="text-gray-800 text-sm truncate">
+                      {project.payment_status.refundedAt
+                        ? new Date(
+                            project.payment_status.refundedAt
+                          ).toLocaleDateString("pt-BR")
+                        : "N/A"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
+        </div>
+      </Card>
+
+      {/* Status do Projeto */}
+      <Card title="Status do Projeto" color="blue" className="mb-4">
+        <div className="space-y-3">
+          {/* Status da Tradução */}
+          <div className="flex items-center justify-between">
+            <span className="text-gray-600 text-sm">Status Trad.:</span>
+            <select
+              value={
+                typeof project.translation_status === "object"
+                  ? project.translation_status.status
+                  : project.translation_status || "N/A"
+              }
+              onChange={(e) => handleStatusChange(e.target.value)}
+              className="px-3 py-1 rounded border border-gray-200 bg-white text-gray-700 text-sm font-medium whitespace-nowrap"
+            >
+              <option value="N/A">N/A</option>
+              <option value="Em Andamento">Em Andamento</option>
+              <option value="Em Revisão">Em Revisão</option>
+              <option value="Em Certificação">Em Certificação</option>
+              <option value="Finalizado">Finalizado</option>
+              <option value="Cancelado">Cancelado</option>
+            </select>
+          </div>
+
+          {/* Status do Projeto */}
+          <div className="flex items-center justify-between">
+            <span className="text-gray-600 text-sm">Status Proj.:</span>
+            <select
+              value={
+                typeof project.project_status === "object"
+                  ? project.project_status.status
+                  : project.project_status || "Rascunho"
+              }
+              onChange={(e) => handleProjectStatusChange(e.target.value)}
+              disabled={project.project_status === "Em Divergência"}
+              className={`px-3 py-1 rounded border text-sm font-medium whitespace-nowrap ${
+                project.project_status === "Em Divergência"
+                  ? "bg-red-50 text-red-700 border-red-200 cursor-not-allowed"
+                  : "bg-white text-gray-700 border-gray-200"
+              }`}
+            >
+              <option value="Rascunho">Rascunho</option>
+              <option value="Ag. Orçamento">Ag. Orçamento</option>
+              <option value="Ag. Aprovação">Ag. Aprovação</option>
+              <option value="Ag. Pagamento">Ag. Pagamento</option>
+              <option value="Em Análise">Em Análise</option>
+              <option value="Em Andamento">Em Andamento</option>
+              <option value="Em Divergência">Em Divergência</option>
+              <option value="Finalizado">Finalizado</option>
+              <option value="Cancelado">Cancelado</option>
+            </select>
           </div>
         </div>
       </Card>
 
+      {/* Arquivos */}
       <Card title="Arquivos" color="blue" className="mb-4">
         <div className="space-y-4">
           {project.files.map((file, index) => (
             <div
               key={index}
-              className="border-b border-gray-200 pb-4 last:border-0"
+              className="border-b border-gray-200 pb-4 last:border-0 space-y-3"
             >
-              <div className="flex justify-between items-center mb-2">
+              <div className="flex items-center justify-between">
+                <span className="text-gray-600 text-sm">Arquivo:</span>
                 <span
-                  className="text-blue-600 cursor-pointer"
+                  className="text-blue-600 cursor-pointer text-sm truncate"
                   onClick={async () => {
                     try {
                       const url = await getFileDownloadUrl(file.fileUrl);
@@ -1557,40 +1824,160 @@ const ProjectDetails = () => {
                 >
                   {file.name}
                 </span>
-                <span className="text-gray-600">{file.pageCount} páginas</span>
               </div>
-              <div className="flex justify-between items-center">
-                <span className="text-gray-600">Valor:</span>
-                <span className="text-gray-800">
+              <div className="flex items-center justify-between">
+                <span className="text-gray-600 text-sm">Páginas:</span>
+                <span className="text-gray-800 text-sm">
+                  {file.pageCount} páginas
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-gray-600 text-sm">Valor:</span>
+                <span className="text-gray-800 text-sm">
                   U$ {(Number(file.valuePerPage) || 0).toFixed(2)}
                 </span>
+              </div>
+            </div>
+          ))}
+          <div className="pt-4 border-t border-gray-200 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-gray-600 text-sm font-medium">
+                Total Páginas:
+              </span>
+              <span className="text-gray-800 text-sm font-medium">
+                {totalPages}
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-gray-600 text-sm font-medium">
+                Total Valor:
+              </span>
+              <span className="text-gray-800 text-sm font-medium">
+                U$ {totalValue}
+              </span>
+            </div>
+          </div>
+        </div>
+      </Card>
+
+      {/* Link do Projeto */}
+      {(typeof project.payment_status === "object"
+        ? project.payment_status.status === "Pago"
+        : project.payment_status === "Pago") &&
+        project.project_status === "Finalizado" && (
+          <Card title="Link do Projeto" color="blue" className="mb-4">
+            <div className="space-y-4">
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={link}
+                  onChange={(e) => setLink(e.target.value)}
+                  placeholder="Insira o link do projeto"
+                  className="flex-1 px-3 py-2 rounded-lg border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-sm"
+                />
+                <button
+                  onClick={handleShareLink}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 whitespace-nowrap text-sm"
+                >
+                  Compartilhar
+                </button>
+              </div>
+              {project.shareLink && (
+                <div className="text-gray-600 text-sm">
+                  <strong>Link Atual:</strong>{" "}
+                  <a
+                    href={project.shareLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 hover:text-blue-800 break-all"
+                  >
+                    {project.shareLink}
+                  </a>
+                </div>
+              )}
+            </div>
+          </Card>
+        )}
+
+      {/* Histórico de Movimentações */}
+      <Card title="Histórico de Movimentações" color="blue">
+        <div className="space-y-4 max-h-[400px] overflow-y-auto">
+          {activityLogs.map((log, index) => (
+            <div
+              key={index}
+              className="border-b border-gray-200 pb-4 last:border-0 space-y-3"
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-gray-600 text-sm">Data/Hora:</span>
+                <span className="text-gray-800 text-sm truncate">
+                  {log.timestamp?.toDate().toLocaleString("pt-BR", {
+                    day: "2-digit",
+                    month: "2-digit",
+                    year: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-gray-600 text-sm">Usuário:</span>
+                <span className="text-gray-800 text-sm truncate">
+                  {log.userEmail}
+                </span>
+              </div>
+              <div className="text-sm text-gray-800">
+                <span
+                  className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                    log.action === "criação de projeto"
+                      ? "bg-green-100 text-green-800"
+                      : log.action === "pagamento realizado"
+                      ? "bg-blue-100 text-blue-800"
+                      : log.action.includes("alteração")
+                      ? "bg-yellow-100 text-yellow-800"
+                      : log.action === "envio para aprovação"
+                      ? "bg-purple-100 text-purple-800"
+                      : "bg-gray-100 text-gray-800"
+                  }`}
+                >
+                  {log.action}
+                </span>
+              </div>
+              <div className="text-xs text-gray-600 break-words bg-gray-50 p-2 rounded">
+                {Object.entries(log.details).map(([key, value]) => (
+                  <div key={key} className="mb-1 last:mb-0">
+                    <span className="font-medium">{key}: </span>
+                    {typeof value === "object" ? (
+                      <pre className="whitespace-pre-wrap text-xs">
+                        {JSON.stringify(value, null, 2)}
+                      </pre>
+                    ) : (
+                      <span>{value}</span>
+                    )}
+                  </div>
+                ))}
               </div>
             </div>
           ))}
         </div>
       </Card>
 
-      <Card title="Histórico de Movimentações" color="blue">
-        <div className="space-y-4 max-h-[400px] overflow-y-auto">
-          {activityLogs.map((log, index) => (
-            <div
-              key={index}
-              className="border-b border-gray-200 pb-4 last:border-0"
-            >
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-sm text-gray-500">
-                  {log.timestamp?.toDate().toLocaleString("pt-BR")}
-                </span>
-                <span className="text-sm text-gray-600">{log.userEmail}</span>
-              </div>
-              <div className="text-sm text-gray-800">{log.action}</div>
-              <div className="text-sm text-gray-600 mt-1">
-                {JSON.stringify(log.details, null, 2)}
-              </div>
-            </div>
-          ))}
+      {/* Botão de Enviar para Aprovação */}
+      {(project.collection === "b2bdocprojects" ||
+        project.collection === "b2cdocprojects") && (
+        <div className="fixed bottom-4 left-4 right-4">
+          <button
+            onClick={handleSendToApproval}
+            disabled={isSendingApproval}
+            className={`w-full px-6 py-3 rounded-lg text-white font-medium text-sm ${
+              isSendingApproval
+                ? "bg-gray-400 cursor-not-allowed"
+                : "bg-blue-600 hover:bg-blue-700"
+            }`}
+          >
+            {isSendingApproval ? "Enviando..." : "Enviar para Aprovação"}
+          </button>
         </div>
-      </Card>
+      )}
     </div>
   );
 
@@ -1630,9 +2017,7 @@ const ProjectDetails = () => {
                     Nome do Projeto
                   </h3>
                   <div className="flex items-center justify-between">
-                    <span className="text-gray-800">
-                      {formatProjectName(project.projectName)}
-                    </span>
+                    {renderProjectName(project.projectName)}
                     <FaEdit
                       className="text-blue-600 cursor-pointer hover:text-blue-700 transition-colors"
                       onClick={() => {
@@ -1690,17 +2075,22 @@ const ProjectDetails = () => {
                     Conversão Monetária
                   </h3>
                   <div className="flex items-center justify-between">
-                    <span
-                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        project.convertCurrency
-                          ? "bg-green-100 text-green-800"
-                          : "bg-red-100 text-red-800"
-                      }`}
-                    >
-                      {project.convertCurrency
-                        ? "Com Conversão"
-                        : "Sem Conversão"}
-                    </span>
+                    <div className="w-1/2 pr-2">
+                      {renderBadge(project.convertCurrency, {
+                        true: {
+                          bg: "bg-green-50",
+                          text: "text-green-700",
+                          border: "border-green-200",
+                          label: "Com Conversão",
+                        },
+                        false: {
+                          bg: "bg-red-50",
+                          text: "text-red-700",
+                          border: "border-red-200",
+                          label: "Sem Conversão",
+                        },
+                      })}
+                    </div>
                     <FaEdit
                       className="text-blue-600 cursor-pointer hover:text-blue-700 transition-colors"
                       onClick={() => {
@@ -1718,15 +2108,22 @@ const ProjectDetails = () => {
                     Prioridade
                   </h3>
                   <div className="flex items-center justify-between">
-                    <span
-                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        project.isPriority
-                          ? "bg-green-100 text-green-800"
-                          : "bg-red-100 text-red-800"
-                      }`}
-                    >
-                      {project.isPriority ? "Com Prioridade" : "Sem Prioridade"}
-                    </span>
+                    <div className="w-1/2 pr-2">
+                      {renderBadge(project.isPriority, {
+                        true: {
+                          bg: "bg-green-50",
+                          text: "text-green-700",
+                          border: "border-green-200",
+                          label: "Com Prioridade",
+                        },
+                        false: {
+                          bg: "bg-red-50",
+                          text: "text-red-700",
+                          border: "border-red-200",
+                          label: "Sem Prioridade",
+                        },
+                      })}
+                    </div>
                     <FaEdit
                       className="text-blue-600 cursor-pointer hover:text-blue-700 transition-colors"
                       onClick={() => {
@@ -1772,7 +2169,11 @@ const ProjectDetails = () => {
                     Status da tradução
                   </h3>
                   <select
-                    value={project.translation_status || "N/A"}
+                    value={
+                      typeof project.translation_status === "object"
+                        ? project.translation_status.status
+                        : project.translation_status || "N/A"
+                    }
                     onChange={(e) => handleStatusChange(e.target.value)}
                     className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-white text-gray-700 text-sm font-medium cursor-pointer transition-colors"
                   >
@@ -1792,7 +2193,11 @@ const ProjectDetails = () => {
                     Status do Projeto
                   </h3>
                   <select
-                    value={project.project_status || "Rascunho"}
+                    value={
+                      typeof project.project_status === "object"
+                        ? project.project_status.status
+                        : project.project_status || "Rascunho"
+                    }
                     onChange={(e) => handleProjectStatusChange(e.target.value)}
                     disabled={project.project_status === "Em Divergência"}
                     className={`w-full px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm font-medium transition-colors ${
