@@ -36,9 +36,11 @@ import {
   FaLanguage,
   FaProjectDiagram,
 } from "react-icons/fa";
-// import "../../styles/CommonStyles.css";
 import { getStorage, ref, getDownloadURL } from "firebase/storage";
 import debounce from "lodash/debounce";
+import ResponsiveLayout from "../../../components/ResponsiveLayout";
+import Card from "../../../components/Card";
+import PageLayout from "../../../components/PageLayout";
 
 // Componente memoizado para a linha da tabela
 const TableRow = memo(
@@ -139,17 +141,16 @@ const EditPagesTable = memo(
 );
 
 const ProjectDetails = () => {
-  const { projectId } = useParams();
-  const navigate = useNavigate();
+  const { projectId: urlProjectId } = useParams();
   const location = useLocation();
-  const [projectDetails, setProjectDetails] = useState(null);
   const [project, setProject] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [projectId, setProjectId] = useState(null);
   const [showEditNameModal, setShowEditNameModal] = useState(false);
   const [newProjectName, setNewProjectName] = useState("");
   const [link, setLink] = useState("");
   const [showDeadlineModal, setShowDeadlineModal] = useState(false);
   const [newDeadline, setNewDeadline] = useState({ date: "", time: "" });
+  const navigate = useNavigate();
   const [showEditPagesModal, setShowEditPagesModal] = useState(false);
   const [editedPages, setEditedPages] = useState({});
   const [isSendingApproval, setIsSendingApproval] = useState(false);
@@ -172,32 +173,24 @@ const ProjectDetails = () => {
   const [selectedRefundOption, setSelectedRefundOption] = useState("total");
   const [showCustomAmount, setShowCustomAmount] = useState(false);
 
-  console.log("Estado inicial do ProjectDetails:", {
-    projectId,
-    location: location.state,
-    projectDetails,
-    project,
-    loading,
-  });
-
   // Memoização dos cálculos
   const totalPages = useMemo(() => {
-    if (!projectDetails?.files) return 0;
-    return projectDetails.files.reduce((total, file) => {
+    if (!project?.files) return 0;
+    return project.files.reduce((total, file) => {
       const pageCount = parseInt(file.pageCount) || 0;
       return total + pageCount;
     }, 0);
-  }, [projectDetails?.files]);
+  }, [project?.files]);
 
   const totalValue = useMemo(() => {
-    if (!projectDetails?.files) return "0.00";
-    return projectDetails.files
+    if (!project?.files) return "0.00";
+    return project.files
       .reduce((acc, file) => {
         const fileTotal = Number(file.total) || Number(file.totalValue) || 0;
         return acc + fileTotal;
       }, 0)
       .toFixed(2);
-  }, [projectDetails?.files]);
+  }, [project?.files]);
 
   // Debounce para atualização de páginas
   const debouncedSetEditedPages = useMemo(
@@ -226,115 +219,132 @@ const ProjectDetails = () => {
     debouncedSetEditedPages.cancel();
   }, [debouncedSetEditedPages]);
 
-  const fetchProjectDetails = useCallback(async () => {
-    try {
-      setLoading(true);
+  // Efeito para inicializar o projectId
+  useEffect(() => {
+    console.log("URL Project ID:", urlProjectId);
+    console.log("Location State:", location.state);
 
-      if (!projectId) {
-        console.error("ID do projeto não encontrado");
-        setLoading(false);
-        return;
-      }
-
-      // Lista de todas as coleções possíveis
-      const collections = [
-        "b2bprojects",
-        "b2bprojectspaid",
-        "b2bapproved",
-        "b2bdocprojects",
-        "b2bapproval",
-        "b2cprojectspaid",
-        "b2cdocprojects",
-        "b2capproval",
-      ];
-
-      // Primeiro, tentar usar a coleção do estado/URL
-      const { state } = location;
-      const urlParams = new URLSearchParams(window.location.search);
-      const collectionFromUrl = urlParams.get("collection");
-      const collectionFromState = state?.collection;
-
-      let projectData = null;
-      let foundCollection = null;
-
-      // Se tivermos uma coleção específica, tentar primeiro ela
-      if (collectionFromUrl || collectionFromState) {
-        const collection = collectionFromUrl || collectionFromState;
-        console.log("Tentando coleção específica:", collection);
-
-        const projectRef = doc(getFirestore(), collection, projectId);
-        const projectDoc = await getDoc(projectRef);
-
-        if (projectDoc.exists()) {
-          projectData = projectDoc.data();
-          foundCollection = collection;
-        }
-      }
-
-      // Se não encontrou na coleção específica, procurar em todas as coleções
-      if (!projectData) {
-        for (const collection of collections) {
-          console.log("Procurando projeto na coleção:", collection);
-          const projectRef = doc(getFirestore(), collection, projectId);
-          const projectDoc = await getDoc(projectRef);
-
-          if (projectDoc.exists()) {
-            projectData = projectDoc.data();
-            foundCollection = collection;
-            break;
-          }
-        }
-      }
-
-      if (!projectData) {
-        console.error("Projeto não encontrado em nenhuma coleção");
-        setLoading(false);
-        return;
-      }
-
-      console.log("Projeto encontrado:", {
-        projectData,
-        collection: foundCollection,
-      });
-
-      setProjectDetails(projectData);
-      setProject(projectData);
-      setLoading(false);
-    } catch (error) {
-      console.error("Erro ao buscar detalhes do projeto:", error);
-      setLoading(false);
+    // Se temos o ID na URL, usamos ele
+    if (urlProjectId) {
+      setProjectId(urlProjectId);
     }
-  }, [projectId, location]);
-
-  const initializeProject = useCallback(() => {
-    console.log("useEffect disparado com:", {
-      projectId,
-      location: location.state,
-      projectDetails,
-      project,
-      loading,
-    });
-
-    if (location.state?.project) {
-      console.log("Projeto encontrado no estado:", location.state.project);
-      setProject(location.state.project);
-      setProjectDetails(location.state.project);
-      setLoading(false);
-    } else {
-      fetchProjectDetails();
+    // Se não temos na URL mas temos no estado, usamos do estado
+    else if (location.state?.project?.id) {
+      setProjectId(location.state.project.id);
     }
-  }, [
-    projectId,
-    location.state,
-    fetchProjectDetails,
-    projectDetails,
-    project,
-    loading,
-  ]);
+    // Se não temos em nenhum lugar, redirecionamos
+    else {
+      console.error("Nenhum ID de projeto encontrado");
+      navigate("/company/master/projects");
+    }
+  }, [urlProjectId, location.state, navigate]);
 
   useEffect(() => {
-    initializeProject();
-  }, [initializeProject]);
+    console.log("useEffect iniciado - projectId:", projectId);
+    console.log("Location state:", location.state);
+
+    const fetchProjectDetails = async () => {
+      try {
+        console.log("Iniciando busca de detalhes do projeto...");
+        const firestore = getFirestore();
+
+        // Verificação mais robusta do Firestore
+        if (!firestore) {
+          console.error("Firestore não está inicializado");
+          throw new Error("Firestore não está inicializado");
+        }
+
+        console.log("Firestore inicializado com sucesso");
+
+        // Se temos o estado do projeto, usamos ele diretamente
+        if (location.state?.project) {
+          console.log("Usando projeto do estado:", location.state.project);
+          setProject(location.state.project);
+          return;
+        }
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const collectionName =
+          urlParams.get("collection") || location.state?.collection;
+        console.log("Collection name:", collectionName);
+
+        if (!collectionName) {
+          console.error("Coleção não especificada na URL ou no estado");
+          navigate("/company/master/projects");
+          return;
+        }
+
+        if (!projectId) {
+          console.error("ID do projeto não disponível");
+          navigate("/company/master/projects");
+          return;
+        }
+
+        const projectRef = doc(firestore, collectionName, projectId);
+        console.log("Project ID:", projectId);
+        console.log("Project Ref:", projectRef);
+
+        const projectDoc = await getDoc(projectRef);
+        console.log("Project Doc exists:", projectDoc.exists());
+        console.log("Project Doc data:", projectDoc.data());
+
+        if (projectDoc.exists()) {
+          const projectData = {
+            ...projectDoc.data(),
+            id: projectId,
+            collection: collectionName,
+          };
+          console.log("Project Data antes de setar:", projectData);
+
+          // Verificar se os dados são válidos
+          if (!projectData || typeof projectData !== "object") {
+            console.error("Dados do projeto inválidos:", projectData);
+            throw new Error("Dados do projeto inválidos");
+          }
+
+          // Atualizar o estado diretamente
+          setProject(projectData);
+          console.log("Estado do projeto atualizado:", projectData);
+        } else {
+          console.error("Projeto não encontrado");
+          navigate("/company/master/projects");
+        }
+      } catch (error) {
+        console.error("Erro ao buscar detalhes do projeto:", error);
+        alert(
+          "Erro ao buscar detalhes do projeto. Por favor, tente novamente."
+        );
+        navigate("/company/master/projects");
+      }
+    };
+
+    // Iniciar a busca se tivermos o ID do projeto
+    if (projectId) {
+      console.log("Project ID disponível, iniciando busca...");
+      fetchProjectDetails();
+    } else {
+      console.log("Project ID não disponível");
+    }
+  }, [projectId, navigate, location.state]);
+
+  // Adicionar um useEffect para monitorar mudanças no estado do projeto
+  useEffect(() => {
+    console.log("Estado do projeto atualizado:", project);
+  }, [project]);
+
+  // Adicionar um useEffect para verificar o projectId
+  useEffect(() => {
+    console.log("Project ID atual:", projectId);
+  }, [projectId]);
+
+  // Verificar se o projeto está sendo carregado
+  useEffect(() => {
+    if (project) {
+      console.log("Projeto carregado com sucesso:", project);
+    } else {
+      console.log("Projeto ainda não carregado");
+    }
+  }, [project]);
 
   const handleShareLink = async () => {
     try {
@@ -347,19 +357,19 @@ const ProjectDetails = () => {
       }
 
       const firestore = getFirestore();
-      const projectRef = doc(firestore, projectDetails.collection, projectId);
+      const projectRef = doc(firestore, project.collection, projectId);
 
       // Criar log da alteração
       const logData = {
         timestamp: serverTimestamp(),
-        userEmail: projectDetails.userEmail,
+        userEmail: project.userEmail,
         action: "inserção de link de compartilhamento",
         details: {
           projeto: {
-            nome: projectDetails.projectName,
-            email: projectDetails.userEmail,
+            nome: project.projectName,
+            email: project.userEmail,
           },
-          linkAnterior: projectDetails.shareLink || "N/A",
+          linkAnterior: project.shareLink || "N/A",
           linkNovo: formattedLink,
         },
       };
@@ -370,7 +380,7 @@ const ProjectDetails = () => {
       await addDoc(collection(firestore, "activity_logs"), logData);
 
       alert("Link compartilhado com sucesso!");
-      setProjectDetails({ ...projectDetails, shareLink: formattedLink });
+      setProject({ ...project, shareLink: formattedLink });
       setLink(formattedLink);
     } catch (error) {
       console.error("Erro ao compartilhar o link:", error.message);
@@ -381,7 +391,7 @@ const ProjectDetails = () => {
   const handleDeadlineUpdate = async () => {
     try {
       const firestore = getFirestore();
-      const projectRef = doc(firestore, projectDetails.collection, projectId);
+      const projectRef = doc(firestore, project.collection, projectId);
 
       // Criar um objeto Date com a data e hora selecionadas
       const [year, month, day] = newDeadline.date.split("-");
@@ -417,14 +427,14 @@ const ProjectDetails = () => {
       // Criar log da alteração
       const logData = {
         timestamp: serverTimestamp(),
-        userEmail: projectDetails.userEmail,
+        userEmail: project.userEmail,
         action: "alteração de prazo do projeto",
         details: {
           projeto: {
-            nome: projectDetails.projectName,
-            email: projectDetails.userEmail,
+            nome: project.projectName,
+            email: project.userEmail,
           },
-          prazoAnterior: projectDetails.deadline || "Não definido",
+          prazoAnterior: project.deadline || "Não definido",
           prazoNovo: formattedDeadline,
         },
       };
@@ -435,7 +445,7 @@ const ProjectDetails = () => {
       await addDoc(collection(firestore, "activity_logs"), logData);
 
       // Atualizar o estado local do projeto
-      setProjectDetails((prevProject) => ({
+      setProject((prevProject) => ({
         ...prevProject,
         ...updateData,
       }));
@@ -450,19 +460,28 @@ const ProjectDetails = () => {
 
   const handleProjectNameUpdate = async () => {
     try {
+      if (!projectId || !project?.collection) {
+        console.error("ID do projeto ou coleção não disponível:", {
+          projectId,
+          collection: project?.collection,
+        });
+        alert("Erro: ID do projeto ou coleção não disponível");
+        return;
+      }
+
       const firestore = getFirestore();
-      const projectRef = doc(firestore, projectDetails.collection, projectId);
+      const projectRef = doc(firestore, project.collection, projectId);
 
       // Criar log da alteração
       const logData = {
         timestamp: serverTimestamp(),
-        userEmail: projectDetails.userEmail,
+        userEmail: project.userEmail,
         action: "alteração de nome do projeto",
         details: {
-          projeto: projectDetails.projectName,
-          nomeAnterior: projectDetails.projectName,
+          projeto: project.projectName,
+          nomeAnterior: project.projectName,
           nomeNovo: newProjectName,
-          email: projectDetails.userEmail,
+          email: project.userEmail,
         },
       };
 
@@ -473,10 +492,11 @@ const ProjectDetails = () => {
       // Adicionar log
       await addDoc(collection(firestore, "activity_logs"), logData);
 
-      setProjectDetails({
-        ...projectDetails,
+      // Atualizar o estado local
+      setProject((prevProject) => ({
+        ...prevProject,
         projectName: newProjectName,
-      });
+      }));
 
       setShowEditNameModal(false);
       alert("Nome do projeto atualizado com sucesso!");
@@ -535,12 +555,12 @@ const ProjectDetails = () => {
   const handleEditPagesSubmit = async () => {
     try {
       const firestore = getFirestore();
-      const projectRef = doc(firestore, projectDetails.collection, projectId);
+      const projectRef = doc(firestore, project.collection, projectId);
 
       // 1. Busca as taxas do usuário
       const userQuery = query(
         collection(firestore, "users"),
-        where("email", "==", projectDetails.userEmail)
+        where("email", "==", project.userEmail)
       );
       const userSnapshot = await getDocs(userQuery);
       const userData = userSnapshot.docs[0].data();
@@ -556,37 +576,34 @@ const ProjectDetails = () => {
 
       // 3. Determina o percentual de aumento baseado no tipo de usuário
       let priceIncrease = 0;
-      if (
-        projectDetails.userType === "b2b" ||
-        userData.registeredByType === "b2b"
-      ) {
+      if (project.userType === "b2b" || userData.registeredByType === "b2b") {
         priceIncrease = Number(priceData.b2bPricePercentage) / 100;
       } else if (
-        projectDetails.userType === "b2c" ||
+        project.userType === "b2c" ||
         userData.registeredByType === "b2c"
       ) {
         priceIncrease = Number(priceData.b2cPricePercentage) / 100;
       }
 
       // 4. Atualiza os arquivos com as novas páginas e valores
-      const updatedFiles = projectDetails.files.map((file, index) => {
+      const updatedFiles = project.files.map((file, index) => {
         const pageCount = editedPages[index] || file.pageCount;
         let valuePerPage = file.valuePerPage;
 
         if (!valuePerPage) {
           if (
-            projectDetails.sourceLanguage === "Português (Brasil)" &&
-            projectDetails.targetLanguage === "Inglês"
+            project.sourceLanguage === "Português (Brasil)" &&
+            project.targetLanguage === "Inglês"
           ) {
             valuePerPage = Number(userRates.pttoen);
           } else if (
-            projectDetails.sourceLanguage === "Espanhol (América Latina)" &&
-            projectDetails.targetLanguage === "Inglês"
+            project.sourceLanguage === "Espanhol (América Latina)" &&
+            project.targetLanguage === "Inglês"
           ) {
             valuePerPage = Number(userRates.esptoen);
           }
 
-          if (projectDetails.isPriority) {
+          if (project.isPriority) {
             valuePerPage = valuePerPage * (1 + priceIncrease);
           }
         }
@@ -604,25 +621,25 @@ const ProjectDetails = () => {
       // Criar log da alteração
       const logData = {
         timestamp: serverTimestamp(),
-        userEmail: projectDetails.userEmail,
+        userEmail: project.userEmail,
         action: "alteração de páginas do projeto",
         details: {
           projeto: {
-            nome: projectDetails.projectName,
-            email: projectDetails.userEmail,
+            nome: project.projectName,
+            email: project.userEmail,
           },
           arquivos: updatedFiles.map((file, index) => ({
             nome: file.name,
-            paginasAnteriores: projectDetails.files[index].pageCount,
+            paginasAnteriores: project.files[index].pageCount,
             paginasNovas: file.pageCount,
-            valorAnterior: projectDetails.files[index].total,
+            valorAnterior: project.files[index].total,
             valorNovo: file.total,
           })),
-          totalAnterior: projectDetails.totalProjectValue,
+          totalAnterior: project.totalProjectValue,
           totalNovo: newTotalProjectValue,
-          idiomaOrigem: projectDetails.sourceLanguage,
-          idiomaDestino: projectDetails.targetLanguage,
-          prazo: projectDetails.deadline,
+          idiomaOrigem: project.sourceLanguage,
+          idiomaDestino: project.targetLanguage,
+          prazo: project.deadline,
         },
       };
 
@@ -637,8 +654,8 @@ const ProjectDetails = () => {
       await addDoc(collection(firestore, "activity_logs"), logData);
 
       // 7. Atualiza o estado local
-      setProjectDetails({
-        ...projectDetails,
+      setProject({
+        ...project,
         files: updatedFiles,
         totalProjectValue: newTotalProjectValue,
       });
@@ -666,29 +683,35 @@ const ProjectDetails = () => {
 
   const updatePaymentStatus = async (newStatus, divergenceInfo = null) => {
     try {
+      if (!projectId || !project?.collection) {
+        console.error("ID do projeto ou coleção não disponível:", {
+          projectId,
+          collection: project?.collection,
+        });
+        alert("Erro: ID do projeto ou coleção não disponível");
+        return;
+      }
+
       const firestore = getFirestore();
-      const projectRef = doc(firestore, projectDetails.collection, projectId);
+      const projectRef = doc(firestore, project.collection, projectId);
 
       const isPaid = newStatus === "Pago";
 
       // Criar log da alteração
       const logData = {
         timestamp: serverTimestamp(),
-        userEmail: projectDetails.userEmail,
+        userEmail: project.userEmail,
         action: "alteração de status de pagamento",
         details: {
           projeto: {
-            nome: projectDetails.projectName,
-            email: projectDetails.userEmail,
+            nome: project.projectName,
+            email: project.userEmail,
             statusAnterior:
-              typeof projectDetails.payment_status === "object"
-                ? projectDetails.payment_status.status
-                : projectDetails.payment_status,
+              typeof project.payment_status === "object"
+                ? project.payment_status.status
+                : project.payment_status,
             statusNovo: newStatus,
-            valor:
-              projectDetails.totalProjectValue ||
-              projectDetails.totalValue ||
-              0,
+            valor: project.totalProjectValue || project.totalValue || 0,
           },
           ...(divergenceInfo && {
             divergencia: {
@@ -700,11 +723,10 @@ const ProjectDetails = () => {
       };
 
       // Determinar a coleção de destino baseado no tipo de usuário
-      let targetCollection = projectDetails.collection;
+      let targetCollection = project.collection;
       if (
         isPaid &&
-        (projectDetails.userType === "b2c" ||
-          projectDetails.registeredByType === "b2c")
+        (project.userType === "b2c" || project.registeredByType === "b2c")
       ) {
         targetCollection = "b2cprojectspaid";
       }
@@ -730,10 +752,10 @@ const ProjectDetails = () => {
         }),
       };
 
-      if (isPaid && targetCollection !== projectDetails.collection) {
+      if (isPaid && targetCollection !== project.collection) {
         const newProjectRef = doc(firestore, targetCollection, projectId);
         await setDoc(newProjectRef, {
-          ...projectDetails,
+          ...project,
           ...updateData,
         });
         await deleteDoc(projectRef);
@@ -744,10 +766,11 @@ const ProjectDetails = () => {
       // Adicionar log
       await addDoc(collection(firestore, "activity_logs"), logData);
 
-      setProjectDetails({
-        ...projectDetails,
+      // Atualizar o estado local
+      setProject((prevProject) => ({
+        ...prevProject,
         ...updateData,
-      });
+      }));
 
       setShowDivergenceModal(false);
       setDivergenceData({ pages: "", reason: "" });
@@ -772,10 +795,10 @@ const ProjectDetails = () => {
     setShowCustomAmount(option === "other");
     if (option === "total") {
       const totalValue = Number(
-        projectDetails.payment_status?.originalAmount ||
-          projectDetails.totalProjectValue ||
-          projectDetails.totalValue ||
-          calculateTotalValue(projectDetails.files)
+        project.payment_status?.originalAmount ||
+          project.totalProjectValue ||
+          project.totalValue ||
+          calculateTotalValue(project.files)
       );
       setRefundAmount(totalValue.toFixed(2));
     } else if (option === "other") {
@@ -786,13 +809,13 @@ const ProjectDetails = () => {
   const handleRefundConfirm = async () => {
     try {
       const firestore = getFirestore();
-      const projectRef = doc(firestore, projectDetails.collection, projectId);
+      const projectRef = doc(firestore, project.collection, projectId);
 
       const originalAmount = Number(
-        projectDetails.payment_status?.originalAmount ||
-          projectDetails.totalProjectValue ||
-          projectDetails.totalValue ||
-          calculateTotalValue(projectDetails.files)
+        project.payment_status?.originalAmount ||
+          project.totalProjectValue ||
+          project.totalValue ||
+          calculateTotalValue(project.files)
       );
 
       const refundData = {
@@ -812,7 +835,7 @@ const ProjectDetails = () => {
       });
 
       // Adicionar ao histórico de pagamentos
-      const paymentHistory = projectDetails.paymentHistory || [];
+      const paymentHistory = project.paymentHistory || [];
       paymentHistory.push({
         type: "refund",
         amount: Number(refundAmount) || originalAmount,
@@ -834,9 +857,9 @@ const ProjectDetails = () => {
       // Atualizar os dados do projeto
       const updatedProjectDoc = await getDoc(projectRef);
       if (updatedProjectDoc.exists()) {
-        setProjectDetails({
+        setProject({
           ...updatedProjectDoc.data(),
-          collection: projectDetails.collection,
+          collection: project.collection,
         });
       }
     } catch (error) {
@@ -847,6 +870,15 @@ const ProjectDetails = () => {
 
   const handleStatusChange = async (newStatus) => {
     try {
+      if (!projectId || !project?.collection) {
+        console.error("ID do projeto ou coleção não disponível:", {
+          projectId,
+          collection: project?.collection,
+        });
+        alert("Erro: ID do projeto ou coleção não disponível");
+        return;
+      }
+
       const firestore = getFirestore();
       const projectRef = doc(firestore, project.collection, projectId);
 
@@ -889,10 +921,10 @@ const ProjectDetails = () => {
       await addDoc(collection(firestore, "activity_logs"), logData);
 
       // Atualizar o estado local
-      setProject({
-        ...project,
+      setProject((prevProject) => ({
+        ...prevProject,
         ...updateData,
-      });
+      }));
 
       alert("Status atualizado com sucesso!");
     } catch (error) {
@@ -903,6 +935,15 @@ const ProjectDetails = () => {
 
   const handleProjectStatusChange = async (newStatus) => {
     try {
+      if (!projectId || !project?.collection) {
+        console.error("ID do projeto ou coleção não disponível:", {
+          projectId,
+          collection: project?.collection,
+        });
+        alert("Erro: ID do projeto ou coleção não disponível");
+        return;
+      }
+
       const firestore = getFirestore();
       const projectRef = doc(firestore, project.collection, projectId);
 
@@ -916,7 +957,7 @@ const ProjectDetails = () => {
         ...(newStatus === "Cancelado" && { translation_status: "Cancelado" }),
       };
 
-      console.log("Status sendo atualizado:", updateData); // Para debug
+      console.log("Status sendo atualizado:", updateData);
 
       await updateDoc(projectRef, updateData);
 
@@ -937,10 +978,11 @@ const ProjectDetails = () => {
         },
       });
 
-      setProject({
-        ...project,
+      // Atualizar o estado local
+      setProject((prevProject) => ({
+        ...prevProject,
         ...updateData,
-      });
+      }));
 
       alert("Status do projeto atualizado com sucesso!");
     } catch (error) {
@@ -954,14 +996,9 @@ const ProjectDetails = () => {
       setIsSendingApproval(true);
 
       // Verifica se há contagem de páginas zerada
-      const hasZeroPages = project?.files?.some((file) => {
-        const fileIndex = Array.isArray(project.files)
-          ? project.files.indexOf(file)
-          : -1;
+      const hasZeroPages = project.files.some((file) => {
         const pageCount =
-          fileIndex !== -1
-            ? editedPages[fileIndex] || file.pageCount
-            : file.pageCount;
+          editedPages[project.files.indexOf(file)] || file.pageCount;
         return !pageCount || pageCount <= 0;
       });
 
@@ -1205,6 +1242,15 @@ const ProjectDetails = () => {
 
   const handleConvertCurrencyUpdate = async () => {
     try {
+      if (!projectId || !project?.collection) {
+        console.error("ID do projeto ou coleção não disponível:", {
+          projectId,
+          collection: project?.collection,
+        });
+        alert("Erro: ID do projeto ou coleção não disponível");
+        return;
+      }
+
       const firestore = getFirestore();
       const projectRef = doc(firestore, project.collection, projectId);
 
@@ -1232,10 +1278,10 @@ const ProjectDetails = () => {
       await updateDoc(projectRef, updateData);
       await addDoc(collection(firestore, "activity_logs"), logData);
 
-      // Atualizar o estado do projeto com o novo valor
+      // Atualizar o estado local
       setProject((prevProject) => ({
         ...prevProject,
-        convertCurrency: newConvertCurrency,
+        ...updateData,
       }));
 
       setShowConvertCurrencyModal(false);
@@ -1248,6 +1294,15 @@ const ProjectDetails = () => {
 
   const handlePriorityUpdate = async () => {
     try {
+      if (!projectId || !project?.collection) {
+        console.error("ID do projeto ou coleção não disponível:", {
+          projectId,
+          collection: project?.collection,
+        });
+        alert("Erro: ID do projeto ou coleção não disponível");
+        return;
+      }
+
       const firestore = getFirestore();
       const projectRef = doc(firestore, project.collection, projectId);
 
@@ -1275,6 +1330,7 @@ const ProjectDetails = () => {
       await updateDoc(projectRef, updateData);
       await addDoc(collection(firestore, "activity_logs"), logData);
 
+      // Atualizar o estado local
       setProject((prevProject) => ({
         ...prevProject,
         ...updateData,
@@ -1290,6 +1346,15 @@ const ProjectDetails = () => {
 
   const handleSourceLanguageUpdate = async () => {
     try {
+      if (!projectId || !project?.collection) {
+        console.error("ID do projeto ou coleção não disponível:", {
+          projectId,
+          collection: project?.collection,
+        });
+        alert("Erro: ID do projeto ou coleção não disponível");
+        return;
+      }
+
       const firestore = getFirestore();
       const projectRef = doc(firestore, project.collection, projectId);
 
@@ -1315,6 +1380,7 @@ const ProjectDetails = () => {
       await updateDoc(projectRef, updateData);
       await addDoc(collection(firestore, "activity_logs"), logData);
 
+      // Atualizar o estado local
       setProject((prevProject) => ({
         ...prevProject,
         ...updateData,
@@ -1373,86 +1439,190 @@ const ProjectDetails = () => {
       .toFixed(2);
   };
 
-  if (loading) {
-    console.log("Estado durante o carregamento:", {
-      loading,
-      projectId,
-      projectDetails,
-      project,
-      location: location.state,
-    });
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
-          <p className="mt-4 text-gray-600">
-            Carregando detalhes do projeto...
-          </p>
-        </div>
+  // Função para formatar o nome do projeto
+  const formatProjectName = (name) => {
+    if (!name) return "Sem Nome";
+    return name.length > 15 ? `${name.slice(0, 15)}...` : name;
+  };
+
+  const renderMobileView = () => (
+    <div className="w-full p-4 space-y-4">
+      <div className="flex items-center mb-4">
+        <button
+          onClick={() => navigate(-1)}
+          className="flex items-center text-blue-600 hover:text-blue-800"
+        >
+          <IoIosArrowBack size={24} className="mr-2" />
+          <span className="text-lg font-semibold">Voltar</span>
+        </button>
       </div>
-    );
-  }
 
-  if (!projectDetails) {
-    console.log("Estado quando o projeto não é encontrado:", {
-      loading,
-      projectId,
-      projectDetails,
-      project,
-      location: location.state,
-    });
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <p className="text-red-500">Projeto não encontrado</p>
-          <button
-            onClick={() => navigate(-1)}
-            className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-          >
-            Voltar
-          </button>
+      <Card title="Informações do Projeto" color="blue" className="mb-4">
+        <div className="space-y-4">
+          <div className="flex justify-between items-center">
+            <span className="text-gray-600">Nome do Projeto:</span>
+            <div className="flex items-center gap-2">
+              <span className="text-gray-800">
+                {formatProjectName(project.projectName)}
+              </span>
+              <FaEdit
+                className="text-blue-600 cursor-pointer"
+                onClick={() => {
+                  setNewProjectName(project.projectName || "");
+                  setShowEditNameModal(true);
+                }}
+              />
+            </div>
+          </div>
+
+          <div className="flex justify-between items-center">
+            <span className="text-gray-600">Cliente:</span>
+            <span className="text-gray-800">{project.userEmail}</span>
+          </div>
+
+          <div className="flex justify-between items-center">
+            <span className="text-gray-600">Língua de Origem:</span>
+            <div className="flex items-center gap-2">
+              <span className="text-gray-800">
+                {project.sourceLanguage || "N/A"}
+              </span>
+              <FaEdit
+                className="text-blue-600 cursor-pointer"
+                onClick={() => {
+                  setNewSourceLanguage(project.sourceLanguage || "");
+                  setShowSourceLanguageModal(true);
+                }}
+              />
+            </div>
+          </div>
+
+          <div className="flex justify-between items-center">
+            <span className="text-gray-600">Língua de Destino:</span>
+            <span className="text-gray-800">
+              {project.targetLanguage || "N/A"}
+            </span>
+          </div>
         </div>
-      </div>
-    );
-  }
+      </Card>
 
-  console.log("Estado quando o projeto é encontrado:", {
-    loading,
-    projectId,
-    projectDetails,
-    project,
-    location: location.state,
-  });
+      <Card title="Informações Financeiras" color="green" className="mb-4">
+        <div className="space-y-4">
+          <div className="flex justify-between items-center">
+            <span className="text-gray-600">Status de Pagamento:</span>
+            <select
+              value={
+                typeof project.payment_status === "object"
+                  ? project.payment_status.status
+                  : project.payment_status || "Pendente"
+              }
+              onChange={(e) => handlePaymentStatusChange(e.target.value)}
+              className="px-3 py-1 rounded border border-gray-300"
+            >
+              <option value="Pendente">Pendente</option>
+              <option value="Pago">Pago</option>
+              <option value="Divergência">Divergência</option>
+              <option value="Reembolsado">Reembolsado</option>
+              <option value="Em Reembolso">Em Reembolso</option>
+            </select>
+          </div>
 
-  return (
-    <div className="w-full max-w-[1200px] mx-auto p-2 md:p-8 space-y-4 md:space-y-8">
-      <div className="glass-card bg-white rounded-xl shadow-lg p-3 md:p-6">
+          <div className="flex justify-between items-center">
+            <span className="text-gray-600">Valor Total:</span>
+            <span className="text-gray-800 font-semibold">U$ {totalValue}</span>
+          </div>
+        </div>
+      </Card>
+
+      <Card title="Arquivos" color="blue" className="mb-4">
+        <div className="space-y-4">
+          {project.files.map((file, index) => (
+            <div
+              key={index}
+              className="border-b border-gray-200 pb-4 last:border-0"
+            >
+              <div className="flex justify-between items-center mb-2">
+                <span
+                  className="text-blue-600 cursor-pointer"
+                  onClick={async () => {
+                    try {
+                      const url = await getFileDownloadUrl(file.fileUrl);
+                      window.open(url, "_blank");
+                    } catch (error) {
+                      console.error("Erro ao abrir arquivo:", error);
+                      alert(
+                        "Erro ao acessar o arquivo. Por favor, tente novamente."
+                      );
+                    }
+                  }}
+                >
+                  {file.name}
+                </span>
+                <span className="text-gray-600">{file.pageCount} páginas</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-gray-600">Valor:</span>
+                <span className="text-gray-800">
+                  U$ {(Number(file.valuePerPage) || 0).toFixed(2)}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </Card>
+
+      <Card title="Histórico de Movimentações" color="blue">
+        <div className="space-y-4 max-h-[400px] overflow-y-auto">
+          {activityLogs.map((log, index) => (
+            <div
+              key={index}
+              className="border-b border-gray-200 pb-4 last:border-0"
+            >
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-sm text-gray-500">
+                  {log.timestamp?.toDate().toLocaleString("pt-BR")}
+                </span>
+                <span className="text-sm text-gray-600">{log.userEmail}</span>
+              </div>
+              <div className="text-sm text-gray-800">{log.action}</div>
+              <div className="text-sm text-gray-600 mt-1">
+                {JSON.stringify(log.details, null, 2)}
+              </div>
+            </div>
+          ))}
+        </div>
+      </Card>
+    </div>
+  );
+
+  const renderDesktopView = () => (
+    <div className="w-full max-w-[1200px] mx-auto p-8 space-y-8">
+      <div className="glass-card bg-white rounded-xl shadow-lg p-6">
         {/* Header com Botão Voltar e Título */}
-        <div className="flex flex-col md:flex-row items-center mb-4 md:mb-6 relative">
+        <div className="flex items-center mb-6 relative">
           <div
-            className="flex items-center cursor-pointer hover:text-blue-600 transition-colors mb-4 md:mb-0 md:absolute md:left-0 self-start"
+            className="flex items-center cursor-pointer hover:text-blue-600 transition-colors absolute left-0"
             onClick={() => navigate(-1)}
           >
             <IoIosArrowBack size={24} className="mr-2" />
             <span className="text-lg font-semibold">Voltar</span>
           </div>
 
-          <h1 className="text-2xl md:text-3xl font-bold flex-1 text-center bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
+          <h1 className="text-3xl font-bold flex-1 text-center bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
             Detalhes do Projeto
           </h1>
         </div>
 
         {/* Container Principal */}
-        <div className="bg-white rounded-xl shadow-sm p-4 md:p-6 space-y-4 md:space-y-8">
+        <div className="bg-white rounded-xl shadow-sm p-6 space-y-8">
           {/* Grid de Informações Básicas */}
-          <div className="flex flex-col md:flex-row gap-4 md:gap-8">
+          <div className="flex gap-8">
             {/* Primeira Div - Informações do Projeto */}
-            <div className="w-full md:w-2/3 bg-gray-50 rounded-xl p-4 md:p-6 space-y-4 md:space-y-8">
-              <h3 className="text-base md:text-lg font-semibold text-gray-700 border-b pb-2 flex items-center gap-2">
+            <div className="w-2/3 bg-gray-50 rounded-xl p-6 space-y-8">
+              <h3 className="text-lg font-semibold text-gray-700 border-b pb-2 flex items-center gap-2">
                 <FaInfoCircle className="text-blue-600" />
                 Informações do Projeto
               </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-4">
                 {/* Nome do Projeto */}
                 <div className="bg-white p-3 rounded-lg shadow-sm h-[85px]">
                   <h3 className="text-sm font-semibold text-gray-700 mb-2 border-b pb-1 flex items-center gap-2">
@@ -1461,7 +1631,7 @@ const ProjectDetails = () => {
                   </h3>
                   <div className="flex items-center justify-between">
                     <span className="text-gray-800">
-                      {project.projectName || "Sem Nome"}
+                      {formatProjectName(project.projectName)}
                     </span>
                     <FaEdit
                       className="text-blue-600 cursor-pointer hover:text-blue-700 transition-colors"
@@ -1646,8 +1816,8 @@ const ProjectDetails = () => {
             </div>
 
             {/* Segunda Div - Informações Financeiras */}
-            <div className="w-full md:w-1/3 bg-green-50 rounded-xl p-4 md:p-6 space-y-4 md:space-y-8">
-              <h3 className="text-base md:text-lg font-semibold text-gray-700 border-b pb-2 flex items-center gap-2">
+            <div className="w-1/3 bg-green-50 rounded-xl p-6 space-y-8">
+              <h3 className="text-lg font-semibold text-gray-700 border-b pb-2 flex items-center gap-2">
                 <FaMoneyBillWave className="text-green-600" />
                 Informações Financeiras
               </h3>
@@ -1763,21 +1933,21 @@ const ProjectDetails = () => {
             ? project.payment_status.status === "Pago"
             : project.payment_status === "Pago") &&
             project.project_status === "Finalizado" && (
-              <div className="bg-white rounded-xl p-4 md:p-6 space-y-4 border border-gray-200">
-                <h3 className="text-base md:text-lg font-semibold text-gray-700">
+              <div className="bg-white rounded-xl p-6 space-y-4 border border-gray-200">
+                <h3 className="text-lg font-semibold text-gray-700">
                   Link do Projeto
                 </h3>
-                <div className="flex flex-col md:flex-row gap-4 items-center">
+                <div className="flex gap-4 items-center">
                   <input
                     type="text"
                     value={link}
                     onChange={(e) => setLink(e.target.value)}
                     placeholder="Insira o link do projeto"
-                    className="w-full md:flex-1 px-4 py-2 rounded-lg border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
+                    className="flex-1 px-4 py-2 rounded-lg border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
                   />
                   <button
                     onClick={handleShareLink}
-                    className="w-full md:w-[250px] px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                    className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors w-[250px]"
                   >
                     Compartilhar
                   </button>
@@ -1800,7 +1970,7 @@ const ProjectDetails = () => {
 
           {/* Seção de Arquivos */}
           <div className="space-y-4">
-            <h2 className="text-xl md:text-2xl font-semibold text-blue-600 flex items-center gap-2">
+            <h2 className="text-2xl font-semibold text-blue-600 flex items-center gap-2">
               <FaFileAlt className="text-blue-600" />
               Arquivos
             </h2>
@@ -1808,10 +1978,10 @@ const ProjectDetails = () => {
               <table className="w-full">
                 <thead className="bg-white border-b border-gray-200">
                   <tr>
-                    <th className="px-4 md:px-6 py-3 text-left text-sm font-semibold text-gray-600">
+                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-600">
                       Nome do Arquivo
                     </th>
-                    <th className="px-4 md:px-6 py-3 text-center text-sm font-semibold text-gray-600">
+                    <th className="px-6 py-3 text-center text-sm font-semibold text-gray-600">
                       <div className="flex items-center justify-center gap-2">
                         Páginas
                         {(project.collection === "b2bdocprojects" ||
@@ -1832,13 +2002,13 @@ const ProjectDetails = () => {
                         )}
                       </div>
                     </th>
-                    <th className="px-4 md:px-6 py-3 text-center text-sm font-semibold text-gray-600">
+                    <th className="px-6 py-3 text-center text-sm font-semibold text-gray-600">
                       Língua de Origem
                     </th>
-                    <th className="px-4 md:px-6 py-3 text-center text-sm font-semibold text-gray-600">
+                    <th className="px-6 py-3 text-center text-sm font-semibold text-gray-600">
                       Língua de Destino
                     </th>
-                    <th className="px-4 md:px-6 py-3 text-right text-sm font-semibold text-gray-600">
+                    <th className="px-6 py-3 text-right text-sm font-semibold text-gray-600">
                       Valor (U$)
                     </th>
                   </tr>
@@ -1849,7 +2019,7 @@ const ProjectDetails = () => {
                       key={`${index}-${file.name}`}
                       className="hover:bg-gray-50 transition-colors"
                     >
-                      <td className="px-4 md:px-6 py-4">
+                      <td className="px-6 py-4">
                         <span
                           onClick={async () => {
                             try {
@@ -1869,16 +2039,16 @@ const ProjectDetails = () => {
                           {file.name}
                         </span>
                       </td>
-                      <td className="px-4 md:px-6 py-4 text-center">
+                      <td className="px-6 py-4 text-center">
                         {file.pageCount}
                       </td>
-                      <td className="px-4 md:px-6 py-4 text-center">
+                      <td className="px-6 py-4 text-center">
                         {project.sourceLanguage || "N/A"}
                       </td>
-                      <td className="px-4 md:px-6 py-4 text-center">
+                      <td className="px-6 py-4 text-center">
                         {project.targetLanguage || "N/A"}
                       </td>
-                      <td className="px-4 md:px-6 py-4 text-right">
+                      <td className="px-6 py-4 text-right">
                         U$ {(Number(file.valuePerPage) || 0).toFixed(2)}
                       </td>
                     </tr>
@@ -1888,7 +2058,7 @@ const ProjectDetails = () => {
             </div>
 
             {/* Totais */}
-            <div className="flex flex-col md:flex-row justify-between items-center px-4 md:px-6 py-4 bg-white rounded-xl border border-gray-200 gap-2">
+            <div className="flex justify-between items-center px-6 py-4 bg-white rounded-xl border border-gray-200">
               <p className="text-gray-700 font-medium">
                 <strong>Total de Páginas:</strong> {totalPages}
               </p>
@@ -1899,465 +2069,6 @@ const ProjectDetails = () => {
           </div>
         </div>
       </div>
-
-      {/* Modal de Edição de Prazo */}
-      {showDeadlineModal && (
-        <div
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            width: "100%",
-            height: "100%",
-            backgroundColor: "rgba(0,0,0,0.5)",
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            zIndex: 1000,
-          }}
-        >
-          <div
-            style={{
-              backgroundColor: "#fff",
-              padding: "20px",
-              borderRadius: "10px",
-              boxShadow: "0 4px 8px rgba(0, 0, 0, 0.2)",
-              width: "400px",
-              textAlign: "center",
-            }}
-          >
-            <h3
-              style={{
-                marginTop: "0px",
-                backgroundColor: "lightblue",
-                padding: "10px",
-                borderRadius: "5px",
-                textAlign: "center",
-              }}
-            >
-              Alterar Prazo
-            </h3>
-
-            <div
-              style={{
-                margin: "20px auto",
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                gap: "15px",
-                width: "fit-content",
-              }}
-            >
-              <div style={{ textAlign: "center", width: "100%" }}>
-                <label
-                  style={{
-                    display: "block",
-                    marginBottom: "5px",
-                    textAlign: "center",
-                  }}
-                >
-                  Data:
-                </label>
-                <input
-                  type="date"
-                  value={newDeadline.date}
-                  min={getMinDate()}
-                  onChange={(e) => {
-                    const selectedDate = new Date(e.target.value + "T00:00:00");
-                    const day = selectedDate.getDay();
-
-                    if (day !== 0 && day !== 6) {
-                      // 0 = Domingo, 6 = Sábado
-                      setNewDeadline((prev) => ({
-                        ...prev,
-                        date: e.target.value,
-                      }));
-                    } else {
-                      alert("Não é possível selecionar sábados ou domingos.");
-                    }
-                  }}
-                  data-days-disabled={disableWeekends()}
-                  style={{
-                    width: "200px",
-                    padding: "10px",
-                    borderRadius: "5px",
-                    border: "1px solid #ddd",
-                    margin: "0 auto",
-                  }}
-                />
-              </div>
-              <div style={{ textAlign: "center", width: "100%" }}>
-                <label
-                  style={{
-                    display: "block",
-                    marginBottom: "5px",
-                    textAlign: "center",
-                  }}
-                >
-                  Hora:
-                </label>
-                <input
-                  type="time"
-                  value={newDeadline.time}
-                  onChange={(e) =>
-                    setNewDeadline((prev) => ({
-                      ...prev,
-                      time: e.target.value,
-                    }))
-                  }
-                  style={{
-                    width: "200px",
-                    padding: "10px",
-                    borderRadius: "5px",
-                    border: "1px solid #ddd",
-                    margin: "0 auto",
-                  }}
-                />
-              </div>
-            </div>
-
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "center",
-                marginTop: "20px",
-                gap: "50px",
-              }}
-            >
-              <button
-                onClick={() => {
-                  handleDeadlineUpdate();
-                }}
-                style={{
-                  padding: "5px 10px",
-                  backgroundColor: "#E0F7FA",
-                  border: "1px solid grey",
-                  borderRadius: "20px",
-                  cursor: "pointer",
-                  boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
-                  color: "black",
-                }}
-              >
-                Salvar
-              </button>
-              <button
-                onClick={() => setShowDeadlineModal(false)}
-                style={{
-                  padding: "5px 10px",
-                  backgroundColor: "#E0F7FA",
-                  border: "1px solid grey",
-                  borderRadius: "20px",
-                  cursor: "pointer",
-                  boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
-                  color: "black",
-                }}
-              >
-                Cancelar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Modal de Edição do Nome do Projeto */}
-      {showEditNameModal && (
-        <div
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            width: "100%",
-            height: "100%",
-            backgroundColor: "rgba(0,0,0,0.5)",
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            zIndex: 1000,
-          }}
-        >
-          <div
-            style={{
-              backgroundColor: "#fff",
-              padding: "20px",
-              borderRadius: "10px",
-              boxShadow: "0 4px 8px rgba(0, 0, 0, 0.2)",
-              width: "400px",
-              textAlign: "center",
-            }}
-          >
-            <h3
-              style={{
-                marginTop: "0px",
-                backgroundColor: "lightblue",
-                padding: "10px",
-                borderRadius: "5px",
-                textAlign: "center",
-              }}
-            >
-              Editar Nome do Projeto
-            </h3>
-
-            <div
-              style={{
-                margin: "20px auto",
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                gap: "15px",
-                width: "fit-content",
-              }}
-            >
-              <input
-                type="text"
-                value={newProjectName}
-                onChange={(e) => setNewProjectName(e.target.value)}
-                placeholder="Digite o novo nome do projeto"
-                style={{
-                  width: "300px",
-                  padding: "10px",
-                  borderRadius: "5px",
-                  border: "1px solid #ddd",
-                }}
-              />
-            </div>
-
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "center",
-                marginTop: "20px",
-                gap: "50px",
-              }}
-            >
-              <button
-                onClick={handleProjectNameUpdate}
-                style={{
-                  padding: "5px 10px",
-                  backgroundColor: "#E0F7FA",
-                  border: "1px solid grey",
-                  borderRadius: "20px",
-                  cursor: "pointer",
-                  boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
-                  color: "black",
-                }}
-              >
-                Salvar
-              </button>
-              <button
-                onClick={() => setShowEditNameModal(false)}
-                style={{
-                  padding: "5px 10px",
-                  backgroundColor: "#E0F7FA",
-                  border: "1px solid grey",
-                  borderRadius: "20px",
-                  cursor: "pointer",
-                  boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
-                  color: "black",
-                }}
-              >
-                Cancelar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Modal de Edição de Páginas */}
-      {showEditPagesModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-          <div className="bg-white rounded-lg p-6 w-11/12 max-w-4xl max-h-[90vh] overflow-y-auto">
-            <h3 className="text-xl font-semibold mb-4">
-              Editar Número de Páginas
-            </h3>
-            <EditPagesTable
-              files={project.files}
-              editedPages={editedPages}
-              onPageChange={handlePageChange}
-              sourceLanguage={project.sourceLanguage}
-              targetLanguage={project.targetLanguage}
-              getFileDownloadUrl={getFileDownloadUrl}
-            />
-            <div className="flex justify-end gap-4 mt-4">
-              <button
-                onClick={handleEditPagesSubmit}
-                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-                disabled={isSendingApproval}
-              >
-                Salvar
-              </button>
-              <button
-                onClick={handleSendToApproval}
-                className={`px-4 py-2 text-white rounded ${
-                  isSendingApproval
-                    ? "bg-gray-400 cursor-not-allowed"
-                    : "bg-green-600 hover:bg-green-700"
-                }`}
-                disabled={isSendingApproval}
-              >
-                {isSendingApproval ? "Aguardando envio..." : "Enviar Aprovação"}
-              </button>
-              <button
-                onClick={handleCloseEditPagesModal}
-                className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
-                disabled={isSendingApproval}
-              >
-                Cancelar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Modal de Divergência */}
-      {showDivergenceModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-          <div className="bg-white rounded-lg p-6 w-[500px]">
-            <h3 className="text-xl font-semibold mb-4">
-              Informações da Divergência
-            </h3>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Quantidade Total de Páginas Faltando
-                </label>
-                <input
-                  type="number"
-                  value={divergenceData.pages}
-                  onChange={(e) =>
-                    setDivergenceData((prev) => ({
-                      ...prev,
-                      pages: e.target.value,
-                    }))
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Digite a quantidade de páginas"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Motivo da Divergência(Informação a ser enviada ao cliente.)
-                </label>
-                <textarea
-                  value={divergenceData.reason}
-                  onChange={(e) =>
-                    setDivergenceData((prev) => ({
-                      ...prev,
-                      reason: e.target.value,
-                    }))
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  rows="3"
-                  placeholder="Digite o motivo da divergência"
-                />
-              </div>
-            </div>
-            <div className="flex justify-end gap-3 mt-6">
-              <button
-                onClick={() => {
-                  setShowDivergenceModal(false);
-                }}
-                className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleDivergenceConfirm}
-                className="px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700"
-              >
-                Confirmar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Modal de Reembolso */}
-      {showRefundModal && (
-        <div className="fixed top-0 left-0 w-full h-full bg-black bg-opacity-50 flex justify-center items-center z-50">
-          <div className="bg-white p-5 rounded-lg shadow-lg w-[500px] text-center">
-            <h3 className="mt-0 bg-blue-200 p-2 rounded text-center">
-              Registrar Valor de Reembolso
-            </h3>
-
-            <div className="my-5 flex flex-col items-center gap-3 w-full">
-              <div className="w-full">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Valor Total do Projeto
-                </label>
-                <div className="text-lg font-semibold text-gray-800 mb-4">
-                  U${" "}
-                  {Number(
-                    project.totalProjectValue ||
-                      project.totalValue ||
-                      calculateTotalValue(project.files)
-                  ).toFixed(2)}
-                </div>
-              </div>
-
-              <div className="w-full">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Valor do Reembolso
-                </label>
-                <select
-                  value={selectedRefundOption}
-                  onChange={handleRefundOptionChange}
-                  className="w-[350px] mx-auto p-2 rounded border border-gray-300"
-                >
-                  <option value="total">Valor Total</option>
-                  <option value="other">Outro Valor</option>
-                </select>
-              </div>
-
-              {showCustomAmount && (
-                <div className="w-full">
-                  <input
-                    type="number"
-                    value={refundAmount}
-                    onChange={(e) => setRefundAmount(e.target.value)}
-                    placeholder="Digite o valor do reembolso"
-                    className="w-full p-2 rounded border border-gray-300"
-                    step="0.01"
-                    min="0"
-                  />
-                </div>
-              )}
-
-              <div className="w-full">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Motivo do Reembolso
-                </label>
-                <textarea
-                  value={refundReason}
-                  onChange={(e) => setRefundReason(e.target.value)}
-                  placeholder="Descreva o motivo do reembolso"
-                  className="w-full p-2 rounded border border-gray-300 h-24"
-                />
-              </div>
-            </div>
-
-            <div className="flex justify-center mt-5 gap-12">
-              <button
-                onClick={handleRefundConfirm}
-                className="px-3 py-1 bg-blue-500 border-none rounded-full cursor-pointer shadow-sm text-white"
-              >
-                Confirmar
-              </button>
-              <button
-                onClick={() => {
-                  setShowRefundModal(false);
-                  setRefundAmount("");
-                  setRefundReason("");
-                  setSelectedRefundOption("total");
-                  setShowCustomAmount(false);
-                }}
-                className="px-3 py-1 bg-red-500 border-none rounded-full cursor-pointer shadow-sm text-white"
-              >
-                Cancelar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Histórico de Movimentações */}
       <div className="glass-card bg-white rounded-xl shadow-lg p-6">
@@ -2415,363 +2126,7 @@ const ProjectDetails = () => {
                     </span>
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-500">
-                    {log.action === "pagamento realizado" && (
-                      <div className="space-y-1">
-                        <div className="flex flex-wrap gap-x-2">
-                          <span className="font-medium">Projeto:</span>
-                          <span>{log.details?.projeto || "Não informado"}</span>
-                          <span className="font-medium">Valor:</span>
-                          <span className="text-green-600">
-                            R$ {log.details?.valor || "0.00"}
-                          </span>
-                          <span className="font-medium">Status:</span>
-                          <span className="text-green-600">
-                            {log.details?.status || "sucesso"}
-                          </span>
-                        </div>
-                      </div>
-                    )}
-                    {log.action === "criação de projeto" && (
-                      <div className="space-y-1">
-                        <div className="flex flex-wrap gap-x-2">
-                          <span className="font-medium">Projeto:</span>
-                          <span>{log.details?.projeto || "Não informado"}</span>
-                          <span className="font-medium">Tipo:</span>
-                          <span>
-                            {log.details?.tipoArquivo || "Não informado"}
-                          </span>
-                        </div>
-                        <div className="flex flex-wrap gap-x-2">
-                          <span className="font-medium">Páginas:</span>
-                          <span>
-                            {log.details?.quantidadePaginas || "Não informado"}
-                          </span>
-                          <span className="font-medium">Valor:</span>
-                          <span className="text-green-600">
-                            R$ {log.details?.valorTotal || "0.00"}
-                          </span>
-                        </div>
-                        <div className="flex flex-wrap gap-x-2">
-                          <span className="font-medium">Origem:</span>
-                          <span>
-                            {log.details?.idiomaOrigem || "Não informado"}
-                          </span>
-                          <span className="font-medium">Destino:</span>
-                          <span>
-                            {log.details?.idiomaDestino || "Não informado"}
-                          </span>
-                        </div>
-                      </div>
-                    )}
-                    {log.action === "alteração de status do projeto" && (
-                      <div className="space-y-1">
-                        <div className="flex flex-wrap gap-x-2">
-                          <span className="font-medium">Projeto:</span>
-                          <span>
-                            {log.details?.projeto?.nome || "Não informado"}
-                          </span>
-                        </div>
-                        <div className="flex flex-wrap gap-x-2">
-                          <span className="font-medium">Status Anterior:</span>
-                          <span className="text-yellow-600">
-                            {log.details?.projeto?.statusAnterior || "N/A"}
-                          </span>
-                          <span className="font-medium">Status Novo:</span>
-                          <span className="text-green-600">
-                            {log.details?.projeto?.statusNovo || "N/A"}
-                          </span>
-                        </div>
-                        <div className="flex flex-wrap gap-x-2">
-                          <span className="font-medium">
-                            Status Tradução Anterior:
-                          </span>
-                          <span className="text-yellow-600">
-                            {log.details?.projeto?.statusTraducaoAnterior ||
-                              "N/A"}
-                          </span>
-                          <span className="font-medium">
-                            Status Tradução Novo:
-                          </span>
-                          <span className="text-green-600">
-                            {log.details?.projeto?.statusTraducaoNovo || "N/A"}
-                          </span>
-                        </div>
-                      </div>
-                    )}
-                    {log.action === "alteração de prazo do projeto" && (
-                      <div className="space-y-1">
-                        <div className="flex flex-wrap gap-x-2">
-                          <span className="font-medium">Projeto:</span>
-                          <span>
-                            {log.details?.projeto?.nome || "Não informado"}
-                          </span>
-                        </div>
-                        <div className="flex flex-wrap gap-x-2">
-                          <span className="font-medium">Prazo Anterior:</span>
-                          <span className="text-yellow-600">
-                            {log.details?.prazoAnterior || "Não informado"}
-                          </span>
-                          <span className="font-medium">Prazo Novo:</span>
-                          <span className="text-green-600">
-                            {log.details?.prazoNovo || "Não informado"}
-                          </span>
-                        </div>
-                      </div>
-                    )}
-                    {log.action === "alteração de nome do projeto" && (
-                      <div className="space-y-1">
-                        <div className="flex flex-wrap gap-x-2">
-                          <span className="font-medium">Nome Anterior:</span>
-                          <span className="text-yellow-600">
-                            {log.details?.nomeAnterior || "Não informado"}
-                          </span>
-                          <span className="font-medium">Nome Novo:</span>
-                          <span className="text-green-600">
-                            {log.details?.nomeNovo || "Não informado"}
-                          </span>
-                        </div>
-                      </div>
-                    )}
-                    {log.action === "alteração de status de tradução" && (
-                      <div className="space-y-1">
-                        <div className="flex flex-wrap gap-x-2">
-                          <span className="font-medium">Projeto:</span>
-                          <span>
-                            {log.details?.projeto?.nome || "Não informado"}
-                          </span>
-                        </div>
-                        <div className="flex flex-wrap gap-x-2">
-                          <span className="font-medium">Status Anterior:</span>
-                          <span className="text-yellow-600">
-                            {log.details?.projeto?.statusAnterior || "N/A"}
-                          </span>
-                          <span className="font-medium">Status Novo:</span>
-                          <span className="text-green-600">
-                            {log.details?.projeto?.statusNovo || "N/A"}
-                          </span>
-                        </div>
-                        <div className="flex flex-wrap gap-x-2">
-                          <span className="font-medium">
-                            Status Projeto Anterior:
-                          </span>
-                          <span className="text-yellow-600">
-                            {log.details?.projeto?.statusProjetoAnterior ||
-                              "N/A"}
-                          </span>
-                          <span className="font-medium">
-                            Status Projeto Novo:
-                          </span>
-                          <span className="text-green-600">
-                            {log.details?.projeto?.statusProjetoNovo || "N/A"}
-                          </span>
-                        </div>
-                      </div>
-                    )}
-                    {log.action === "inserção de link de compartilhamento" && (
-                      <div className="space-y-1">
-                        <div className="flex flex-wrap gap-x-2">
-                          <span className="font-medium">Projeto:</span>
-                          <span>
-                            {log.details?.projeto?.nome || "Não informado"}
-                          </span>
-                        </div>
-                        <div className="flex flex-wrap gap-x-2">
-                          <span className="font-medium">Link Anterior:</span>
-                          <span className="text-yellow-600">
-                            {log.details?.linkAnterior || "N/A"}
-                          </span>
-                          <span className="font-medium">Link Novo:</span>
-                          <span className="text-green-600">
-                            {log.details?.linkNovo || "N/A"}
-                          </span>
-                        </div>
-                      </div>
-                    )}
-                    {log.action === "envio para aprovação" && (
-                      <div className="space-y-1">
-                        <div className="flex flex-wrap gap-x-2">
-                          <span className="font-medium">Projeto:</span>
-                          <span>
-                            {log.details?.projeto?.nome || "Não informado"}
-                          </span>
-                        </div>
-                        <div className="flex flex-wrap gap-x-2">
-                          <span className="font-medium">Arquivos:</span>
-                          <span>
-                            {log.details?.arquivos?.map((file, index) => (
-                              <div
-                                key={index}
-                                className="flex flex-wrap gap-x-2"
-                              >
-                                <span className="font-medium">Nome:</span>
-                                <span>{file.nome || "Não informado"}</span>
-                                <span className="font-medium">
-                                  Páginas Anteriores:
-                                </span>
-                                <span className="text-yellow-600">
-                                  {file.paginasAnteriores || "N/A"}
-                                </span>
-                                <span className="font-medium">
-                                  Páginas Novas:
-                                </span>
-                                <span className="text-green-600">
-                                  {file.paginasNovas || "N/A"}
-                                </span>
-                                <span className="font-medium">
-                                  Valor Anterior:
-                                </span>
-                                <span className="text-yellow-600">
-                                  U$ {file.valorAnterior?.toFixed(2) || "0.00"}
-                                </span>
-                                <span className="font-medium">Valor Novo:</span>
-                                <span className="text-green-600">
-                                  U$ {file.valorNovo?.toFixed(2) || "0.00"}
-                                </span>
-                              </div>
-                            )) || "Não informado"}
-                          </span>
-                        </div>
-                        <div className="flex flex-wrap gap-x-2">
-                          <span className="font-medium">Total Anterior:</span>
-                          <span className="text-yellow-600">
-                            U${" "}
-                            {log.details?.totalAnterior?.toFixed(2) || "0.00"}
-                          </span>
-                          <span className="font-medium">Total Novo:</span>
-                          <span className="text-green-600">
-                            U$ {log.details?.totalNovo?.toFixed(2) || "0.00"}
-                          </span>
-                        </div>
-                      </div>
-                    )}
-                    {log.action === "alteração de páginas do projeto" && (
-                      <div className="space-y-1">
-                        <div className="flex flex-wrap gap-x-2">
-                          <span className="font-medium">Projeto:</span>
-                          <span>
-                            {log.details?.projeto?.nome || "Não informado"}
-                          </span>
-                        </div>
-                        <div className="flex flex-wrap gap-x-2">
-                          <span className="font-medium">Arquivos:</span>
-                          <span>
-                            {log.details?.arquivos?.map((file, index) => (
-                              <div
-                                key={index}
-                                className="flex flex-wrap gap-x-2"
-                              >
-                                <span className="font-medium">Nome:</span>
-                                <span>{file.nome || "Não informado"}</span>
-                                <span className="font-medium">
-                                  Páginas Anteriores:
-                                </span>
-                                <span className="text-yellow-600">
-                                  {file.paginasAnteriores || "N/A"}
-                                </span>
-                                <span className="font-medium">
-                                  Páginas Novas:
-                                </span>
-                                <span className="text-green-600">
-                                  {file.paginasNovas || "N/A"}
-                                </span>
-                                <span className="font-medium">
-                                  Valor Anterior:
-                                </span>
-                                <span className="text-yellow-600">
-                                  U$ {file.valorAnterior?.toFixed(2) || "0.00"}
-                                </span>
-                                <span className="font-medium">Valor Novo:</span>
-                                <span className="text-green-600">
-                                  U$ {file.valorNovo?.toFixed(2) || "0.00"}
-                                </span>
-                              </div>
-                            )) || "Não informado"}
-                          </span>
-                        </div>
-                        <div className="flex flex-wrap gap-x-2">
-                          <span className="font-medium">Total Anterior:</span>
-                          <span className="text-yellow-600">
-                            U${" "}
-                            {log.details?.totalAnterior?.toFixed(2) || "0.00"}
-                          </span>
-                          <span className="font-medium">Total Novo:</span>
-                          <span className="text-green-600">
-                            U$ {log.details?.totalNovo?.toFixed(2) || "0.00"}
-                          </span>
-                        </div>
-                      </div>
-                    )}
-                    {log.action === "alteração de status de pagamento" && (
-                      <div className="flex flex-col gap-2">
-                        <div className="flex items-center gap-4">
-                          <div className="flex items-center gap-1">
-                            <span className="font-medium text-gray-700">
-                              Projeto:
-                            </span>
-                            <span>
-                              {log.details?.projeto?.nome ||
-                                log.details?.projeto ||
-                                "Não informado"}
-                            </span>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-4">
-                          <div className="flex items-center gap-1">
-                            <span className="font-medium text-gray-700">
-                              Status Anterior:
-                            </span>
-                            <span className="text-yellow-600">
-                              {log.details?.statusAnterior ||
-                                log.details?.projeto?.statusAnterior ||
-                                "N/A"}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <span className="font-medium text-gray-700">
-                              Status Novo:
-                            </span>
-                            <span className="text-green-600">
-                              {log.details?.statusNovo ||
-                                log.details?.projeto?.statusNovo ||
-                                "N/A"}
-                            </span>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-4">
-                          <div className="flex items-center gap-1">
-                            <span className="font-medium text-gray-700">
-                              Valor:
-                            </span>
-                            <span className="text-gray-800">
-                              U${" "}
-                              {log.details?.valor?.toFixed(2) ||
-                                log.details?.projeto?.valor?.toFixed(2) ||
-                                "0.00"}
-                            </span>
-                          </div>
-                        </div>
-                        {log.details?.divergencia && (
-                          <div className="flex items-center gap-4">
-                            <div className="flex items-center gap-1">
-                              <span className="font-medium text-gray-700">
-                                Páginas Divergentes:
-                              </span>
-                              <span className="text-red-600">
-                                {log.details?.divergencia?.paginas || "N/A"}
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <span className="font-medium text-gray-700">
-                                Motivo:
-                              </span>
-                              <span className="text-red-600">
-                                {log.details?.divergencia?.motivo || "N/A"}
-                              </span>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    )}
+                    {JSON.stringify(log.details, null, 2)}
                   </td>
                 </tr>
               ))}
@@ -2779,148 +2134,388 @@ const ProjectDetails = () => {
           </table>
         </div>
       </div>
+    </div>
+  );
 
-      {/* Modal de Conversão Monetária */}
-      {showConvertCurrencyModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-          <div className="bg-white rounded-xl p-6 w-[90%] max-w-md">
-            <h3 className="text-xl font-semibold text-center mb-6 bg-blue-50 py-2 rounded-lg">
-              Alterar Conversão Monetária
+  if (!project) {
+    console.log("Renderizando tela de carregamento - project é null");
+    return (
+      <div className="flex justify-center items-center h-screen text-lg">
+        Carregando...
+      </div>
+    );
+  }
+
+  console.log("Renderizando detalhes do projeto:", project);
+
+  return (
+    <PageLayout>
+      <ResponsiveLayout
+        mobile={renderMobileView()}
+        desktop={renderDesktopView()}
+      />
+
+      {/* Modals */}
+      {showEditNameModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-96">
+            <h3 className="text-lg font-semibold mb-4">
+              Editar Nome do Projeto
             </h3>
-            <div className="space-y-4">
-              <div className="flex items-center justify-center gap-4">
-                <label className="flex items-center gap-2">
-                  <input
-                    type="radio"
-                    checked={newConvertCurrency}
-                    onChange={() => setNewConvertCurrency(true)}
-                    className="form-radio text-blue-600"
-                  />
-                  <span>Com Conversão</span>
-                </label>
-                <label className="flex items-center gap-2">
-                  <input
-                    type="radio"
-                    checked={!newConvertCurrency}
-                    onChange={() => setNewConvertCurrency(false)}
-                    className="form-radio text-blue-600"
-                  />
-                  <span>Sem Conversão</span>
-                </label>
-              </div>
-            </div>
-            <div className="flex justify-center gap-4 mt-6">
+            <input
+              type="text"
+              value={newProjectName}
+              onChange={(e) => setNewProjectName(e.target.value)}
+              className="w-full px-3 py-2 border rounded-lg mb-4"
+              placeholder="Novo nome do projeto"
+            />
+            <div className="flex justify-end gap-2">
               <button
-                onClick={handleConvertCurrencyUpdate}
-                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                onClick={() => setShowEditNameModal(false)}
+                className="px-4 py-2 text-gray-600 hover:text-gray-800"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleProjectNameUpdate}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
               >
                 Salvar
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showDeadlineModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-96">
+            <h3 className="text-lg font-semibold mb-4">Definir Prazo</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Data
+                </label>
+                <input
+                  type="date"
+                  value={newDeadline.date}
+                  onChange={(e) =>
+                    setNewDeadline({ ...newDeadline, date: e.target.value })
+                  }
+                  min={getMinDate()}
+                  disabled={disableWeekends()}
+                  className="w-full px-3 py-2 border rounded-lg"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Hora
+                </label>
+                <input
+                  type="time"
+                  value={newDeadline.time}
+                  onChange={(e) =>
+                    setNewDeadline({ ...newDeadline, time: e.target.value })
+                  }
+                  className="w-full px-3 py-2 border rounded-lg"
+                />
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 mt-4">
+              <button
+                onClick={() => setShowDeadlineModal(false)}
+                className="px-4 py-2 text-gray-600 hover:text-gray-800"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleDeadlineUpdate}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              >
+                Salvar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showEditPagesModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-[800px] max-h-[80vh] overflow-y-auto">
+            <h3 className="text-lg font-semibold mb-4">Editar Páginas</h3>
+            <EditPagesTable
+              files={project.files}
+              editedPages={editedPages}
+              onPageChange={handlePageChange}
+              sourceLanguage={project.sourceLanguage}
+              targetLanguage={project.targetLanguage}
+              getFileDownloadUrl={getFileDownloadUrl}
+            />
+            <div className="flex justify-end gap-2 mt-4">
+              <button
+                onClick={handleCloseEditPagesModal}
+                className="px-4 py-2 text-gray-600 hover:text-gray-800"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleEditPagesSubmit}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              >
+                Salvar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showDivergenceModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-96">
+            <h3 className="text-lg font-semibold mb-4">
+              Registrar Divergência
+            </h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Páginas
+                </label>
+                <input
+                  type="number"
+                  value={divergenceData.pages}
+                  onChange={(e) =>
+                    setDivergenceData({
+                      ...divergenceData,
+                      pages: e.target.value,
+                    })
+                  }
+                  className="w-full px-3 py-2 border rounded-lg"
+                  placeholder="Número de páginas"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Motivo
+                </label>
+                <textarea
+                  value={divergenceData.reason}
+                  onChange={(e) =>
+                    setDivergenceData({
+                      ...divergenceData,
+                      reason: e.target.value,
+                    })
+                  }
+                  className="w-full px-3 py-2 border rounded-lg"
+                  placeholder="Motivo da divergência"
+                  rows={3}
+                />
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 mt-4">
+              <button
+                onClick={() => setShowDivergenceModal(false)}
+                className="px-4 py-2 text-gray-600 hover:text-gray-800"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleDivergenceConfirm}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+              >
+                Confirmar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showRefundModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-96">
+            <h3 className="text-lg font-semibold mb-4">Registrar Reembolso</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Opção de Reembolso
+                </label>
+                <select
+                  value={selectedRefundOption}
+                  onChange={handleRefundOptionChange}
+                  className="w-full px-3 py-2 border rounded-lg"
+                >
+                  <option value="total">Valor Total</option>
+                  <option value="other">Outro Valor</option>
+                </select>
+              </div>
+              {showCustomAmount && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Valor do Reembolso
+                  </label>
+                  <input
+                    type="number"
+                    value={refundAmount}
+                    onChange={(e) => setRefundAmount(e.target.value)}
+                    className="w-full px-3 py-2 border rounded-lg"
+                    placeholder="Valor do reembolso"
+                  />
+                </div>
+              )}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Motivo
+                </label>
+                <textarea
+                  value={refundReason}
+                  onChange={(e) => setRefundReason(e.target.value)}
+                  className="w-full px-3 py-2 border rounded-lg"
+                  placeholder="Motivo do reembolso"
+                  rows={3}
+                />
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 mt-4">
+              <button
+                onClick={() => setShowRefundModal(false)}
+                className="px-4 py-2 text-gray-600 hover:text-gray-800"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleRefundConfirm}
+                className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700"
+              >
+                Confirmar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showConvertCurrencyModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-96">
+            <h3 className="text-lg font-semibold mb-4">Conversão Monetária</h3>
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={newConvertCurrency}
+                  onChange={(e) => setNewConvertCurrency(e.target.checked)}
+                  className="w-4 h-4"
+                />
+                <label className="text-sm font-medium text-gray-700">
+                  Habilitar conversão monetária
+                </label>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 mt-4">
               <button
                 onClick={() => setShowConvertCurrencyModal(false)}
-                className="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+                className="px-4 py-2 text-gray-600 hover:text-gray-800"
               >
                 Cancelar
+              </button>
+              <button
+                onClick={handleConvertCurrencyUpdate}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              >
+                Salvar
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Modal de Prioridade */}
       {showPriorityModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-          <div className="bg-white rounded-xl p-6 w-[90%] max-w-md">
-            <h3 className="text-xl font-semibold text-center mb-6 bg-blue-50 py-2 rounded-lg">
-              Alterar Prioridade
-            </h3>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-96">
+            <h3 className="text-lg font-semibold mb-4">Prioridade</h3>
             <div className="space-y-4">
-              <div className="flex items-center justify-center gap-4">
-                <label className="flex items-center gap-2">
-                  <input
-                    type="radio"
-                    checked={newPriority}
-                    onChange={() => setNewPriority(true)}
-                    className="form-radio text-blue-600"
-                  />
-                  <span>Com Prioridade</span>
-                </label>
-                <label className="flex items-center gap-2">
-                  <input
-                    type="radio"
-                    checked={!newPriority}
-                    onChange={() => setNewPriority(false)}
-                    className="form-radio text-blue-600"
-                  />
-                  <span>Sem Prioridade</span>
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={newPriority}
+                  onChange={(e) => setNewPriority(e.target.checked)}
+                  className="w-4 h-4"
+                />
+                <label className="text-sm font-medium text-gray-700">
+                  Marcar como prioridade
                 </label>
               </div>
             </div>
-            <div className="flex justify-center gap-4 mt-6">
-              <button
-                onClick={handlePriorityUpdate}
-                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                Salvar
-              </button>
+            <div className="flex justify-end gap-2 mt-4">
               <button
                 onClick={() => setShowPriorityModal(false)}
-                className="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+                className="px-4 py-2 text-gray-600 hover:text-gray-800"
               >
                 Cancelar
+              </button>
+              <button
+                onClick={handlePriorityUpdate}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              >
+                Salvar
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Modal de Língua de Origem */}
       {showSourceLanguageModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-          <div className="bg-white rounded-xl p-6 w-[90%] max-w-md">
-            <h3 className="text-xl font-semibold text-center mb-6 bg-blue-50 py-2 rounded-lg">
-              Alterar Língua de Origem
-            </h3>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-96">
+            <h3 className="text-lg font-semibold mb-4">Língua de Origem</h3>
             <div className="space-y-4">
-              <div className="flex items-center justify-center gap-4">
-                <label className="flex items-center gap-2">
-                  <input
-                    type="radio"
-                    checked={newSourceLanguage === "Português"}
-                    onChange={() => setNewSourceLanguage("Português")}
-                    className="form-radio text-blue-600"
-                  />
-                  <span>Português</span>
-                </label>
-                <label className="flex items-center gap-2">
-                  <input
-                    type="radio"
-                    checked={newSourceLanguage === "Espanhol"}
-                    onChange={() => setNewSourceLanguage("Espanhol")}
-                    className="form-radio text-blue-600"
-                  />
-                  <span>Espanhol</span>
-                </label>
-              </div>
-            </div>
-            <div className="flex justify-center gap-4 mt-6">
-              <button
-                onClick={handleSourceLanguageUpdate}
-                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              <select
+                value={newSourceLanguage}
+                onChange={(e) => setNewSourceLanguage(e.target.value)}
+                className="w-full px-3 py-2 border rounded-lg"
               >
-                Salvar
-              </button>
+                <option value="">Selecione uma língua</option>
+                <option value="Português (Brasil)">Português (Brasil)</option>
+                <option value="Espanhol (América Latina)">
+                  Espanhol (América Latina)
+                </option>
+                <option value="Inglês">Inglês</option>
+              </select>
+            </div>
+            <div className="flex justify-end gap-2 mt-4">
               <button
                 onClick={() => setShowSourceLanguageModal(false)}
-                className="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+                className="px-4 py-2 text-gray-600 hover:text-gray-800"
               >
                 Cancelar
+              </button>
+              <button
+                onClick={handleSourceLanguageUpdate}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              >
+                Salvar
               </button>
             </div>
           </div>
         </div>
       )}
-    </div>
+
+      {/* Botão de Enviar para Aprovação */}
+      {(project.collection === "b2bdocprojects" ||
+        project.collection === "b2cdocprojects") && (
+        <div className="flex justify-end mt-4">
+          <button
+            onClick={handleSendToApproval}
+            disabled={isSendingApproval}
+            className={`px-6 py-2 rounded-lg text-white font-medium ${
+              isSendingApproval
+                ? "bg-gray-400 cursor-not-allowed"
+                : "bg-blue-600 hover:bg-blue-700"
+            }`}
+          >
+            {isSendingApproval ? "Enviando..." : "Enviar para Aprovação"}
+          </button>
+        </div>
+      )}
+    </PageLayout>
   );
 };
 
