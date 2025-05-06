@@ -322,7 +322,7 @@ const ProjectsDone = () => {
   }, [paginatedData, clientTypes]);
 
   return (
-    <div className="w-full px-2 md:px-4">
+    <div className="w-full px-4 md:px-10">
       {loading && (
         <div className="text-center p-8">
           <p className="text-gray-600">Carregando projetos...</p>

@@ -249,14 +249,14 @@ const ClientProjectsPaid = () => {
       {!loading && (
         <div className="w-full">
           {error && (
-            <div className="text-center p-4 md:p-5 bg-red-50 text-red-600 rounded-lg shadow-sm my-4 md:my-5">
+            <div className="text-center p-4 bg-red-50 text-red-600 rounded-lg shadow-sm my-4 md:p-5 md:my-5">
               <p>Erro ao carregar os projetos: {error}</p>
             </div>
           )}
 
           {loading ? (
-            <div className="text-center p-4 md:p-8">
-              <div className="animate-spin rounded-full h-12 md:h-16 w-12 md:w-16 border-t-2 border-b-2 border-blue-500 mx-auto"></div>
+            <div className="text-center p-4">
+              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto md:h-16 md:w-16"></div>
               <p className="text-gray-600 mt-4">Carregando projetos...</p>
             </div>
           ) : (
@@ -268,17 +268,17 @@ const ClientProjectsPaid = () => {
                       <tr>
                         <th
                           scope="col"
-                          className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                          className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer md:px-4 md:py-3"
                           onClick={() => handleSort("projectName")}
                         >
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1 md:gap-2">
                             Nome do Projeto
                             {sortField === "projectName" && (
                               <span>
                                 {sortDirection === "asc" ? (
-                                  <IoMdArrowDropup className="w-4 h-4" />
+                                  <IoMdArrowDropup className="w-3 h-3 md:w-4 md:h-4" />
                                 ) : (
-                                  <IoMdArrowDropdown className="w-4 h-4" />
+                                  <IoMdArrowDropdown className="w-3 h-3 md:w-4 md:h-4" />
                                 )}
                               </span>
                             )}
@@ -286,17 +286,17 @@ const ClientProjectsPaid = () => {
                         </th>
                         <th
                           scope="col"
-                          className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                          className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer md:px-4 md:py-3"
                           onClick={() => handleSort("projectOwner")}
                         >
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1 md:gap-2">
                             Proprietário
                             {sortField === "projectOwner" && (
                               <span>
                                 {sortDirection === "asc" ? (
-                                  <IoMdArrowDropup className="w-4 h-4" />
+                                  <IoMdArrowDropup className="w-3 h-3 md:w-4 md:h-4" />
                                 ) : (
-                                  <IoMdArrowDropdown className="w-4 h-4" />
+                                  <IoMdArrowDropdown className="w-3 h-3 md:w-4 md:h-4" />
                                 )}
                               </span>
                             )}
@@ -304,17 +304,17 @@ const ClientProjectsPaid = () => {
                         </th>
                         <th
                           scope="col"
-                          className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                          className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer md:px-4 md:py-3"
                           onClick={() => handleSort("createdAt")}
                         >
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1 md:gap-2">
                             Data de Criação
                             {sortField === "createdAt" && (
                               <span>
                                 {sortDirection === "asc" ? (
-                                  <IoMdArrowDropup className="w-4 h-4" />
+                                  <IoMdArrowDropup className="w-3 h-3 md:w-4 md:h-4" />
                                 ) : (
-                                  <IoMdArrowDropdown className="w-4 h-4" />
+                                  <IoMdArrowDropdown className="w-3 h-3 md:w-4 md:h-4" />
                                 )}
                               </span>
                             )}
@@ -322,17 +322,17 @@ const ClientProjectsPaid = () => {
                         </th>
                         <th
                           scope="col"
-                          className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                          className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer md:px-4 md:py-3"
                           onClick={() => handleSort("sourceLanguage")}
                         >
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1 md:gap-2">
                             Idioma de Origem
                             {sortField === "sourceLanguage" && (
                               <span>
                                 {sortDirection === "asc" ? (
-                                  <IoMdArrowDropup className="w-4 h-4" />
+                                  <IoMdArrowDropup className="w-3 h-3 md:w-4 md:h-4" />
                                 ) : (
-                                  <IoMdArrowDropdown className="w-4 h-4" />
+                                  <IoMdArrowDropdown className="w-3 h-3 md:w-4 md:h-4" />
                                 )}
                               </span>
                             )}
@@ -340,17 +340,17 @@ const ClientProjectsPaid = () => {
                         </th>
                         <th
                           scope="col"
-                          className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                          className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer md:px-4 md:py-3"
                           onClick={() => handleSort("targetLanguage")}
                         >
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1 md:gap-2">
                             Idioma de Destino
                             {sortField === "targetLanguage" && (
                               <span>
                                 {sortDirection === "asc" ? (
-                                  <IoMdArrowDropup className="w-4 h-4" />
+                                  <IoMdArrowDropup className="w-3 h-3 md:w-4 md:h-4" />
                                 ) : (
-                                  <IoMdArrowDropdown className="w-4 h-4" />
+                                  <IoMdArrowDropdown className="w-3 h-3 md:w-4 md:h-4" />
                                 )}
                               </span>
                             )}
@@ -358,17 +358,17 @@ const ClientProjectsPaid = () => {
                         </th>
                         <th
                           scope="col"
-                          className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                          className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer md:px-4 md:py-3"
                           onClick={() => handleSort("totalValue")}
                         >
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1 md:gap-2">
                             Valor Total
                             {sortField === "totalValue" && (
                               <span>
                                 {sortDirection === "asc" ? (
-                                  <IoMdArrowDropup className="w-4 h-4" />
+                                  <IoMdArrowDropup className="w-3 h-3 md:w-4 md:h-4" />
                                 ) : (
-                                  <IoMdArrowDropdown className="w-4 h-4" />
+                                  <IoMdArrowDropdown className="w-3 h-3 md:w-4 md:h-4" />
                                 )}
                               </span>
                             )}
@@ -385,24 +385,24 @@ const ClientProjectsPaid = () => {
                             onClick={() => handleProjectClick(project.id)}
                             className="hover:bg-blue-50/50 cursor-pointer transition-all duration-200"
                           >
-                            <td className="px-4 py-1.5 whitespace-nowrap text-sm text-gray-700">
+                            <td className="px-2 py-1.5 whitespace-nowrap text-xs text-gray-700 md:px-4 md:text-sm">
                               {project.projectName}
                             </td>
-                            <td className="px-4 py-1.5 whitespace-nowrap text-sm text-gray-700">
+                            <td className="px-2 py-1.5 whitespace-nowrap text-xs text-gray-700 md:px-4 md:text-sm">
                               {project.projectOwner || "Não informado"}
                             </td>
-                            <td className="px-4 py-1.5 whitespace-nowrap text-sm text-gray-700">
+                            <td className="px-2 py-1.5 whitespace-nowrap text-xs text-gray-700 md:px-4 md:text-sm">
                               {new Date(
                                 project.createdAt?.seconds * 1000
                               ).toLocaleDateString("pt-BR")}
                             </td>
-                            <td className="px-4 py-1.5 whitespace-nowrap text-sm text-gray-700">
+                            <td className="px-2 py-1.5 whitespace-nowrap text-xs text-gray-700 md:px-4 md:text-sm">
                               {project.sourceLanguage}
                             </td>
-                            <td className="px-4 py-1.5 whitespace-nowrap text-sm text-gray-700">
+                            <td className="px-2 py-1.5 whitespace-nowrap text-xs text-gray-700 md:px-4 md:text-sm">
                               {project.targetLanguage}
                             </td>
-                            <td className="px-4 py-1.5 whitespace-nowrap text-sm text-gray-700">
+                            <td className="px-2 py-1.5 whitespace-nowrap text-xs text-gray-700 md:px-4 md:text-sm">
                               R$ {totalValue}
                             </td>
                           </tr>

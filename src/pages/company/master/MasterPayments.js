@@ -238,7 +238,7 @@ const MasterPayments = () => {
   }, [paginatedData, clientTypes]);
 
   return (
-    <div className="w-full px-2 md:px-4">
+    <div className="w-full px-4 md:px-10">
       {!loading && (
         <div className="w-full">
           <div className="w-full overflow-x-auto">

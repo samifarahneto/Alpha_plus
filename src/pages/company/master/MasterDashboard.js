@@ -373,7 +373,7 @@ const MasterDashboard = () => {
 
   return (
     <PageLayout>
-      <div className="w-full max-w-full p-4 sm:p-6 md:p-8 space-y-4 sm:space-y-6 md:space-y-8">
+      <div className="w-full max-w-full p-4 sm:p-6 md:p-8 space-y-4 sm:space-y-6 md:space-y-8 px-4 md:px-10">
         <div className="glass-card">
           {/* Grid de 4 cards (1 coluna no mobile, 2 colunas no desktop) */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 md:gap-8">

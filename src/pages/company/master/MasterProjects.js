@@ -1050,7 +1050,7 @@ const MasterProjects = ({ style, isMobile }) => {
   };
 
   return (
-    <div className="w-full px-10 md:px-10">
+    <div className="w-full px-4 md:px-10">
       {!loading && (
         <div className="w-full">
           <div className="flex flex-col md:flex-row items-end gap-2.5 mb-8 px-2 md:px-10">

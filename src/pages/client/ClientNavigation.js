@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   FolderIcon,
@@ -17,15 +17,48 @@ const ClientNavigation = ({
   unreadApprovalCount = 0,
 }) => {
   const navigate = useNavigate();
+  const navRef = useRef(null);
+  const activeLinkRef = useRef(null);
+
+  const handleNavigation = (path, link) => (e) => {
+    e.preventDefault();
+    setActiveLink(link);
+    navigate(path);
+  };
+
+  useEffect(() => {
+    if (activeLinkRef.current && navRef.current) {
+      const nav = navRef.current;
+      const activeElement = activeLinkRef.current;
+      const navRect = nav.getBoundingClientRect();
+      const activeRect = activeElement.getBoundingClientRect();
+
+      // Verifica se o elemento ativo está visível
+      const isVisible =
+        activeRect.left >= navRect.left && activeRect.right <= navRect.right;
+
+      if (!isVisible) {
+        // Calcula a posição de rolagem necessária para centralizar o elemento ativo
+        const scrollLeft =
+          activeElement.offsetLeft - navRect.width / 2 + activeRect.width / 2;
+
+        nav.scrollTo({
+          left: scrollLeft,
+          behavior: "smooth",
+        });
+      }
+    }
+  }, [activeLink]);
 
   return (
-    <div className="flex justify-center gap-2 mb-6 border-b border-gray-200 px-4 overflow-x-auto">
+    <div
+      ref={navRef}
+      className="flex w-full mb-6 border-b border-gray-200 overflow-x-auto scroll-smooth"
+    >
       <span
-        onClick={() => {
-          setActiveLink("projects");
-          navigate("/client/projects");
-        }}
-        className={`nav-link flex items-center justify-center gap-2 min-w-[180px] h-[40px] px-4 ${
+        ref={activeLink === "projects" ? activeLinkRef : null}
+        onClick={handleNavigation("/client/projects", "projects")}
+        className={`nav-link flex items-center justify-center gap-2 w-full h-[40px] md:w-auto md:min-w-[180px] ${
           activeLink === "projects" ? "nav-link-active" : "nav-link-inactive"
         }`}
       >
@@ -40,11 +73,9 @@ const ClientNavigation = ({
         </span>
       </span>
       <span
-        onClick={() => {
-          setActiveLink("projects-budget");
-          navigate("/client/projects-budget");
-        }}
-        className={`nav-link flex items-center justify-center gap-2 min-w-[180px] h-[40px] px-4 ${
+        ref={activeLink === "projects-budget" ? activeLinkRef : null}
+        onClick={handleNavigation("/client/projects-budget", "projects-budget")}
+        className={`nav-link flex items-center justify-center gap-2 w-full h-[40px] md:w-auto md:min-w-[180px] ${
           activeLink === "projects-budget"
             ? "nav-link-active"
             : "nav-link-inactive"
@@ -61,11 +92,9 @@ const ClientNavigation = ({
         </span>
       </span>
       <span
-        onClick={() => {
-          setActiveLink("going-on");
-          navigate("/client/going-on");
-        }}
-        className={`nav-link flex items-center justify-center gap-2 min-w-[180px] h-[40px] px-4 ${
+        ref={activeLink === "going-on" ? activeLinkRef : null}
+        onClick={handleNavigation("/client/going-on", "going-on")}
+        className={`nav-link flex items-center justify-center gap-2 w-full h-[40px] md:w-auto md:min-w-[180px] ${
           activeLink === "going-on" ? "nav-link-active" : "nav-link-inactive"
         }`}
       >
@@ -73,11 +102,9 @@ const ClientNavigation = ({
         Em Andamento
       </span>
       <span
-        onClick={() => {
-          setActiveLink("projects-done");
-          navigate("/client/projects-done");
-        }}
-        className={`nav-link flex items-center justify-center gap-2 min-w-[180px] h-[40px] px-4 ${
+        ref={activeLink === "projects-done" ? activeLinkRef : null}
+        onClick={handleNavigation("/client/projects-done", "projects-done")}
+        className={`nav-link flex items-center justify-center gap-2 w-full h-[40px] md:w-auto md:min-w-[180px] ${
           activeLink === "projects-done"
             ? "nav-link-active"
             : "nav-link-inactive"
@@ -87,11 +114,9 @@ const ClientNavigation = ({
         Projetos Concluídos
       </span>
       <span
-        onClick={() => {
-          setActiveLink("projects-paid");
-          navigate("/client/projects-paid");
-        }}
-        className={`nav-link flex items-center justify-center gap-2 min-w-[180px] h-[40px] px-4 ${
+        ref={activeLink === "projects-paid" ? activeLinkRef : null}
+        onClick={handleNavigation("/client/projects-paid", "projects-paid")}
+        className={`nav-link flex items-center justify-center gap-2 w-full h-[40px] md:w-auto md:min-w-[180px] ${
           activeLink === "projects-paid"
             ? "nav-link-active"
             : "nav-link-inactive"
@@ -101,11 +126,9 @@ const ClientNavigation = ({
         Projetos Pagos
       </span>
       <span
-        onClick={() => {
-          setActiveLink("payments");
-          navigate("/client/payments");
-        }}
-        className={`nav-link flex items-center justify-center gap-2 min-w-[180px] h-[40px] px-4 ${
+        ref={activeLink === "payments" ? activeLinkRef : null}
+        onClick={handleNavigation("/client/payments", "payments")}
+        className={`nav-link flex items-center justify-center gap-2 w-full h-[40px] md:w-auto md:min-w-[180px] ${
           activeLink === "payments" ? "nav-link-active" : "nav-link-inactive"
         }`}
       >

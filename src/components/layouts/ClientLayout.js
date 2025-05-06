@@ -7,7 +7,7 @@ const ClientLayout = ({ children }) => {
   const currentPath = location.pathname.split("/").pop();
 
   return (
-    <div className="w-full px-10 md:px-10">
+    <div className="w-full">
       <div className="w-full">
         <ClientNavigation
           activeLink={currentPath}
@@ -18,7 +18,7 @@ const ClientLayout = ({ children }) => {
         />
 
         {/* Conteúdo da página */}
-        <div className="content-container">{children}</div>
+        <div className="content-container px-4 md:px-10">{children}</div>
       </div>
     </div>
   );
