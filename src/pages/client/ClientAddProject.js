@@ -266,8 +266,13 @@ const ClientAddProject = () => {
   const countPdfPages = async (pdfBlob) => {
     try {
       const pdfArrayBuffer = await pdfBlob.arrayBuffer();
-      const pdfDoc = await PDFDocument.load(pdfArrayBuffer);
-      return pdfDoc.getPageCount();
+      const pdfDoc = await PDFDocument.load(pdfArrayBuffer, {
+        updateMetadata: false,
+        ignoreEncryption: true,
+      });
+      const pageCount = pdfDoc.getPageCount();
+      console.log(`PDF ${pdfBlob.name} tem ${pageCount} páginas`);
+      return pageCount;
     } catch (error) {
       console.error("Erro ao contar páginas do PDF:", error);
       throw error;
@@ -446,7 +451,6 @@ const ClientAddProject = () => {
         ? calculateValueWithPriority(baseValuePerPage)
         : baseValuePerPage;
 
-      // Flag para verificar se há arquivos que requerem análise manual
       let hasManualQuoteFiles = false;
 
       for (const file of files) {
@@ -455,37 +459,38 @@ const ClientAddProject = () => {
           let fileTotal = 0;
           let requiresManualQuote = false;
 
-          // Verifica se o arquivo pode ter contagem automática
-          const canCountPages =
-            file.type === "application/pdf" || file.type.startsWith("image/");
-
-          if (canCountPages) {
-            if (file.type === "application/pdf") {
-              try {
-                pageCount = await countPdfPages(file);
-                console.log(`PDF ${file.name} tem ${pageCount} páginas`);
-              } catch (error) {
-                console.error(
-                  `Erro ao contar páginas do PDF ${file.name}:`,
-                  error
-                );
-                requiresManualQuote = true;
-                hasManualQuoteFiles = true;
-              }
-            } else if (file.type.startsWith("image/")) {
-              pageCount = 1; // Cada imagem conta como uma página
-              console.log(`Imagem ${file.name} conta como 1 página`);
+          if (file.type === "application/pdf") {
+            try {
+              pageCount = await countPdfPages(file);
+              console.log(`Processando PDF ${file.name}:`, {
+                pageCount,
+                fileSize: file.size,
+                fileType: file.type,
+              });
+            } catch (error) {
+              console.error(`Erro ao processar PDF ${file.name}:`, error);
+              requiresManualQuote = true;
+              hasManualQuoteFiles = true;
             }
-
-            if (!requiresManualQuote) {
-              fileTotal = pageCount * calculatedValuePerPage;
-              totalPagesCount += pageCount;
-              totalValue += fileTotal;
-            }
+          } else if (file.type.startsWith("image/")) {
+            pageCount = 1;
+            console.log(`Processando imagem ${file.name}:`, {
+              pageCount,
+              fileSize: file.size,
+              fileType: file.type,
+            });
           } else {
             requiresManualQuote = true;
             hasManualQuoteFiles = true;
-            console.log(`Arquivo ${file.name} requer análise manual`);
+            console.log(`Arquivo ${file.name} requer análise manual:`, {
+              fileType: file.type,
+            });
+          }
+
+          if (!requiresManualQuote) {
+            fileTotal = pageCount * calculatedValuePerPage;
+            totalPagesCount += pageCount;
+            totalValue += fileTotal;
           }
 
           const downloadURL = await uploadPDFToFirebase(file, file.name);

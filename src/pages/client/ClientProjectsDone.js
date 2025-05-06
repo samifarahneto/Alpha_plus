@@ -308,7 +308,7 @@ const ClientProjectsDone = () => {
     },
     {
       id: "payment_status",
-      label: "Status de Pagamento",
+      label: "PGTO",
       render: (value) => {
         const statusConfig = {
           Pago: {
@@ -352,7 +352,7 @@ const ClientProjectsDone = () => {
     },
     {
       id: "project_status",
-      label: "Status do Projeto",
+      label: "Status",
       render: (value) => {
         const statusConfig = {
           "Em Andamento": {
@@ -421,7 +421,7 @@ const ClientProjectsDone = () => {
     },
     {
       id: "translation_status",
-      label: "Status da Tradução",
+      label: "Tradução",
       render: (value) => {
         const statusConfig = {
           "Em Andamento": {
@@ -443,6 +443,11 @@ const ClientProjectsDone = () => {
             bg: "bg-red-50",
             text: "text-red-700",
             border: "border-red-200",
+          },
+          Finalizado: {
+            bg: "bg-green-50",
+            text: "text-green-700",
+            border: "border-green-200",
           },
           "N/A": {
             bg: "bg-gray-50",
