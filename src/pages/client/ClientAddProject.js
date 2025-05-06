@@ -1315,15 +1315,15 @@ const ClientAddProject = () => {
 
   const renderContent = () => {
     return (
-      <div className="w-full max-w-full p-8">
+      <div className="w-full max-w-full p-4 md:p-8">
         <div className="glass-card">
-          <h1 className="text-3xl font-bold text-center mb-8 bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
+          <h1 className="text-2xl md:text-3xl font-bold text-center mb-4 md:mb-8 bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
             {currentStep === 1 ? "Criar Projeto" : "Resumo do Projeto"}
           </h1>
 
-          <div className="flex justify-center items-start gap-[20px]">
+          <div className="flex flex-col lg:flex-row justify-center items-start gap-4 md:gap-[20px]">
             {/* Step 1 - Tipos de Arquivos */}
-            <div className="w-[300px] p-5 shadow-lg rounded-lg bg-white h-[750px] flex flex-col">
+            <div className="w-full lg:w-[300px] p-4 md:p-5 shadow-lg rounded-lg bg-white h-auto lg:h-[750px] flex flex-col">
               <div className="flex items-center gap-2 mb-6 flex items-center justify-center">
                 <div>
                   <FontAwesomeIcon
@@ -1467,7 +1467,7 @@ const ClientAddProject = () => {
             </div>
 
             {/* Step 2 - Formulário de Criação */}
-            <div className="w-[500px] p-5 shadow-lg rounded-lg bg-white h-[750px] flex flex-col">
+            <div className="w-full lg:w-[500px] p-4 md:p-5 shadow-lg rounded-lg bg-white h-auto lg:h-[750px] flex flex-col">
               <div className="flex items-center gap-2 mb-6">
                 <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold">
                   1
@@ -1697,7 +1697,7 @@ const ClientAddProject = () => {
             </div>
 
             {/* Step 3 - Resumo do Projeto */}
-            <div className="w-[700px] p-5 shadow-lg rounded-lg bg-white h-[750px] flex flex-col">
+            <div className="w-full lg:w-[700px] p-4 md:p-5 shadow-lg rounded-lg bg-white h-auto lg:h-[750px] flex flex-col">
               <div className="flex items-center gap-2 mb-6">
                 <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold">
                   2
@@ -2079,7 +2079,7 @@ const ClientAddProject = () => {
           {/* Modal de Arquivos */}
           {isFileModalOpen && (
             <div
-              className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50"
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
@@ -2089,7 +2089,7 @@ const ClientAddProject = () => {
               }}
             >
               <div
-                className="bg-white rounded-xl shadow-2xl w-[90%] max-w-2xl overflow-hidden"
+                className="bg-white rounded-xl shadow-2xl w-full max-w-2xl overflow-hidden"
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
@@ -2210,11 +2210,11 @@ const ClientAddProject = () => {
 
           {/* Modal para Salvar */}
           <div
-            className={`fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 ${
+            className={`fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 ${
               showSaveModal ? "block" : "hidden"
             }`}
           >
-            <div className="bg-white rounded-xl shadow-2xl w-[90%] max-w-md overflow-hidden">
+            <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
               <div className="bg-white border-b border-gray-100 px-6 py-4">
                 <div className="flex items-center justify-center">
                   <h3 className="text-lg font-semibold text-gray-800">
@@ -2268,11 +2268,11 @@ const ClientAddProject = () => {
 
           {/* Modal para Salvar e Pagar */}
           <div
-            className={`fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 ${
+            className={`fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 ${
               showSaveAndCheckoutModal ? "block" : "hidden"
             }`}
           >
-            <div className="bg-white rounded-xl shadow-2xl w-[90%] max-w-md overflow-hidden">
+            <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
               <div className="bg-white border-b border-gray-100 px-6 py-4">
                 <div className="flex items-center justify-center">
                   <h3 className="text-lg font-semibold text-gray-800">
@@ -2326,8 +2326,8 @@ const ClientAddProject = () => {
 
           {/* Modal de Confirmação de Aprovação */}
           {isApprovalModalOpen && (
-            <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-              <div className="bg-white rounded-xl shadow-2xl w-[90%] max-w-md overflow-hidden">
+            <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+              <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
                 {/* Header */}
                 <div className="bg-white border-b border-gray-100 px-6 py-4">
                   <div className="flex items-center justify-center">
@@ -2388,8 +2388,8 @@ const ClientAddProject = () => {
           )}
 
           {isCheckoutModalOpen && (
-            <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-              <div className="bg-white rounded-xl shadow-2xl w-[90%] max-w-md overflow-hidden">
+            <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+              <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
                 {/* Header */}
                 <div className="bg-white border-b border-gray-100 px-6 py-4">
                   <div className="flex items-center justify-center">

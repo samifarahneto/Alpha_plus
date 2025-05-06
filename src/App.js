@@ -6,6 +6,7 @@ import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { UnreadCountProvider } from "./contexts/UnreadCountContext";
 import Header from "./components/Header";
 import MasterLayout from "./components/MasterLayout";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 // Importações das páginas
 import Home from "./pages/Home";
@@ -112,7 +113,11 @@ const AppContent = () => {
           <Route path="/client/payment-error" element={<PaymentError />} />
           <Route
             path="/client/add-collaborator"
-            element={<AddCollaboratorColab />}
+            element={
+              <ProtectedRoute allowedUserTypes={["b2b", "b2c"]}>
+                <AddCollaboratorColab />
+              </ProtectedRoute>
+            }
           />
 
           {/* Rotas do Master */}

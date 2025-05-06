@@ -38,6 +38,7 @@ const ClientPayments = () => {
           "sourceLanguage",
           "targetLanguage",
           "totalValue",
+          "project_status",
           "status",
           "deadline",
           "select",
@@ -149,6 +150,10 @@ const ClientPayments = () => {
                 ...doc.data(),
                 collection: collectionName,
               }));
+              console.log(
+                `Projetos da coleção ${collectionName} (q1):`,
+                projectsList
+              );
               setProjects((prevProjects) => {
                 const projectMap = new Map(prevProjects.map((p) => [p.id, p]));
                 projectsList.forEach((project) => {
@@ -165,6 +170,10 @@ const ClientPayments = () => {
                 ...doc.data(),
                 collection: collectionName,
               }));
+              console.log(
+                `Projetos da coleção ${collectionName} (q2):`,
+                projectsList
+              );
               setProjects((prevProjects) => {
                 const projectMap = new Map(prevProjects.map((p) => [p.id, p]));
                 projectsList.forEach((project) => {
@@ -194,7 +203,23 @@ const ClientPayments = () => {
   }, []);
 
   const handleProjectClick = (projectId) => {
-    navigate(`/client/projects/${projectId}`);
+    // Encontrar o projeto nos dados
+    const project = projects.find((p) => p.id === projectId);
+    if (!project) {
+      console.error("Projeto não encontrado:", projectId);
+      return;
+    }
+
+    console.log("Projeto clicado:", project);
+    console.log("Coleção do projeto:", project.collection);
+
+    // Navegar para a página de detalhes com a coleção correta
+    navigate(`/client/projects/${projectId}`, {
+      state: {
+        project: project,
+        collection: project.collection,
+      },
+    });
   };
 
   const calculateTotalValue = (files) => {
@@ -233,6 +258,71 @@ const ClientPayments = () => {
     } else {
       alert("Por favor, selecione ao menos um projeto para pagar.");
     }
+  };
+
+  const renderProjectStatusBadge = (status) => {
+    const statusConfig = {
+      "Em Andamento": {
+        bg: "bg-blue-50",
+        text: "text-blue-700",
+        border: "border-blue-200",
+      },
+      Finalizado: {
+        bg: "bg-green-50",
+        text: "text-green-700",
+        border: "border-green-200",
+      },
+      "Em Revisão": {
+        bg: "bg-yellow-50",
+        text: "text-yellow-700",
+        border: "border-yellow-200",
+      },
+      Cancelado: {
+        bg: "bg-red-50",
+        text: "text-red-700",
+        border: "border-red-200",
+      },
+      "Em Análise": {
+        bg: "bg-yellow-50",
+        text: "text-yellow-700",
+        border: "border-yellow-200",
+      },
+      "Ag. Orçamento": {
+        bg: "bg-orange-50",
+        text: "text-orange-700",
+        border: "border-orange-200",
+      },
+      "Ag. Aprovação": {
+        bg: "bg-amber-50",
+        text: "text-amber-700",
+        border: "border-amber-200",
+      },
+      "Ag. Pagamento": {
+        bg: "bg-purple-50",
+        text: "text-purple-700",
+        border: "border-purple-200",
+      },
+      "Em Divergência": {
+        bg: "bg-red-50",
+        text: "text-red-700",
+        border: "border-red-200",
+      },
+      "N/A": {
+        bg: "bg-gray-50",
+        text: "text-gray-700",
+        border: "border-gray-200",
+      },
+    };
+
+    const config = statusConfig[status] || statusConfig["N/A"];
+
+    return (
+      <div
+        className={`w-full px-2 py-1 rounded-full border ${config.bg} ${config.text} ${config.border} text-center text-xs font-medium`}
+      >
+        {status || "N/A"}
+      </div>
+    );
   };
 
   const columns = [
@@ -325,8 +415,13 @@ const ClientPayments = () => {
       },
     },
     {
-      id: "status",
+      id: "project_status",
       label: "Status",
+      render: (value) => renderProjectStatusBadge(value || "N/A"),
+    },
+    {
+      id: "status",
+      label: "PGTO",
       render: (value) => {
         const statusConfig = {
           Pago: {
@@ -371,7 +466,27 @@ const ClientPayments = () => {
     {
       id: "deadline",
       label: "Prazo",
-      render: (value) => {
+      render: (value, row) => {
+        if (!value && !row.deadlineDate) return "A definir";
+
+        // Se tiver deadlineDate, usar ele
+        if (row.deadlineDate) {
+          if (
+            row.deadlineDate === "A definir" ||
+            row.deadlineDate === "Não definido"
+          ) {
+            return "A definir";
+          }
+          try {
+            const date = new Date(row.deadlineDate);
+            if (isNaN(date.getTime())) return "A definir";
+            return date.toLocaleDateString("pt-BR");
+          } catch (error) {
+            return "A definir";
+          }
+        }
+
+        // Se não tiver deadlineDate, tentar usar o value (deadline)
         if (!value || !value.seconds) return "A definir";
         try {
           const date = new Date(value.seconds * 1000);

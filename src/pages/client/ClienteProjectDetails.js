@@ -67,6 +67,10 @@ const ClienteProjectDetails = () => {
           "b2cprojects",
           "b2capproved",
           "b2cprojectspaid",
+          "b2bdocsaved",
+          "b2cdocsaved",
+          "b2bsketch",
+          "b2csketch",
         ];
 
         let projectDoc = null;
@@ -523,6 +527,67 @@ const ClienteProjectDetails = () => {
     }
   };
 
+  const renderBadge = (status, config) => {
+    const defaultConfig = {
+      true: {
+        bg: "bg-green-50",
+        text: "text-green-700",
+        border: "border-green-200",
+        label: "Ativado",
+      },
+      false: {
+        bg: "bg-red-50",
+        text: "text-red-700",
+        border: "border-red-200",
+        label: "Desativado",
+      },
+    };
+
+    const badgeConfig = config || defaultConfig;
+    const badge = badgeConfig[status] || badgeConfig["false"];
+
+    return (
+      <div
+        className={`w-full px-2 py-1 rounded-full border ${badge.bg} ${badge.text} ${badge.border} text-center text-xs font-medium`}
+      >
+        {badge.label}
+      </div>
+    );
+  };
+
+  const formatDeadlineDate = (dateString) => {
+    if (
+      !dateString ||
+      dateString === "A definir" ||
+      dateString === "Não definido"
+    ) {
+      return "A definir";
+    }
+
+    try {
+      // Se a data vier no formato ISO (YYYY-MM-DD)
+      if (dateString.includes("T")) {
+        const date = new Date(dateString);
+        return date.toLocaleDateString("pt-BR", {
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric",
+        });
+      }
+
+      // Se a data vier no formato brasileiro (DD/MM/YYYY)
+      if (dateString.includes("/")) {
+        const [day, month, year] = dateString.split("/");
+        return `${day.padStart(2, "0")}/${month.padStart(2, "0")}/${year}`;
+      }
+
+      return dateString;
+    } catch (error) {
+      console.error("Erro ao formatar data:", error);
+      return "A definir";
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-screen text-lg">
@@ -540,42 +605,42 @@ const ClienteProjectDetails = () => {
   }
 
   return (
-    <div className="w-full max-w-[1200px] mx-auto p-8 space-y-8">
-      <div className="glass-card bg-white rounded-xl shadow-lg p-6">
+    <div className="w-full max-w-[1200px] mx-auto px-0 md:px-8 py-4 md:py-8 space-y-4 md:space-y-8">
+      <div className="glass-card bg-white rounded-xl shadow-lg py-4 px-0 md:p-6">
         {/* Header com Botão Voltar e Título */}
-        <div className="flex items-center mb-6 relative">
+        <div className="flex items-center mb-4 md:mb-6 relative">
           <div
-            className="flex items-center cursor-pointer hover:text-blue-600 transition-colors absolute left-0"
+            className="flex items-center cursor-pointer hover:text-blue-600 transition-colors absolute left-4 md:left-0"
             onClick={() => navigate(-1)}
           >
-            <IoIosArrowBack size={24} className="mr-2" />
-            <span className="text-lg font-semibold">Voltar</span>
+            <IoIosArrowBack size={20} className="mr-1 md:mr-2" />
+            <span className="text-base md:text-lg font-semibold">Voltar</span>
           </div>
 
-          <h1 className="text-3xl font-bold flex-1 text-center bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
+          <h1 className="text-xl md:text-3xl font-bold flex-1 text-center bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
             Detalhes do Projeto
           </h1>
         </div>
 
         {/* Container Principal */}
-        <div className="bg-white rounded-xl shadow-sm p-6 space-y-8">
+        <div className="bg-white rounded-xl shadow-sm p-4 md:p-6 space-y-4 md:space-y-8">
           {/* Grid de Informações Básicas */}
-          <div className="flex gap-8">
+          <div className="flex flex-col md:flex-row gap-4 md:gap-8">
             {/* Primeira Div - Informações do Projeto */}
-            <div className="w-2/3 bg-gray-50 rounded-xl p-6 space-y-8">
-              <h3 className="text-lg font-semibold text-gray-700 border-b pb-2 flex items-center gap-2">
+            <div className="w-full md:w-2/3 bg-gray-50 rounded-xl p-4 md:p-6 space-y-4 md:space-y-8">
+              <h3 className="text-base md:text-lg font-semibold text-gray-700 border-b pb-2 flex items-center gap-2">
                 <FaInfoCircle className="text-blue-600" />
                 Informações do Projeto
               </h3>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
                 {/* Nome do Projeto */}
-                <div className="bg-white p-3 rounded-lg shadow-sm h-[85px]">
-                  <h3 className="text-sm font-semibold text-gray-700 mb-2 border-b pb-1 flex items-center gap-2">
+                <div className="bg-white p-3 rounded-lg shadow-sm min-h-[85px]">
+                  <h3 className="text-xs md:text-sm font-semibold text-gray-700 mb-2 border-b pb-1 flex items-center gap-2">
                     <FaFileAlt className="text-blue-600" />
                     Nome do Projeto
                   </h3>
                   <div className="flex items-center justify-between">
-                    <span className="text-gray-800">
+                    <span className="text-sm md:text-base text-gray-800">
                       {project.projectName || "Sem Nome"}
                     </span>
                     <FaEdit
@@ -589,22 +654,24 @@ const ClienteProjectDetails = () => {
                 </div>
 
                 {/* Cliente (Email) */}
-                <div className="bg-white p-3 rounded-lg shadow-sm h-[85px]">
-                  <h3 className="text-sm font-semibold text-gray-700 mb-2 border-b pb-1 flex items-center gap-2">
+                <div className="bg-white p-3 rounded-lg shadow-sm min-h-[85px]">
+                  <h3 className="text-xs md:text-sm font-semibold text-gray-700 mb-2 border-b pb-1 flex items-center gap-2">
                     <FaUser className="text-blue-600" />
                     Cliente (Email)
                   </h3>
-                  <span className="text-gray-800">{project.userEmail}</span>
+                  <span className="text-sm md:text-base text-gray-800 break-all">
+                    {project.userEmail}
+                  </span>
                 </div>
 
                 {/* Língua de Origem */}
-                <div className="bg-white p-3 rounded-lg shadow-sm h-[85px]">
-                  <h3 className="text-sm font-semibold text-gray-700 mb-2 border-b pb-1 flex items-center gap-2">
+                <div className="bg-white p-3 rounded-lg shadow-sm min-h-[85px]">
+                  <h3 className="text-xs md:text-sm font-semibold text-gray-700 mb-2 border-b pb-1 flex items-center gap-2">
                     <FaGlobeAmericas className="text-blue-600" />
                     Língua de Origem
                   </h3>
                   <div className="flex items-center justify-between">
-                    <span className="text-gray-800">
+                    <span className="text-sm md:text-base text-gray-800">
                       {project.sourceLanguage || "N/A"}
                     </span>
                     <FaEdit
@@ -618,76 +685,87 @@ const ClienteProjectDetails = () => {
                 </div>
 
                 {/* Língua de Destino */}
-                <div className="bg-white p-3 rounded-lg shadow-sm h-[85px]">
-                  <h3 className="text-sm font-semibold text-gray-700 mb-2 border-b pb-1 flex items-center gap-2">
+                <div className="bg-white p-3 rounded-lg shadow-sm min-h-[85px]">
+                  <h3 className="text-xs md:text-sm font-semibold text-gray-700 mb-2 border-b pb-1 flex items-center gap-2">
                     <FaGlobe className="text-blue-600" />
                     Língua de Destino
                   </h3>
-                  <span className="text-gray-800">
+                  <span className="text-sm md:text-base text-gray-800">
                     {project.targetLanguage || "N/A"}
                   </span>
                 </div>
 
                 {/* Conversão Monetária */}
-                <div className="bg-white p-3 rounded-lg shadow-sm h-[85px]">
-                  <h3 className="text-sm font-semibold text-gray-700 mb-1 border-b pb-1 flex items-center gap-2">
+                <div className="bg-white p-3 rounded-lg shadow-sm min-h-[85px]">
+                  <h3 className="text-xs md:text-sm font-semibold text-gray-700 mb-1 border-b pb-1 flex items-center gap-2">
                     <FaExchangeAlt className="text-blue-600" />
                     Conversão Monetária
                   </h3>
-                  <span
-                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                      project.convertCurrency
-                        ? "bg-green-100 text-green-800"
-                        : "bg-red-100 text-red-800"
-                    }`}
-                  >
-                    {project.convertCurrency
-                      ? "Com Conversão"
-                      : "Sem Conversão"}
-                  </span>
+                  <div className="flex items-center justify-between">
+                    <div className="w-1/2 pr-2">
+                      {renderBadge(project.convertCurrency, {
+                        true: {
+                          bg: "bg-green-50",
+                          text: "text-green-700",
+                          border: "border-green-200",
+                          label: "Com Conversão",
+                        },
+                        false: {
+                          bg: "bg-red-50",
+                          text: "text-red-700",
+                          border: "border-red-200",
+                          label: "Sem Conversão",
+                        },
+                      })}
+                    </div>
+                  </div>
                 </div>
 
                 {/* Prioridade */}
-                <div className="bg-white p-3 rounded-lg shadow-sm h-[85px]">
-                  <h3 className="text-sm font-semibold text-gray-700 mb-1 border-b pb-1 flex items-center gap-2">
+                <div className="bg-white p-3 rounded-lg shadow-sm min-h-[85px]">
+                  <h3 className="text-xs md:text-sm font-semibold text-gray-700 mb-1 border-b pb-1 flex items-center gap-2">
                     <FaStar className="text-blue-600" />
                     Prioridade
                   </h3>
-                  <span
-                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                      project.isPriority
-                        ? "bg-red-100 text-red-800"
-                        : "bg-gray-100 text-gray-800"
-                    }`}
-                  >
-                    {project.isPriority ? "Prioridade" : "Normal"}
-                  </span>
+                  <div className="flex items-center justify-between">
+                    <div className="w-1/2 pr-2">
+                      {renderBadge(project.isPriority, {
+                        true: {
+                          bg: "bg-green-50",
+                          text: "text-green-700",
+                          border: "border-green-200",
+                          label: "Com Prioridade",
+                        },
+                        false: {
+                          bg: "bg-red-50",
+                          text: "text-red-700",
+                          border: "border-red-200",
+                          label: "Sem Prioridade",
+                        },
+                      })}
+                    </div>
+                  </div>
                 </div>
 
                 {/* Prazo */}
-                <div className="bg-white p-3 rounded-lg shadow-sm h-[85px]">
-                  <h3 className="text-sm font-semibold text-gray-700 mb-2 border-b pb-1 flex items-center gap-2">
+                <div className="bg-white p-3 rounded-lg shadow-sm min-h-[85px]">
+                  <h3 className="text-xs md:text-sm font-semibold text-gray-700 mb-2 border-b pb-1 flex items-center gap-2">
                     <FaClock className="text-blue-600" />
                     Prazo
                   </h3>
                   <span className="text-gray-800">
-                    {(
-                      typeof project.payment_status === "object"
-                        ? project.payment_status.status === "Pago"
-                        : project.payment_status === "Pago"
-                    )
-                      ? project.deadlineDate || "Não definido"
-                      : formatDate(project.deadline)}
+                    {formatDeadlineDate(project.deadlineDate) ||
+                      formatDeadlineDate(project.deadline)}
                   </span>
                 </div>
 
                 {/* Data de Recebimento */}
-                <div className="bg-white p-3 rounded-lg shadow-sm h-[85px]">
-                  <h3 className="text-sm font-semibold text-gray-700 mb-2 border-b pb-1 flex items-center gap-2">
+                <div className="bg-white p-3 rounded-lg shadow-sm min-h-[85px]">
+                  <h3 className="text-xs md:text-sm font-semibold text-gray-700 mb-2 border-b pb-1 flex items-center gap-2">
                     <FaCalendar className="text-blue-600" />
                     Data de Recebimento
                   </h3>
-                  <span className="text-gray-800">
+                  <span className="text-sm md:text-base text-gray-800">
                     {formatDate(project.createdAt)}
                   </span>
                 </div>
@@ -695,15 +773,15 @@ const ClienteProjectDetails = () => {
             </div>
 
             {/* Segunda Div - Informações Financeiras */}
-            <div className="w-1/3 bg-green-50 rounded-xl p-6 space-y-8">
-              <h3 className="text-lg font-semibold text-gray-700 border-b pb-2 flex items-center gap-2">
+            <div className="w-full md:w-1/3 bg-green-50 rounded-xl p-4 md:p-6 space-y-4 md:space-y-8">
+              <h3 className="text-base md:text-lg font-semibold text-gray-700 border-b pb-2 flex items-center gap-2">
                 <FaMoneyBillWave className="text-green-600" />
                 Informações Financeiras
               </h3>
-              <div className="grid grid-cols-1 gap-4">
+              <div className="grid grid-cols-1 gap-3 md:gap-4">
                 {/* Status de Pagamento */}
-                <div className="bg-white p-3 rounded-lg shadow-sm h-[85px]">
-                  <h3 className="text-sm font-semibold text-gray-700 mb-1 border-b pb-1 flex items-center gap-2">
+                <div className="bg-white p-3 rounded-lg shadow-sm min-h-[85px]">
+                  <h3 className="text-xs md:text-sm font-semibold text-gray-700 mb-1 border-b pb-1 flex items-center gap-2">
                     <FaCreditCard className="text-green-600" />
                     Status de Pagamento
                   </h3>
@@ -733,12 +811,12 @@ const ClienteProjectDetails = () => {
                 </div>
 
                 {/* Informações de Pagamento */}
-                <div className="bg-white p-3 rounded-lg shadow-sm h-[85px]">
-                  <h3 className="text-sm font-semibold text-gray-700 mb-2 border-b pb-1 flex items-center gap-2">
+                <div className="bg-white p-3 rounded-lg shadow-sm min-h-[85px]">
+                  <h3 className="text-xs md:text-sm font-semibold text-gray-700 mb-2 border-b pb-1 flex items-center gap-2">
                     <FaCalendarAlt className="text-green-600" />
                     Informações de Pagamento
                   </h3>
-                  <div className="grid grid-cols-[80px_auto] gap-2 text-sm">
+                  <div className="grid grid-cols-[80px_auto] gap-2 text-xs md:text-sm">
                     <span className="text-gray-600 font-medium">Data:</span>
                     <span className="text-gray-800">
                       {project.paidAt
@@ -752,11 +830,11 @@ const ClienteProjectDetails = () => {
                 {project.payment_status &&
                   project.payment_status.status === "Reembolsado" && (
                     <div className="bg-white p-3 rounded-lg shadow-sm">
-                      <h3 className="text-sm font-semibold text-gray-700 mb-2 border-b pb-1 flex items-center gap-2">
+                      <h3 className="text-xs md:text-sm font-semibold text-gray-700 mb-2 border-b pb-1 flex items-center gap-2">
                         <FaUndo className="text-green-600" />
                         Detalhes do Reembolso
                       </h3>
-                      <div className="grid grid-cols-2 gap-2 text-sm">
+                      <div className="grid grid-cols-2 gap-2 text-xs md:text-sm">
                         <span className="text-gray-600">Valor Original:</span>
                         <span className="text-gray-800">
                           U${" "}
@@ -792,7 +870,7 @@ const ClienteProjectDetails = () => {
           </div>
           {/* Seção de Arquivos */}
           <div className="space-y-4">
-            <h2 className="text-2xl font-semibold text-blue-600 flex items-center gap-2">
+            <h2 className="text-lg md:text-2xl font-semibold text-blue-600 flex items-center gap-2">
               <FaFileAlt className="text-blue-600" />
               Arquivos Originais
             </h2>
@@ -802,11 +880,11 @@ const ClienteProjectDetails = () => {
               ? project.payment_status.status === "Pago"
               : project.payment_status === "Pago") &&
               project.shareLink && (
-                <div className="bg-white rounded-xl p-6 space-y-4 border border-gray-200">
-                  <h3 className="text-lg font-semibold text-gray-700">
+                <div className="bg-white rounded-xl p-4 md:p-6 space-y-4 border border-gray-200">
+                  <h3 className="text-base md:text-lg font-semibold text-gray-700">
                     Link do Projeto Concluído
                   </h3>
-                  <div className="text-gray-600">
+                  <div className="text-sm md:text-base text-gray-600">
                     <strong>Link Atual:</strong>{" "}
                     <a
                       href={project.shareLink}
@@ -824,19 +902,19 @@ const ClienteProjectDetails = () => {
               <table className="w-full">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-4 py-2 text-left text-sm font-medium text-gray-600">
+                    <th className="px-4 py-2 text-left text-xs md:text-sm font-medium text-gray-600">
                       Nome do Arquivo
                     </th>
-                    <th className="px-4 py-2 text-center text-sm font-medium text-gray-600 w-24">
+                    <th className="px-4 py-2 text-center text-xs md:text-sm font-medium text-gray-600 w-16 md:w-24">
                       Páginas
                     </th>
-                    <th className="px-4 py-2 text-center text-sm font-medium text-gray-600 w-32">
+                    <th className="px-4 py-2 text-center text-xs md:text-sm font-medium text-gray-600 w-24 md:w-32">
                       Língua de Origem
                     </th>
-                    <th className="px-4 py-2 text-center text-sm font-medium text-gray-600 w-32">
+                    <th className="px-4 py-2 text-center text-xs md:text-sm font-medium text-gray-600 w-24 md:w-32">
                       Língua de Destino
                     </th>
-                    <th className="px-4 py-2 text-right text-sm font-medium text-gray-600 w-32">
+                    <th className="px-4 py-2 text-right text-xs md:text-sm font-medium text-gray-600 w-24 md:w-32">
                       Valor (U$)
                     </th>
                   </tr>
@@ -847,7 +925,7 @@ const ClienteProjectDetails = () => {
                       key={file.fileUrl}
                       className="hover:bg-gray-50 transition-colors"
                     >
-                      <td className="px-4 py-2 w-64">
+                      <td className="px-4 py-2 w-48 md:w-64">
                         <button
                           onClick={async () => {
                             try {
@@ -862,25 +940,25 @@ const ClienteProjectDetails = () => {
                               );
                             }
                           }}
-                          className="flex items-center justify-between w-full text-blue-600 hover:text-blue-800 transition-colors cursor-pointer text-sm bg-transparent border-none p-0"
+                          className="flex items-center justify-between w-full text-blue-600 hover:text-blue-800 transition-colors cursor-pointer text-xs md:text-sm bg-transparent border-none p-0"
                           title={file.name}
                         >
                           <span className="truncate mr-2">
                             {truncateFileName(file.name)}
                           </span>
-                          <FaDownload className="text-sm flex-shrink-0" />
+                          <FaDownload className="text-xs md:text-sm flex-shrink-0" />
                         </button>
                       </td>
-                      <td className="px-4 py-2 text-center text-sm">
+                      <td className="px-4 py-2 text-center text-xs md:text-sm">
                         {file.pageCount}
                       </td>
-                      <td className="px-4 py-2 text-center text-sm">
+                      <td className="px-4 py-2 text-center text-xs md:text-sm">
                         {project.sourceLanguage}
                       </td>
-                      <td className="px-4 py-2 text-center text-sm">
+                      <td className="px-4 py-2 text-center text-xs md:text-sm">
                         {project.targetLanguage}
                       </td>
-                      <td className="px-4 py-2 text-right text-sm">
+                      <td className="px-4 py-2 text-right text-xs md:text-sm">
                         U${" "}
                         {Number(file.total || file.totalValue || 0).toFixed(2)}
                       </td>
@@ -891,18 +969,20 @@ const ClienteProjectDetails = () => {
             </div>
           </div>
           {/* Resumo Financeiro */}
-          <div className="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
+          <div className="flex flex-col md:flex-row justify-between items-center p-4 bg-gray-50 rounded-lg gap-2 md:gap-0">
             <div className="flex items-center gap-2">
-              <span className="text-gray-700 font-semibold">
+              <span className="text-sm md:text-base text-gray-700 font-semibold">
                 Total de Páginas:
               </span>
-              <span className="text-gray-800">
+              <span className="text-sm md:text-base text-gray-800">
                 {calculateTotalPages(project.files)}
               </span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-gray-700 font-semibold">Valor Total:</span>
-              <span className="text-gray-800">
+              <span className="text-sm md:text-base text-gray-700 font-semibold">
+                Valor Total:
+              </span>
+              <span className="text-sm md:text-base text-gray-800">
                 U${" "}
                 {Number(
                   project.totalProjectValue ||
@@ -1019,7 +1099,7 @@ const ClienteProjectDetails = () => {
               project.project_status === "Ag. Aprovação" ? (
                 <button
                   onClick={() => setShowApprovalModal(true)}
-                  className="w-[350px] px-6 py-3 bg-green-500 text-white text-base rounded-lg border-none cursor-pointer transition-colors duration-200 hover:bg-green-600 flex items-center justify-center gap-2"
+                  className="w-full md:w-[350px] px-4 md:px-6 py-2 md:py-3 bg-green-500 text-white text-sm md:text-base rounded-lg border-none cursor-pointer transition-colors duration-200 hover:bg-green-600 flex items-center justify-center gap-2"
                 >
                   <FaUserCheck />
                   Aprovar
@@ -1028,7 +1108,7 @@ const ClienteProjectDetails = () => {
                 project.collection === "b2cdocprojects" ? (
                 <button
                   disabled
-                  className="w-[350px] px-6 py-3 bg-gray-500 text-white text-base rounded-lg border-none cursor-not-allowed flex items-center justify-center gap-2"
+                  className="w-full md:w-[350px] px-4 md:px-6 py-2 md:py-3 bg-gray-500 text-white text-sm md:text-base rounded-lg border-none cursor-not-allowed flex items-center justify-center gap-2"
                 >
                   <FaClock />
                   Aguardando Orçamento
@@ -1061,7 +1141,7 @@ const ClienteProjectDetails = () => {
                           project.payment_status.status === "Divergência") ||
                         project.payment_status === "Pago"
                   }
-                  className={`w-[350px] px-6 py-3 text-white text-base rounded-lg border-none transition-colors duration-200 flex items-center justify-center gap-2 ${
+                  className={`w-full md:w-[350px] px-4 md:px-6 py-2 md:py-3 text-white text-sm md:text-base rounded-lg border-none transition-colors duration-200 flex items-center justify-center gap-2 ${
                     project.collection === "b2bdocsaved" ||
                     project.collection === "b2cdocsaved"
                       ? "bg-blue-500 hover:bg-blue-600 cursor-pointer"
@@ -1114,7 +1194,7 @@ const ClienteProjectDetails = () => {
             ) : (
               <button
                 disabled
-                className="w-[350px] px-6 py-3 bg-gray-500 text-white text-base rounded-lg border-none cursor-not-allowed flex items-center justify-center gap-2"
+                className="w-full md:w-[350px] px-4 md:px-6 py-2 md:py-3 bg-gray-500 text-white text-sm md:text-base rounded-lg border-none cursor-not-allowed flex items-center justify-center gap-2"
               >
                 <FaCreditCard />
                 Pago
@@ -1124,30 +1204,30 @@ const ClienteProjectDetails = () => {
         </div>
       </div>
 
-      {/* Modais (mantidos como estavam) */}
+      {/* Modais */}
       {showApprovalModal && (
-        <div className="fixed top-0 left-0 w-full h-full bg-black bg-opacity-50 flex justify-center items-center z-50">
-          <div className="bg-white p-5 rounded-lg shadow-lg w-96 text-center">
-            <h3 className="mt-0 bg-green-500 text-white p-2 rounded text-center">
+        <div className="fixed top-0 left-0 w-full h-full bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
+          <div className="bg-white p-4 md:p-5 rounded-lg shadow-lg w-full max-w-[384px] text-center">
+            <h3 className="mt-0 bg-green-500 text-white p-2 rounded text-center text-sm md:text-base">
               Confirmar Aprovação
             </h3>
 
-            <div className="my-5 flex flex-col items-center gap-3 w-fit mx-auto">
-              <p className="text-base">
+            <div className="my-4 md:my-5 flex flex-col items-center gap-3 w-fit mx-auto">
+              <p className="text-sm md:text-base">
                 Tem certeza que deseja aprovar este projeto?
               </p>
             </div>
 
-            <div className="flex justify-center mt-5 gap-12">
+            <div className="flex justify-center mt-4 md:mt-5 gap-8 md:gap-12">
               <button
                 onClick={handleProjectApproval}
-                className="px-3 py-1 bg-green-500 border-none rounded-full cursor-pointer shadow-sm text-white"
+                className="px-3 py-1 bg-green-500 border-none rounded-full cursor-pointer shadow-sm text-white text-sm md:text-base"
               >
                 Confirmar
               </button>
               <button
                 onClick={() => setShowApprovalModal(false)}
-                className="px-3 py-1 bg-red-500 border-none rounded-full cursor-pointer shadow-sm text-white"
+                className="px-3 py-1 bg-red-500 border-none rounded-full cursor-pointer shadow-sm text-white text-sm md:text-base"
               >
                 Cancelar
               </button>
@@ -1157,32 +1237,32 @@ const ClienteProjectDetails = () => {
       )}
 
       {showEditNameModal && (
-        <div className="fixed top-0 left-0 w-full h-full bg-black bg-opacity-50 flex justify-center items-center z-50">
-          <div className="bg-white p-5 rounded-lg shadow-lg w-96 text-center">
-            <h3 className="mt-0 bg-blue-200 p-2 rounded text-center">
+        <div className="fixed top-0 left-0 w-full h-full bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
+          <div className="bg-white p-4 md:p-5 rounded-lg shadow-lg w-full max-w-[384px] text-center">
+            <h3 className="mt-0 bg-blue-200 p-2 rounded text-center text-sm md:text-base">
               Editar Nome do Projeto
             </h3>
 
-            <div className="my-5 flex flex-col items-center gap-3 w-fit mx-auto">
+            <div className="my-4 md:my-5 flex flex-col items-center gap-3 w-fit mx-auto">
               <input
                 type="text"
                 value={newProjectName}
                 onChange={(e) => setNewProjectName(e.target.value)}
                 placeholder="Digite o novo nome do projeto"
-                className="w-72 p-2 rounded border border-gray-300"
+                className="w-full md:w-72 p-2 rounded border border-gray-300 text-sm md:text-base"
               />
             </div>
 
-            <div className="flex justify-center mt-5 gap-12">
+            <div className="flex justify-center mt-4 md:mt-5 gap-8 md:gap-12">
               <button
                 onClick={handleProjectNameUpdate}
-                className="px-3 py-1 bg-blue-50 border border-gray-400 rounded-full cursor-pointer shadow-sm text-black"
+                className="px-3 py-1 bg-blue-50 border border-gray-400 rounded-full cursor-pointer shadow-sm text-black text-sm md:text-base"
               >
                 Salvar
               </button>
               <button
                 onClick={() => setShowEditNameModal(false)}
-                className="px-3 py-1 bg-blue-50 border border-gray-400 rounded-full cursor-pointer shadow-sm text-black"
+                className="px-3 py-1 bg-blue-50 border border-gray-400 rounded-full cursor-pointer shadow-sm text-black text-sm md:text-base"
               >
                 Cancelar
               </button>
@@ -1192,17 +1272,17 @@ const ClienteProjectDetails = () => {
       )}
 
       {showEditLanguageModal && (
-        <div className="fixed top-0 left-0 w-full h-full bg-black bg-opacity-50 flex justify-center items-center z-50">
-          <div className="bg-white p-5 rounded-lg shadow-lg w-96 text-center">
-            <h3 className="mt-0 bg-blue-200 p-2 rounded text-center">
+        <div className="fixed top-0 left-0 w-full h-full bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
+          <div className="bg-white p-4 md:p-5 rounded-lg shadow-lg w-full max-w-[384px] text-center">
+            <h3 className="mt-0 bg-blue-200 p-2 rounded text-center text-sm md:text-base">
               Editar Língua de Origem
             </h3>
 
-            <div className="my-5 flex flex-col items-center gap-3 w-fit mx-auto">
+            <div className="my-4 md:my-5 flex flex-col items-center gap-3 w-fit mx-auto">
               <select
                 value={newSourceLanguage}
                 onChange={(e) => setNewSourceLanguage(e.target.value)}
-                className="w-72 p-2 rounded border border-gray-300"
+                className="w-full md:w-72 p-2 rounded border border-gray-300 text-sm md:text-base"
               >
                 <option value="Português (Brasil)">Português (Brasil)</option>
                 <option value="Espanhol (América Latina)">
@@ -1211,16 +1291,16 @@ const ClienteProjectDetails = () => {
               </select>
             </div>
 
-            <div className="flex justify-center mt-5 gap-12">
+            <div className="flex justify-center mt-4 md:mt-5 gap-8 md:gap-12">
               <button
                 onClick={handleSourceLanguageUpdate}
-                className="px-3 py-1 bg-blue-50 border border-gray-400 rounded-full cursor-pointer shadow-sm text-black"
+                className="px-3 py-1 bg-blue-50 border border-gray-400 rounded-full cursor-pointer shadow-sm text-black text-sm md:text-base"
               >
                 Salvar
               </button>
               <button
                 onClick={() => setShowEditLanguageModal(false)}
-                className="px-3 py-1 bg-blue-50 border border-gray-400 rounded-full cursor-pointer shadow-sm text-black"
+                className="px-3 py-1 bg-blue-50 border border-gray-400 rounded-full cursor-pointer shadow-sm text-black text-sm md:text-base"
               >
                 Cancelar
               </button>
@@ -1231,18 +1311,18 @@ const ClienteProjectDetails = () => {
 
       {/* Modal de Reembolso */}
       {showRefundModal && (
-        <div className="fixed top-0 left-0 w-full h-full bg-black bg-opacity-50 flex justify-center items-center z-50">
-          <div className="bg-white p-5 rounded-lg shadow-lg w-96 text-center">
-            <h3 className="mt-0 bg-blue-200 p-2 rounded text-center">
+        <div className="fixed top-0 left-0 w-full h-full bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
+          <div className="bg-white p-4 md:p-5 rounded-lg shadow-lg w-full max-w-[384px] text-center">
+            <h3 className="mt-0 bg-blue-200 p-2 rounded text-center text-sm md:text-base">
               Confirmar Cancelamento e Reembolso
             </h3>
 
-            <div className="my-5 flex flex-col items-center gap-3 w-fit mx-auto">
-              <p className="text-base">
+            <div className="my-4 md:my-5 flex flex-col items-center gap-3 w-fit mx-auto">
+              <p className="text-sm md:text-base">
                 Ao cancelar e pedir o reembolso, você será extornado do valor
                 pago e seu projeto será cancelado.
               </p>
-              <p className="text-lg font-bold text-blue-600">
+              <p className="text-base md:text-lg font-bold text-blue-600">
                 Valor do Reembolso: U${" "}
                 {Number(
                   project.totalProjectValue ||
@@ -1252,16 +1332,16 @@ const ClienteProjectDetails = () => {
               </p>
             </div>
 
-            <div className="flex justify-center mt-5 gap-12">
+            <div className="flex justify-center mt-4 md:mt-5 gap-8 md:gap-12">
               <button
                 onClick={handleRefundRequest}
-                className="px-3 py-1 bg-blue-500 border-none rounded-full cursor-pointer shadow-sm text-white"
+                className="px-3 py-1 bg-blue-500 border-none rounded-full cursor-pointer shadow-sm text-white text-sm md:text-base"
               >
                 Confirmar
               </button>
               <button
                 onClick={() => setShowRefundModal(false)}
-                className="px-3 py-1 bg-red-500 border-none rounded-full cursor-pointer shadow-sm text-white"
+                className="px-3 py-1 bg-red-500 border-none rounded-full cursor-pointer shadow-sm text-white text-sm md:text-base"
               >
                 Cancelar
               </button>
