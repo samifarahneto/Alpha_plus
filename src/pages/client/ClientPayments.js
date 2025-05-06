@@ -197,36 +197,14 @@ const ClientPayments = () => {
     navigate(`/client/projects/${projectId}`);
   };
 
-  const formatDate = (date) => {
-    if (!date) return "";
-
-    try {
-      // Se for um Timestamp do Firestore
-      if (date.toDate) {
-        return date.toDate().toLocaleDateString("pt-BR");
-      }
-
-      // Se for uma string de data
-      if (typeof date === "string") {
-        return new Date(date).toLocaleDateString("pt-BR");
-      }
-
-      // Se for um objeto Date
-      if (date instanceof Date) {
-        return date.toLocaleDateString("pt-BR");
-      }
-
-      return "";
-    } catch (error) {
-      console.error("Erro ao formatar data:", error);
-      return "";
-    }
-  };
-
   const calculateTotalValue = (files) => {
-    if (!files) return "0.00";
-    const total = files.reduce((sum, file) => sum + (file.total || 0), 0);
-    return total.toFixed(2);
+    if (!files || !Array.isArray(files)) return "0.00";
+    return files
+      .reduce((acc, file) => {
+        const fileTotal = Number(file.total) || 0;
+        return acc + fileTotal;
+      }, 0)
+      .toFixed(2);
   };
 
   const handleProjectSelect = (projectId, isSelected) => {
@@ -262,25 +240,29 @@ const ClientPayments = () => {
       id: "author",
       label: "Autor",
       fixed: true,
-      render: (value) => (
-        <span>
-          {value && value.length > 15
-            ? `${value.slice(0, 15)}...`
-            : value || "Não informado"}
-        </span>
-      ),
+      render: (value, row) => {
+        const author = row.nomeCompleto || row.projectOwner || "Não informado";
+        return (
+          <span>
+            {author && author.length > 15
+              ? `${author.slice(0, 15)}...`
+              : author}
+          </span>
+        );
+      },
     },
     {
       id: "email",
       label: "Email",
       fixed: true,
-      render: (value) => (
-        <span>
-          {value && value.length > 20
-            ? `${value.slice(0, 20)}...`
-            : value || "Não informado"}
-        </span>
-      ),
+      render: (value, row) => {
+        const email = row.userEmail || "Não informado";
+        return (
+          <span>
+            {email && email.length > 20 ? `${email.slice(0, 20)}...` : email}
+          </span>
+        );
+      },
     },
     {
       id: "projectName",
@@ -297,38 +279,108 @@ const ClientPayments = () => {
     {
       id: "createdAt",
       label: "Data",
-      render: (value) => formatDate(value),
+      render: (value) => {
+        if (!value) return "Não informado";
+        try {
+          if (value.toDate) {
+            return value.toDate().toLocaleDateString("pt-BR");
+          }
+          if (value.seconds) {
+            return new Date(value.seconds * 1000).toLocaleDateString("pt-BR");
+          }
+          return new Date(value).toLocaleDateString("pt-BR");
+        } catch (error) {
+          return "Data inválida";
+        }
+      },
     },
     {
       id: "pages",
       label: "Págs",
       render: (value, row) => {
-        if (!row.files) return "0";
-        return row.files.reduce((sum, file) => sum + (file.pages || 0), 0);
+        if (!row.files || !Array.isArray(row.files)) return "0";
+        const totalPages = row.files.reduce((sum, file) => {
+          const pages = parseInt(file.pageCount) || 0;
+          return sum + pages;
+        }, 0);
+        return totalPages.toString();
       },
     },
     {
       id: "sourceLanguage",
       label: "Origem",
+      render: (value) => value || "Não informado",
     },
     {
       id: "targetLanguage",
       label: "Destino",
+      render: (value) => value || "Não informado",
     },
     {
       id: "totalValue",
       label: "Valor U$",
-      render: (value, row) => `U$ ${calculateTotalValue(row.files)}`,
+      render: (value, row) => {
+        const total = calculateTotalValue(row.files);
+        return `U$ ${total}`;
+      },
     },
     {
       id: "status",
       label: "Status",
-      render: (value) => value || "Pendente",
+      render: (value) => {
+        const statusConfig = {
+          Pago: {
+            bg: "bg-green-50",
+            text: "text-green-700",
+            border: "border-green-200",
+          },
+          Pendente: {
+            bg: "bg-yellow-50",
+            text: "text-yellow-700",
+            border: "border-yellow-200",
+          },
+          Atrasado: {
+            bg: "bg-red-50",
+            text: "text-red-700",
+            border: "border-red-200",
+          },
+          Divergência: {
+            bg: "bg-red-50",
+            text: "text-red-700",
+            border: "border-red-200",
+          },
+          "N/A": {
+            bg: "bg-gray-50",
+            text: "text-gray-700",
+            border: "border-gray-200",
+          },
+        };
+
+        const status = value || "Pendente";
+        const config = statusConfig[status] || statusConfig["N/A"];
+
+        return (
+          <div
+            className={`w-full px-2 py-1 rounded-full border ${config.bg} ${config.text} ${config.border} text-center text-xs font-medium`}
+          >
+            {status}
+          </div>
+        );
+      },
     },
     {
       id: "deadline",
       label: "Prazo",
-      render: (value) => formatDate(value),
+      render: (value) => {
+        if (!value || !value.seconds) return "A definir";
+        try {
+          const date = new Date(value.seconds * 1000);
+          if (isNaN(date.getTime())) return "A definir";
+          return date.toLocaleDateString("pt-BR");
+        } catch (error) {
+          return "A definir";
+        }
+      },
     },
     {
       id: "select",
