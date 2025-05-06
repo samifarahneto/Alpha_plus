@@ -61,6 +61,7 @@ const ClientAddProject = () => {
     totalValue: 0,
     valuePerPage: 0,
     hasManualQuoteFiles: false,
+    projectType: "pdf",
   });
 
   // Estado necessário para controle do tipo de usuário e direcionamento da coleção
@@ -385,8 +386,15 @@ const ClientAddProject = () => {
   ]);
 
   const uploadPDFToFirebase = async (pdfBlob, fileName) => {
+    const auth = getAuth();
+    const user = auth.currentUser;
+
+    if (!user) {
+      throw new Error("Usuário não autenticado");
+    }
+
     const storage = getStorage();
-    const storageRef = ref(storage, `pdfs/${fileName}`);
+    const storageRef = ref(storage, `pdfs/${user.uid}/${fileName}`);
     const uploadTask = uploadBytesResumable(storageRef, pdfBlob);
 
     return new Promise((resolve, reject) => {
@@ -507,6 +515,7 @@ const ClientAddProject = () => {
       console.log("Resumo do processamento:", {
         totalPagesCount,
         totalValue,
+        hasManualQuoteFiles,
         files: uploadedFiles.map((f) => ({
           name: f.name,
           pageCount: f.pageCount,
@@ -1171,6 +1180,20 @@ const ClientAddProject = () => {
       }));
     });
 
+    // Verifica se há arquivos DOCX
+    const hasDocxFiles = validFiles.some(
+      (file) =>
+        file.name.toLowerCase().endsWith(".docx") ||
+        file.name.toLowerCase().endsWith(".doc")
+    );
+
+    // Atualiza o projectData com o tipo de projeto
+    setProjectData((prev) => ({
+      ...prev,
+      projectType: hasDocxFiles ? "docx" : "pdf",
+      hasManualQuoteFiles: hasDocxFiles,
+    }));
+
     setFiles((prevFiles) => [...prevFiles, ...validFiles]);
     event.target.value = null;
   };
@@ -1275,6 +1298,7 @@ const ClientAddProject = () => {
       totalValue: 0,
       valuePerPage: 0,
       hasManualQuoteFiles: false,
+      projectType: "pdf",
     });
     setCurrentStep(1);
   };
@@ -1924,7 +1948,8 @@ const ClientAddProject = () => {
                       </svg>
                       Resetar
                     </button>
-                    {projectData.hasManualQuoteFiles ? (
+                    {projectData.hasManualQuoteFiles ||
+                    projectData.projectType === "docx" ? (
                       <>
                         <button
                           onClick={() => {

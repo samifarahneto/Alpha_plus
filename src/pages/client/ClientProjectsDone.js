@@ -43,8 +43,12 @@ const ClientProjectsDone = () => {
           "createdAt",
           "sourceLanguage",
           "targetLanguage",
-          "totalValue",
           "files",
+          "deadlineDate",
+          "payment_status",
+          "project_status",
+          "translation_status",
+          "totalValue",
         ];
   });
   const navigate = useNavigate();
@@ -59,34 +63,63 @@ const ClientProjectsDone = () => {
         if (!currentUser) return;
 
         const db = getFirestore();
-        const projectsRef = collection(db, "projects");
-        const q = query(
-          projectsRef,
-          where("clientId", "==", currentUser.uid),
-          where("status", "==", "Concluído"),
-          orderBy("createdAt", "desc")
+        const collections = [
+          "b2bprojectspaid",
+          "b2cprojectspaid",
+          "b2bapproved",
+        ];
+
+        const queries = collections.map((collectionName) => {
+          const projectsRef = collection(db, collectionName);
+          return query(
+            projectsRef,
+            where("userEmail", "==", currentUser.email),
+            where("translation_status", "in", ["Finalizado", "Concluído"]),
+            orderBy("createdAt", "desc")
+          );
+        });
+
+        const queries2 = collections.map((collectionName) => {
+          const projectsRef = collection(db, collectionName);
+          return query(
+            projectsRef,
+            where("userEmail", "==", currentUser.email),
+            where("project_status", "==", "Finalizado"),
+            orderBy("createdAt", "desc")
+          );
+        });
+
+        const allQueries = [...queries, ...queries2];
+
+        const unsubscribes = allQueries.map((q) =>
+          onSnapshot(
+            q,
+            (snapshot) => {
+              const projectsList = snapshot.docs.map((doc) => ({
+                id: doc.id,
+                collection: doc.ref.parent.id,
+                ...doc.data(),
+              }));
+              setProjects((prevProjects) => {
+                const newProjects = [...prevProjects, ...projectsList];
+                // Remove duplicatas baseado no ID
+                return Array.from(
+                  new Map(newProjects.map((item) => [item.id, item])).values()
+                );
+              });
+              setLoading(false);
+            },
+            (error) => {
+              console.error("Erro ao buscar projetos:", error);
+              setError(
+                "Erro ao carregar os projetos. Por favor, tente novamente."
+              );
+              setLoading(false);
+            }
+          )
         );
 
-        const unsubscribe = onSnapshot(
-          q,
-          (snapshot) => {
-            const projectsList = snapshot.docs.map((doc) => ({
-              id: doc.id,
-              ...doc.data(),
-            }));
-            setProjects(projectsList);
-            setLoading(false);
-          },
-          (error) => {
-            console.error("Erro ao buscar projetos:", error);
-            setError(
-              "Erro ao carregar os projetos. Por favor, tente novamente."
-            );
-            setLoading(false);
-          }
-        );
-
-        return () => unsubscribe();
+        return () => unsubscribes.forEach((unsubscribe) => unsubscribe());
       } catch (error) {
         console.error("Erro ao buscar projetos:", error);
         setError("Erro ao carregar os projetos. Por favor, tente novamente.");
@@ -102,9 +135,34 @@ const ClientProjectsDone = () => {
   };
 
   const formatDate = (date) => {
-    if (!date) return "A definir";
-    const d = date.toDate();
-    return d.toLocaleDateString("pt-BR");
+    if (!date) return "N/A";
+
+    try {
+      // Se for um Timestamp do Firestore
+      if (date && typeof date.toDate === "function") {
+        return date.toDate().toLocaleDateString("pt-BR");
+      }
+
+      // Se for uma string de data
+      if (typeof date === "string") {
+        return new Date(date).toLocaleDateString("pt-BR");
+      }
+
+      // Se for um objeto Date
+      if (date instanceof Date) {
+        return date.toLocaleDateString("pt-BR");
+      }
+
+      // Se for um objeto com seconds (Timestamp do Firestore em outro formato)
+      if (date && typeof date.seconds === "number") {
+        return new Date(date.seconds * 1000).toLocaleDateString("pt-BR");
+      }
+
+      return "N/A";
+    } catch (error) {
+      console.error("Erro ao formatar data:", error);
+      return "N/A";
+    }
   };
 
   const calculateTotalValue = (files) => {
@@ -181,7 +239,7 @@ const ClientProjectsDone = () => {
       fixed: true,
       render: (value) => (
         <span>
-          {value && value.length > 15
+          {value && typeof value === "string" && value.length > 15
             ? `${value.slice(0, 15)}...`
             : value || "Não informado"}
         </span>
@@ -199,7 +257,7 @@ const ClientProjectsDone = () => {
       fixed: true,
       render: (value) => (
         <span>
-          {value && value.length > 15
+          {value && typeof value === "string" && value.length > 15
             ? `${value.slice(0, 15)}...`
             : value || "Sem Nome"}
         </span>
@@ -213,23 +271,20 @@ const ClientProjectsDone = () => {
     {
       id: "sourceLanguage",
       label: "Origem",
+      render: (value) => <span>{value || "Não informado"}</span>,
     },
     {
       id: "targetLanguage",
       label: "Destino",
-    },
-    {
-      id: "totalValue",
-      label: "Valor U$",
-      render: (value, row) => `U$ ${calculateTotalValue(row.files)}`,
+      render: (value) => <span>{value || "Não informado"}</span>,
     },
     {
       id: "files",
-      label: "Arqs",
+      label: "Arquivos",
       render: (value, row) => (
         <div className="flex items-center justify-center gap-1">
-          <span>{row.files?.length || 0}</span>
-          {row.files?.length > 0 && (
+          <span>{Array.isArray(row.files) ? row.files.length : 0}</span>
+          {Array.isArray(row.files) && row.files.length > 0 && (
             <FaDownload
               className="text-blue-600 hover:text-blue-800 cursor-pointer"
               onClick={(e) => {
@@ -242,6 +297,176 @@ const ClientProjectsDone = () => {
           )}
         </div>
       ),
+    },
+    {
+      id: "deadlineDate",
+      label: "Prazo",
+      render: (value) => {
+        if (!value) return "N/A";
+        return formatDate(value);
+      },
+    },
+    {
+      id: "payment_status",
+      label: "Status de Pagamento",
+      render: (value) => {
+        const statusConfig = {
+          Pago: {
+            bg: "bg-green-50",
+            text: "text-green-700",
+            border: "border-green-200",
+          },
+          Pendente: {
+            bg: "bg-yellow-50",
+            text: "text-yellow-700",
+            border: "border-yellow-200",
+          },
+          Atrasado: {
+            bg: "bg-red-50",
+            text: "text-red-700",
+            border: "border-red-200",
+          },
+          Divergência: {
+            bg: "bg-red-50",
+            text: "text-red-700",
+            border: "border-red-200",
+          },
+          "N/A": {
+            bg: "bg-gray-50",
+            text: "text-gray-700",
+            border: "border-gray-200",
+          },
+        };
+
+        const status = typeof value === "string" ? value : "N/A";
+        const config = statusConfig[status] || statusConfig["N/A"];
+
+        return (
+          <div
+            className={`w-full px-2 py-1 rounded-full border ${config.bg} ${config.text} ${config.border} text-center text-xs font-medium`}
+          >
+            {status}
+          </div>
+        );
+      },
+    },
+    {
+      id: "project_status",
+      label: "Status do Projeto",
+      render: (value) => {
+        const statusConfig = {
+          "Em Andamento": {
+            bg: "bg-blue-50",
+            text: "text-blue-700",
+            border: "border-blue-200",
+          },
+          Finalizado: {
+            bg: "bg-green-50",
+            text: "text-green-700",
+            border: "border-green-200",
+          },
+          "Em Revisão": {
+            bg: "bg-yellow-50",
+            text: "text-yellow-700",
+            border: "border-yellow-200",
+          },
+          Cancelado: {
+            bg: "bg-red-50",
+            text: "text-red-700",
+            border: "border-red-200",
+          },
+          "Em Análise": {
+            bg: "bg-yellow-50",
+            text: "text-yellow-700",
+            border: "border-yellow-200",
+          },
+          "Ag. Orçamento": {
+            bg: "bg-orange-50",
+            text: "text-orange-700",
+            border: "border-orange-200",
+          },
+          "Ag. Aprovação": {
+            bg: "bg-amber-50",
+            text: "text-amber-700",
+            border: "border-amber-200",
+          },
+          "Ag. Pagamento": {
+            bg: "bg-purple-50",
+            text: "text-purple-700",
+            border: "border-purple-200",
+          },
+          "Em Divergência": {
+            bg: "bg-red-50",
+            text: "text-red-700",
+            border: "border-red-200",
+          },
+          "N/A": {
+            bg: "bg-gray-50",
+            text: "text-gray-700",
+            border: "border-gray-200",
+          },
+        };
+
+        const status = typeof value === "string" ? value : "N/A";
+        const config = statusConfig[status] || statusConfig["N/A"];
+
+        return (
+          <div
+            className={`w-full px-2 py-1 rounded-full border ${config.bg} ${config.text} ${config.border} text-center text-xs font-medium`}
+          >
+            {status}
+          </div>
+        );
+      },
+    },
+    {
+      id: "translation_status",
+      label: "Status da Tradução",
+      render: (value) => {
+        const statusConfig = {
+          "Em Andamento": {
+            bg: "bg-blue-50",
+            text: "text-blue-700",
+            border: "border-blue-200",
+          },
+          Concluído: {
+            bg: "bg-green-50",
+            text: "text-green-700",
+            border: "border-green-200",
+          },
+          "Em Revisão": {
+            bg: "bg-yellow-50",
+            text: "text-yellow-700",
+            border: "border-yellow-200",
+          },
+          Cancelado: {
+            bg: "bg-red-50",
+            text: "text-red-700",
+            border: "border-red-200",
+          },
+          "N/A": {
+            bg: "bg-gray-50",
+            text: "text-gray-700",
+            border: "border-gray-200",
+          },
+        };
+
+        const status = typeof value === "string" ? value : "N/A";
+        const config = statusConfig[status] || statusConfig["N/A"];
+
+        return (
+          <div
+            className={`w-full px-2 py-1 rounded-full border ${config.bg} ${config.text} ${config.border} text-center text-xs font-medium`}
+          >
+            {status}
+          </div>
+        );
+      },
+    },
+    {
+      id: "totalValue",
+      label: "Valor Total",
+      render: (value, row) => `U$ ${calculateTotalValue(row.files)}`,
     },
   ];
 

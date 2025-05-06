@@ -1,8 +1,54 @@
 rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
+    // Função para verificar se o usuário está autenticado
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Função para verificar se o usuário é admin/master
+    function isMaster() {
+      return request.auth.token.role == 'master';
+    }
+
+    // Regras para a pasta pdfs
+    match /pdfs/{userId}/{fileName} {
+      // Permitir leitura para usuários autenticados
+      allow read: if isAuthenticated() && request.auth.uid == userId;
+      
+      // Permitir escrita apenas para usuários autenticados
+      // e se o arquivo for menor que 10MB
+      allow write: if isAuthenticated() 
+        && request.auth.uid == userId
+        && request.resource.size < 10 * 1024 * 1024
+        && (
+          request.resource.contentType.matches('application/pdf') ||
+          request.resource.contentType.matches('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet') ||
+          request.resource.contentType.matches('application/vnd.ms-excel') ||
+          request.resource.contentType.matches('application/vnd.openxmlformats-officedocument.wordprocessingml.document') ||
+          request.resource.contentType.matches('application/msword')
+        );
+    }
+
+    // Regras para outros tipos de documentos
+    match /documents/{userId}/{fileName} {
+      // Permitir leitura para usuários autenticados
+      allow read: if isAuthenticated() && request.auth.uid == userId;
+      
+      // Permitir escrita apenas para usuários autenticados
+      // e se o arquivo for menor que 20MB
+      allow write: if isAuthenticated() 
+        && request.auth.uid == userId
+        && request.resource.size < 20 * 1024 * 1024;
+    }
+
+    // Regra padrão para outros arquivos
     match /{allPaths=**} {
-      allow read, write: if request.auth != null; // Permite acesso apenas para usuários autenticados
+      // Permitir leitura para usuários autenticados
+      allow read: if isAuthenticated();
+      
+      // Permitir escrita apenas para admin/master
+      allow write: if isMaster();
     }
   }
 }

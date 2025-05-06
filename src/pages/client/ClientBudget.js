@@ -9,6 +9,7 @@ import {
   onSnapshot,
 } from "firebase/firestore";
 import { auth } from "../../firebaseConfig";
+import { FaDownload } from "react-icons/fa";
 import ClientLayout from "../../components/layouts/ClientLayout";
 import DataTable from "../../components/DataTable";
 import "../../styles/Table.css";
@@ -17,6 +18,8 @@ const ClientBudget = () => {
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [showFilesModal, setShowFilesModal] = useState(false);
+  const [selectedFiles, setSelectedFiles] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(() => {
     const savedRowsPerPage = localStorage.getItem("clientBudgetRowsPerPage");
@@ -28,50 +31,69 @@ const ClientBudget = () => {
     return savedColumnOrder
       ? JSON.parse(savedColumnOrder)
       : [
-          "projectName",
           "projectOwner",
+          "userEmail",
+          "projectName",
           "createdAt",
           "sourceLanguage",
           "targetLanguage",
+          "files",
+          "deadlineDate",
+          "payment_status",
+          "project_status",
+          "translation_status",
           "totalValue",
         ];
   });
   const navigate = useNavigate();
 
-  const fixedColumns = ["projectName", "projectOwner"];
+  const fixedColumns = ["projectOwner", "userEmail", "projectName"];
 
   useEffect(() => {
     const fetchProjects = async () => {
       try {
         const db = getFirestore();
-        const projectsRef = collection(db, "projects");
-        const q = query(
-          projectsRef,
-          where("clientId", "==", auth.currentUser.uid),
-          where("status", "==", "Aguardando Orçamento"),
-          orderBy("createdAt", "desc")
+        const collections = ["b2bdocprojects", "b2cdocprojects"];
+
+        const queries = collections.map((collectionName) => {
+          const projectsRef = collection(db, collectionName);
+          return query(
+            projectsRef,
+            where("userEmail", "==", auth.currentUser.email),
+            where("project_status", "==", "Ag. Orçamento"),
+            orderBy("createdAt", "desc")
+          );
+        });
+
+        const unsubscribes = queries.map((q) =>
+          onSnapshot(
+            q,
+            (snapshot) => {
+              const projectsList = snapshot.docs.map((doc) => ({
+                id: doc.id,
+                collection: doc.ref.parent.id,
+                ...doc.data(),
+              }));
+              setProjects((prevProjects) => {
+                const newProjects = [...prevProjects, ...projectsList];
+                // Remove duplicatas baseado no ID
+                return Array.from(
+                  new Map(newProjects.map((item) => [item.id, item])).values()
+                );
+              });
+              setLoading(false);
+            },
+            (error) => {
+              console.error("Erro ao buscar projetos:", error);
+              setError(
+                "Erro ao carregar os projetos. Por favor, tente novamente."
+              );
+              setLoading(false);
+            }
+          )
         );
 
-        const unsubscribe = onSnapshot(
-          q,
-          (snapshot) => {
-            const projectsList = snapshot.docs.map((doc) => ({
-              id: doc.id,
-              ...doc.data(),
-            }));
-            setProjects(projectsList);
-            setLoading(false);
-          },
-          (error) => {
-            console.error("Erro ao buscar projetos:", error);
-            setError(
-              "Erro ao carregar os projetos. Por favor, tente novamente."
-            );
-            setLoading(false);
-          }
-        );
-
-        return () => unsubscribe();
+        return () => unsubscribes.forEach((unsubscribe) => unsubscribe());
       } catch (error) {
         console.error("Erro ao buscar projetos:", error);
         setError("Erro ao carregar os projetos. Por favor, tente novamente.");
@@ -100,20 +122,8 @@ const ClientBudget = () => {
 
   const columns = [
     {
-      id: "projectName",
-      label: "Nome do Projeto",
-      fixed: true,
-      render: (value) => (
-        <span>
-          {value && value.length > 15
-            ? `${value.slice(0, 15)}...`
-            : value || "Sem Nome"}
-        </span>
-      ),
-    },
-    {
       id: "projectOwner",
-      label: "Proprietário",
+      label: "Autor",
       fixed: true,
       render: (value) => (
         <span>
@@ -124,22 +134,226 @@ const ClientBudget = () => {
       ),
     },
     {
+      id: "userEmail",
+      label: "Email",
+      fixed: true,
+      render: (value) => <span>{value || "Não informado"}</span>,
+    },
+    {
+      id: "projectName",
+      label: "Projeto",
+      fixed: true,
+      render: (value) => (
+        <span>
+          {value && value.length > 15
+            ? `${value.slice(0, 15)}...`
+            : value || "Sem Nome"}
+        </span>
+      ),
+    },
+    {
       id: "createdAt",
-      label: "Data de Criação",
+      label: "Data",
       render: (value) => formatDate(value),
     },
     {
       id: "sourceLanguage",
-      label: "Idioma de Origem",
+      label: "Origem",
     },
     {
       id: "targetLanguage",
-      label: "Idioma de Destino",
+      label: "Destino",
+    },
+    {
+      id: "files",
+      label: "Arqs",
+      render: (value, row) => (
+        <div className="flex items-center justify-center gap-1">
+          <span>{row.files?.length || 0}</span>
+          {row.files?.length > 0 && (
+            <FaDownload
+              className="text-blue-600 hover:text-blue-800 cursor-pointer"
+              onClick={(e) => {
+                e.stopPropagation();
+                setSelectedFiles(row.files);
+                setShowFilesModal(true);
+              }}
+              size={14}
+            />
+          )}
+        </div>
+      ),
+    },
+    {
+      id: "deadlineDate",
+      label: "Prazo",
+      render: (value) => {
+        if (!value) return "N/A";
+        const date = value.toDate ? value.toDate() : new Date(value);
+        return date.toLocaleDateString("pt-BR");
+      },
+    },
+    {
+      id: "payment_status",
+      label: "PGTO",
+      render: (value) => {
+        const statusConfig = {
+          Pago: {
+            bg: "bg-green-50",
+            text: "text-green-700",
+            border: "border-green-200",
+          },
+          Pendente: {
+            bg: "bg-yellow-50",
+            text: "text-yellow-700",
+            border: "border-yellow-200",
+          },
+          Atrasado: {
+            bg: "bg-red-50",
+            text: "text-red-700",
+            border: "border-red-200",
+          },
+          Divergência: {
+            bg: "bg-red-50",
+            text: "text-red-700",
+            border: "border-red-200",
+          },
+          "N/A": {
+            bg: "bg-gray-50",
+            text: "text-gray-700",
+            border: "border-gray-200",
+          },
+        };
+
+        const status = value || "Pendente";
+        const config = statusConfig[status] || statusConfig["N/A"];
+
+        return (
+          <div
+            className={`w-full px-2 py-1 rounded-full border ${config.bg} ${config.text} ${config.border} text-center text-xs font-medium`}
+          >
+            {status}
+          </div>
+        );
+      },
+    },
+    {
+      id: "project_status",
+      label: "Status",
+      render: (value) => {
+        const statusConfig = {
+          "Em Andamento": {
+            bg: "bg-blue-50",
+            text: "text-blue-700",
+            border: "border-blue-200",
+          },
+          Finalizado: {
+            bg: "bg-green-50",
+            text: "text-green-700",
+            border: "border-green-200",
+          },
+          "Em Revisão": {
+            bg: "bg-yellow-50",
+            text: "text-yellow-700",
+            border: "border-yellow-200",
+          },
+          Cancelado: {
+            bg: "bg-red-50",
+            text: "text-red-700",
+            border: "border-red-200",
+          },
+          "Em Análise": {
+            bg: "bg-yellow-50",
+            text: "text-yellow-700",
+            border: "border-yellow-200",
+          },
+          "Ag. Orçamento": {
+            bg: "bg-orange-50",
+            text: "text-orange-700",
+            border: "border-orange-200",
+          },
+          "Ag. Aprovação": {
+            bg: "bg-amber-50",
+            text: "text-amber-700",
+            border: "border-amber-200",
+          },
+          "Ag. Pagamento": {
+            bg: "bg-purple-50",
+            text: "text-purple-700",
+            border: "border-purple-200",
+          },
+          "Em Divergência": {
+            bg: "bg-red-50",
+            text: "text-red-700",
+            border: "border-red-200",
+          },
+          "N/A": {
+            bg: "bg-gray-50",
+            text: "text-gray-700",
+            border: "border-gray-200",
+          },
+        };
+
+        const status = value || "Ag. Orçamento";
+        const config = statusConfig[status] || statusConfig["N/A"];
+
+        return (
+          <div
+            className={`w-full px-2 py-1 rounded-full border ${config.bg} ${config.text} ${config.border} text-center text-xs font-medium`}
+          >
+            {status}
+          </div>
+        );
+      },
+    },
+    {
+      id: "translation_status",
+      label: "Tradução",
+      render: (value) => {
+        const statusConfig = {
+          "Em Andamento": {
+            bg: "bg-blue-50",
+            text: "text-blue-700",
+            border: "border-blue-200",
+          },
+          Concluído: {
+            bg: "bg-green-50",
+            text: "text-green-700",
+            border: "border-green-200",
+          },
+          "Em Revisão": {
+            bg: "bg-yellow-50",
+            text: "text-yellow-700",
+            border: "border-yellow-200",
+          },
+          Cancelado: {
+            bg: "bg-red-50",
+            text: "text-red-700",
+            border: "border-red-200",
+          },
+          "N/A": {
+            bg: "bg-gray-50",
+            text: "text-gray-700",
+            border: "border-gray-200",
+          },
+        };
+
+        const status = value || "N/A";
+        const config = statusConfig[status] || statusConfig["N/A"];
+
+        return (
+          <div
+            className={`w-full px-2 py-1 rounded-full border ${config.bg} ${config.text} ${config.border} text-center text-xs font-medium`}
+          >
+            {status}
+          </div>
+        );
+      },
     },
     {
       id: "totalValue",
-      label: "Valor Total",
-      render: (value, row) => `R$ ${calculateTotalValue(row.files)}`,
+      label: "Valor U$",
+      render: (value, row) => `U$ ${calculateTotalValue(row.files)}`,
     },
   ];
 
@@ -157,6 +371,67 @@ const ClientBudget = () => {
     setCurrentPage(1);
     setShowRowsDropdown(false);
     localStorage.setItem("clientBudgetRowsPerPage", value.toString());
+  };
+
+  const renderFilesModal = () => {
+    if (!showFilesModal) return null;
+
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+        <div className="w-11/12 max-w-4xl max-h-[90vh] overflow-y-auto bg-white rounded-lg shadow-xl">
+          <div className="p-6">
+            <div className="mb-6">
+              <h3 className="text-xl font-semibold text-gray-900 text-center">
+                Visualizar Arquivos
+              </h3>
+            </div>
+
+            <div className="space-y-4">
+              {selectedFiles.map((file, index) => (
+                <div
+                  key={index}
+                  className="flex items-center justify-between p-4 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  <div className="flex-1">
+                    <div className="flex flex-col">
+                      <span className="text-sm font-medium text-gray-900">
+                        {file.name}
+                      </span>
+                      <span className="text-sm text-gray-500">
+                        {file.pageCount || 0} páginas
+                      </span>
+                    </div>
+                  </div>
+                  <div className="ml-4">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        window.open(file.fileUrl, "_blank");
+                      }}
+                      className="inline-flex items-center gap-2 px-3 py-1.5 text-sm text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+                    >
+                      <FaDownload className="w-4 h-4" />
+                      Download
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="flex justify-end mt-6">
+              <button
+                type="button"
+                onClick={() => setShowFilesModal(false)}
+                className="px-4 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+              >
+                Fechar
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -273,6 +548,7 @@ const ClientBudget = () => {
           </div>
         </>
       )}
+      {renderFilesModal()}
     </ClientLayout>
   );
 };
