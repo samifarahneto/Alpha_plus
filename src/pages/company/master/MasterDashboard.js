@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { db } from "../../../firebaseConfig";
 import { collection, getDocs } from "firebase/firestore";
+import PageLayout from "../../../components/PageLayout";
 
 const MasterDashboard = () => {
   const [dashboardData, setDashboardData] = useState({
@@ -371,421 +372,486 @@ const MasterDashboard = () => {
   }, []);
 
   return (
-    <div className="w-full max-w-full p-8 space-y-8">
-      <div className="glass-card">
-        <h1 className="text-3xl font-bold text-center mb-8 bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
-          Dashboard Master
-        </h1>
+    <PageLayout>
+      <div className="w-full max-w-full p-4 sm:p-6 md:p-8 space-y-4 sm:space-y-6 md:space-y-8">
+        <div className="glass-card">
+          {/* Grid de 4 cards (1 coluna no mobile, 2 colunas no desktop) */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 md:gap-8">
+            {/* Card 1 - Financeiro */}
+            <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 border border-gray-100 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+              <div className="flex items-center justify-between mb-4 sm:mb-6">
+                <h3 className="text-lg sm:text-xl font-semibold text-gray-800 flex items-center">
+                  <span className="bg-blue-500 p-2 rounded-lg mr-3">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-5 w-5 sm:h-6 sm:w-6 text-white"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
+                    </svg>
+                  </span>
+                  Financeiro
+                </h3>
+              </div>
 
-        {/* Grid de 4 cards (2x2) */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Card 1 */}
-          <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100 hover:shadow-xl transition-shadow duration-300">
-            <div className="flex items-center justify-center mb-4">
-              <h3 className="text-xl font-semibold text-gray-800">
-                Financeiro
-              </h3>
-              <div className="bg-blue-500 p-2 rounded-lg ml-3">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-6 w-6 text-white"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
+              {/* Grid de cards financeiros */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                {/* Receita Total */}
+                <div className="bg-gradient-to-br from-white to-blue-50 rounded-lg shadow-md p-3 sm:p-4 border border-blue-100 transition-all hover:shadow-lg">
+                  <p className="text-sm font-medium text-gray-500 mb-1 sm:mb-2">
+                    Receita Total
+                  </p>
+                  <div>
+                    <p className="text-xl sm:text-2xl font-bold text-green-600">
+                      R${" "}
+                      {dashboardData.receitaTotal.toLocaleString("pt-BR", {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Total acumulado
+                    </p>
+                  </div>
+                </div>
+
+                {/* Pagamentos Pendentes */}
+                <div className="bg-gradient-to-br from-white to-red-50 rounded-lg shadow-md p-3 sm:p-4 border border-red-100 transition-all hover:shadow-lg">
+                  <p className="text-sm font-medium text-gray-500 mb-1 sm:mb-2">
+                    Pagamentos Pendentes
+                  </p>
+                  <div>
+                    <p className="text-xl sm:text-2xl font-bold text-red-600">
+                      R${" "}
+                      {dashboardData.pagamentosPendentes.toLocaleString(
+                        "pt-BR",
+                        {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        }
+                      )}
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Aguardando pagamento
+                    </p>
+                  </div>
+                </div>
+
+                {/* Divergências Pagas */}
+                <div className="bg-gradient-to-br from-white to-blue-50 rounded-lg shadow-md p-3 sm:p-4 border border-blue-100 transition-all hover:shadow-lg">
+                  <p className="text-sm font-medium text-gray-500 mb-1 sm:mb-2">
+                    Divergências Pagas
+                  </p>
+                  <div>
+                    <p className="text-xl sm:text-2xl font-bold text-blue-600">
+                      R${" "}
+                      {dashboardData.divergenciasPagas.toLocaleString("pt-BR", {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Total de divergências
+                    </p>
+                  </div>
+                </div>
+
+                {/* Reembolsos Pagos */}
+                <div className="bg-gradient-to-br from-white to-yellow-50 rounded-lg shadow-md p-3 sm:p-4 border border-yellow-100 transition-all hover:shadow-lg">
+                  <p className="text-sm font-medium text-gray-500 mb-1 sm:mb-2">
+                    Reembolsos Pagos
+                  </p>
+                  <div>
+                    <p className="text-xl sm:text-2xl font-bold text-yellow-600">
+                      R${" "}
+                      {dashboardData.reembolsosPagos.toLocaleString("pt-BR", {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Total de reembolsos
+                    </p>
+                  </div>
+                </div>
+
+                {/* Pagamentos de B2B */}
+                <div className="bg-gradient-to-br from-white to-purple-50 rounded-lg shadow-md p-3 sm:p-4 border border-purple-100 transition-all hover:shadow-lg">
+                  <p className="text-sm font-medium text-gray-500 mb-1 sm:mb-2">
+                    Pagamentos de B2B
+                  </p>
+                  <div>
+                    <p className="text-xl sm:text-2xl font-bold text-purple-600">
+                      R${" "}
+                      {dashboardData.pagamentosB2B.toLocaleString("pt-BR", {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">Total B2B</p>
+                  </div>
+                </div>
+
+                {/* Pagamentos de B2C */}
+                <div className="bg-gradient-to-br from-white to-indigo-50 rounded-lg shadow-md p-3 sm:p-4 border border-indigo-100 transition-all hover:shadow-lg">
+                  <p className="text-sm font-medium text-gray-500 mb-1 sm:mb-2">
+                    Pagamentos de B2C
+                  </p>
+                  <div>
+                    <p className="text-xl sm:text-2xl font-bold text-indigo-600">
+                      R${" "}
+                      {dashboardData.pagamentosB2C.toLocaleString("pt-BR", {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">Total B2C</p>
+                  </div>
+                </div>
               </div>
             </div>
 
-            {/* Grid de cards financeiros */}
-            <div className="grid grid-cols-2 gap-4">
-              {/* Receita Total */}
-              <div className="bg-gradient-to-b from-white to-gray-50 rounded-lg shadow-md p-4 border border-gray-100 transition-all hover:shadow-lg">
-                <p className="text-sm font-medium text-gray-500 mb-2">
-                  Receita Total
-                </p>
-                <div>
-                  <p className="text-2xl font-bold text-green-600">
-                    R${" "}
-                    {dashboardData.receitaTotal.toLocaleString("pt-BR", {
-                      minimumFractionDigits: 2,
-                      maximumFractionDigits: 2,
-                    })}
-                  </p>
-                  <p className="text-xs text-gray-500 mt-1 opacity-0">&nbsp;</p>
-                </div>
+            {/* Card 2 - Tradução */}
+            <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 border border-gray-100 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+              <div className="flex items-center justify-between mb-4 sm:mb-6">
+                <h3 className="text-lg sm:text-xl font-semibold text-gray-800 flex items-center">
+                  <span className="bg-green-500 p-2 rounded-lg mr-3">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-5 w-5 sm:h-6 sm:w-6 text-white"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"
+                      />
+                    </svg>
+                  </span>
+                  Tradução
+                </h3>
               </div>
 
-              {/* Pagamentos Pendentes */}
-              <div className="bg-gradient-to-b from-white to-gray-50 rounded-lg shadow-md p-4 border border-gray-100 transition-all hover:shadow-lg">
-                <p className="text-sm font-medium text-gray-500 mb-2">
-                  Pagamentos Pendentes
-                </p>
-                <div>
-                  <p className="text-2xl font-bold text-red-600">
-                    R${" "}
-                    {dashboardData.pagamentosPendentes.toLocaleString("pt-BR", {
-                      minimumFractionDigits: 2,
-                      maximumFractionDigits: 2,
-                    })}
+              {/* Grid de status de tradução */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                {/* Em Andamento */}
+                <div className="bg-gradient-to-br from-white to-blue-50 rounded-lg shadow-md p-3 sm:p-4 border border-blue-100 transition-all hover:shadow-lg">
+                  <p className="text-sm font-medium text-gray-500 mb-1 sm:mb-2">
+                    Em Andamento
                   </p>
-                  <p className="text-xs text-gray-500 mt-1 opacity-0">&nbsp;</p>
+                  <div>
+                    <p className="text-xl sm:text-2xl font-bold text-blue-600">
+                      {dashboardData.statusSummary.emAndamento}
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Projetos ativos
+                    </p>
+                  </div>
                 </div>
-              </div>
 
-              {/* Divergências Pagas */}
-              <div className="bg-gradient-to-b from-white to-gray-50 rounded-lg shadow-md p-4 border border-gray-100 transition-all hover:shadow-lg">
-                <p className="text-sm font-medium text-gray-500 mb-2">
-                  Divergências Pagas
-                </p>
-                <div>
-                  <p className="text-2xl font-bold text-blue-600">
-                    R${" "}
-                    {dashboardData.divergenciasPagas.toLocaleString("pt-BR", {
-                      minimumFractionDigits: 2,
-                      maximumFractionDigits: 2,
-                    })}
+                {/* Em Revisão */}
+                <div className="bg-gradient-to-br from-white to-yellow-50 rounded-lg shadow-md p-3 sm:p-4 border border-yellow-100 transition-all hover:shadow-lg">
+                  <p className="text-sm font-medium text-gray-500 mb-1 sm:mb-2">
+                    Em Revisão
                   </p>
-                  <p className="text-xs text-gray-500 mt-1 opacity-0">&nbsp;</p>
+                  <div>
+                    <p className="text-xl sm:text-2xl font-bold text-yellow-600">
+                      {dashboardData.statusSummary.emRevisao}
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">Em análise</p>
+                  </div>
                 </div>
-              </div>
 
-              {/* Reembolsos Pagos */}
-              <div className="bg-gradient-to-b from-white to-gray-50 rounded-lg shadow-md p-4 border border-gray-100 transition-all hover:shadow-lg">
-                <p className="text-sm font-medium text-gray-500 mb-2">
-                  Reembolsos Pagos
-                </p>
-                <div>
-                  <p className="text-2xl font-bold text-yellow-600">
-                    R${" "}
-                    {dashboardData.reembolsosPagos.toLocaleString("pt-BR", {
-                      minimumFractionDigits: 2,
-                      maximumFractionDigits: 2,
-                    })}
+                {/* Em Certificação */}
+                <div className="bg-gradient-to-br from-white to-purple-50 rounded-lg shadow-md p-3 sm:p-4 border border-purple-100 transition-all hover:shadow-lg">
+                  <p className="text-sm font-medium text-gray-500 mb-1 sm:mb-2">
+                    Em Certificação
                   </p>
-                  <p className="text-xs text-gray-500 mt-1 opacity-0">&nbsp;</p>
+                  <div>
+                    <p className="text-xl sm:text-2xl font-bold text-purple-600">
+                      {dashboardData.statusSummary.emCertificacao}
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Em certificação
+                    </p>
+                  </div>
                 </div>
-              </div>
 
-              {/* Pagamentos de B2B */}
-              <div className="bg-gradient-to-b from-white to-gray-50 rounded-lg shadow-md p-4 border border-gray-100 transition-all hover:shadow-lg">
-                <p className="text-sm font-medium text-gray-500 mb-2">
-                  Pagamentos de B2B
-                </p>
-                <div>
-                  <p className="text-2xl font-bold text-purple-600">
-                    R${" "}
-                    {dashboardData.pagamentosB2B.toLocaleString("pt-BR", {
-                      minimumFractionDigits: 2,
-                      maximumFractionDigits: 2,
-                    })}
+                {/* Finalizado */}
+                <div className="bg-gradient-to-br from-white to-green-50 rounded-lg shadow-md p-3 sm:p-4 border border-green-100 transition-all hover:shadow-lg">
+                  <p className="text-sm font-medium text-gray-500 mb-1 sm:mb-2">
+                    Finalizado
                   </p>
-                  <p className="text-xs text-gray-500 mt-1 opacity-0">&nbsp;</p>
+                  <div>
+                    <p className="text-xl sm:text-2xl font-bold text-green-600">
+                      {dashboardData.statusSummary.finalizado}
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Projetos concluídos
+                    </p>
+                  </div>
                 </div>
-              </div>
 
-              {/* Pagamentos de B2C */}
-              <div className="bg-gradient-to-b from-white to-gray-50 rounded-lg shadow-md p-4 border border-gray-100 transition-all hover:shadow-lg">
-                <p className="text-sm font-medium text-gray-500 mb-2">
-                  Pagamentos de B2C
-                </p>
-                <div>
-                  <p className="text-2xl font-bold text-indigo-600">
-                    R${" "}
-                    {dashboardData.pagamentosB2C.toLocaleString("pt-BR", {
-                      minimumFractionDigits: 2,
-                      maximumFractionDigits: 2,
-                    })}
+                {/* Cancelado */}
+                <div className="bg-gradient-to-br from-white to-red-50 rounded-lg shadow-md p-3 sm:p-4 border border-red-100 transition-all hover:shadow-lg">
+                  <p className="text-sm font-medium text-gray-500 mb-1 sm:mb-2">
+                    Cancelado
                   </p>
-                  <p className="text-xs text-gray-500 mt-1 opacity-0">&nbsp;</p>
+                  <div>
+                    <p className="text-xl sm:text-2xl font-bold text-red-600">
+                      {dashboardData.statusSummary.cancelado}
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Projetos cancelados
+                    </p>
+                  </div>
+                </div>
+
+                {/* N/A */}
+                <div className="bg-gradient-to-br from-white to-gray-50 rounded-lg shadow-md p-3 sm:p-4 border border-gray-100 transition-all hover:shadow-lg">
+                  <p className="text-sm font-medium text-gray-500 mb-1 sm:mb-2">
+                    N/A
+                  </p>
+                  <div>
+                    <p className="text-xl sm:text-2xl font-bold text-gray-600">
+                      {dashboardData.statusSummary.na}
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">Não aplicável</p>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
 
-          {/* Card 2 */}
-          <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100 hover:shadow-xl transition-shadow duration-300">
-            <div className="flex items-center justify-center mb-4">
-              <h3 className="text-xl font-semibold text-gray-800">Tradução</h3>
-              <div className="bg-green-500 p-2 rounded-lg ml-3">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-6 w-6 text-white"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"
-                  />
-                </svg>
+            {/* Card 3 - Projetos */}
+            <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 border border-gray-100 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+              <div className="flex items-center justify-between mb-4 sm:mb-6">
+                <h3 className="text-lg sm:text-xl font-semibold text-gray-800 flex items-center">
+                  <span className="bg-purple-500 p-2 rounded-lg mr-3">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-5 w-5 sm:h-6 sm:w-6 text-white"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"
+                      />
+                    </svg>
+                  </span>
+                  Projetos
+                </h3>
+              </div>
+
+              {/* Grid de status de projeto */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                {/* Rascunho */}
+                <div className="bg-gradient-to-br from-white to-gray-50 rounded-lg shadow-md p-3 sm:p-4 border border-gray-100 transition-all hover:shadow-lg">
+                  <p className="text-sm font-medium text-gray-500 mb-1 sm:mb-2">
+                    Rascunho
+                  </p>
+                  <div>
+                    <p className="text-xl sm:text-2xl font-bold text-gray-600">
+                      0
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">Em rascunho</p>
+                  </div>
+                </div>
+
+                {/* Ag. Orçamento */}
+                <div className="bg-gradient-to-br from-white to-yellow-50 rounded-lg shadow-md p-3 sm:p-4 border border-yellow-100 transition-all hover:shadow-lg">
+                  <p className="text-sm font-medium text-gray-500 mb-1 sm:mb-2">
+                    Ag. Orçamento
+                  </p>
+                  <div>
+                    <p className="text-xl sm:text-2xl font-bold text-yellow-600">
+                      0
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Aguardando orçamento
+                    </p>
+                  </div>
+                </div>
+
+                {/* Ag. Aprovação */}
+                <div className="bg-gradient-to-br from-white to-orange-50 rounded-lg shadow-md p-3 sm:p-4 border border-orange-100 transition-all hover:shadow-lg">
+                  <p className="text-sm font-medium text-gray-500 mb-1 sm:mb-2">
+                    Ag. Aprovação
+                  </p>
+                  <div>
+                    <p className="text-xl sm:text-2xl font-bold text-orange-600">
+                      0
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Aguardando aprovação
+                    </p>
+                  </div>
+                </div>
+
+                {/* Ag. Pagamento */}
+                <div className="bg-gradient-to-br from-white to-red-50 rounded-lg shadow-md p-3 sm:p-4 border border-red-100 transition-all hover:shadow-lg">
+                  <p className="text-sm font-medium text-gray-500 mb-1 sm:mb-2">
+                    Ag. Pagamento
+                  </p>
+                  <div>
+                    <p className="text-xl sm:text-2xl font-bold text-red-600">
+                      0
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Aguardando pagamento
+                    </p>
+                  </div>
+                </div>
+
+                {/* Em Análise */}
+                <div className="bg-gradient-to-br from-white to-blue-50 rounded-lg shadow-md p-3 sm:p-4 border border-blue-100 transition-all hover:shadow-lg">
+                  <p className="text-sm font-medium text-gray-500 mb-1 sm:mb-2">
+                    Em Análise
+                  </p>
+                  <div>
+                    <p className="text-xl sm:text-2xl font-bold text-blue-600">
+                      0
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">Em análise</p>
+                  </div>
+                </div>
+
+                {/* Em Andamento */}
+                <div className="bg-gradient-to-br from-white to-green-50 rounded-lg shadow-md p-3 sm:p-4 border border-green-100 transition-all hover:shadow-lg">
+                  <p className="text-sm font-medium text-gray-500 mb-1 sm:mb-2">
+                    Em Andamento
+                  </p>
+                  <div>
+                    <p className="text-xl sm:text-2xl font-bold text-green-600">
+                      0
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Em desenvolvimento
+                    </p>
+                  </div>
+                </div>
+
+                {/* Cancelado */}
+                <div className="bg-gradient-to-br from-white to-red-50 rounded-lg shadow-md p-3 sm:p-4 border border-red-100 transition-all hover:shadow-lg">
+                  <p className="text-sm font-medium text-gray-500 mb-1 sm:mb-2">
+                    Cancelado
+                  </p>
+                  <div>
+                    <p className="text-xl sm:text-2xl font-bold text-red-600">
+                      0
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Projetos cancelados
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
 
-            {/* Grid de status de tradução */}
-            <div className="grid grid-cols-2 gap-4">
-              {/* Em Andamento */}
-              <div className="bg-gradient-to-b from-white to-gray-50 rounded-lg shadow-md p-4 border border-gray-100 transition-all hover:shadow-lg">
-                <p className="text-sm font-medium text-gray-500 mb-2">
-                  Em Andamento
-                </p>
-                <div>
-                  <p className="text-2xl font-bold text-blue-600">
-                    {dashboardData.statusSummary.emAndamento}
+            {/* Card 4 - Pagamentos */}
+            <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 border border-gray-100 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+              <div className="flex items-center justify-between mb-4 sm:mb-6">
+                <h3 className="text-lg sm:text-xl font-semibold text-gray-800 flex items-center">
+                  <span className="bg-orange-500 p-2 rounded-lg mr-3">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-5 w-5 sm:h-6 sm:w-6 text-white"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
+                    </svg>
+                  </span>
+                  Pagamentos
+                </h3>
+              </div>
+
+              {/* Grid de status de pagamento */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                {/* Pendente */}
+                <div className="bg-gradient-to-br from-white to-yellow-50 rounded-lg shadow-md p-3 sm:p-4 border border-yellow-100 transition-all hover:shadow-lg">
+                  <p className="text-sm font-medium text-gray-500 mb-1 sm:mb-2">
+                    Pendente
                   </p>
-                  <p className="text-xs text-gray-500 mt-1 opacity-0">&nbsp;</p>
+                  <div>
+                    <p className="text-xl sm:text-2xl font-bold text-yellow-600">
+                      R$ 0
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Aguardando pagamento
+                    </p>
+                  </div>
                 </div>
-              </div>
 
-              {/* Em Revisão */}
-              <div className="bg-gradient-to-b from-white to-gray-50 rounded-lg shadow-md p-4 border border-gray-100 transition-all hover:shadow-lg">
-                <p className="text-sm font-medium text-gray-500 mb-2">
-                  Em Revisão
-                </p>
-                <div>
-                  <p className="text-2xl font-bold text-yellow-600">
-                    {dashboardData.statusSummary.emRevisao}
+                {/* Pago */}
+                <div className="bg-gradient-to-br from-white to-green-50 rounded-lg shadow-md p-3 sm:p-4 border border-green-100 transition-all hover:shadow-lg">
+                  <p className="text-sm font-medium text-gray-500 mb-1 sm:mb-2">
+                    Pago
                   </p>
-                  <p className="text-xs text-gray-500 mt-1 opacity-0">&nbsp;</p>
+                  <div>
+                    <p className="text-xl sm:text-2xl font-bold text-green-600">
+                      R$ 0
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Pagamentos realizados
+                    </p>
+                  </div>
                 </div>
-              </div>
 
-              {/* Em Certificação */}
-              <div className="bg-gradient-to-b from-white to-gray-50 rounded-lg shadow-md p-4 border border-gray-100 transition-all hover:shadow-lg">
-                <p className="text-sm font-medium text-gray-500 mb-2">
-                  Em Certificação
-                </p>
-                <div>
-                  <p className="text-2xl font-bold text-purple-600">
-                    {dashboardData.statusSummary.emCertificacao}
+                {/* Divergência */}
+                <div className="bg-gradient-to-br from-white to-red-50 rounded-lg shadow-md p-3 sm:p-4 border border-red-100 transition-all hover:shadow-lg">
+                  <p className="text-sm font-medium text-gray-500 mb-1 sm:mb-2">
+                    Divergência
                   </p>
-                  <p className="text-xs text-gray-500 mt-1 opacity-0">&nbsp;</p>
+                  <div>
+                    <p className="text-xl sm:text-2xl font-bold text-red-600">
+                      R$ 0
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Divergências pendentes
+                    </p>
+                  </div>
                 </div>
-              </div>
 
-              {/* Finalizado */}
-              <div className="bg-gradient-to-b from-white to-gray-50 rounded-lg shadow-md p-4 border border-gray-100 transition-all hover:shadow-lg">
-                <p className="text-sm font-medium text-gray-500 mb-2">
-                  Finalizado
-                </p>
-                <div>
-                  <p className="text-2xl font-bold text-green-600">
-                    {dashboardData.statusSummary.finalizado}
+                {/* Reembolso */}
+                <div className="bg-gradient-to-br from-white to-blue-50 rounded-lg shadow-md p-3 sm:p-4 border border-blue-100 transition-all hover:shadow-lg">
+                  <p className="text-sm font-medium text-gray-500 mb-1 sm:mb-2">
+                    Reembolso
                   </p>
-                  <p className="text-xs text-gray-500 mt-1 opacity-0">&nbsp;</p>
-                </div>
-              </div>
-
-              {/* Cancelado */}
-              <div className="bg-gradient-to-b from-white to-gray-50 rounded-lg shadow-md p-4 border border-gray-100 transition-all hover:shadow-lg">
-                <p className="text-sm font-medium text-gray-500 mb-2">
-                  Cancelado
-                </p>
-                <div>
-                  <p className="text-2xl font-bold text-red-600">
-                    {dashboardData.statusSummary.cancelado}
-                  </p>
-                  <p className="text-xs text-gray-500 mt-1 opacity-0">&nbsp;</p>
-                </div>
-              </div>
-
-              {/* N/A */}
-              <div className="bg-gradient-to-b from-white to-gray-50 rounded-lg shadow-md p-4 border border-gray-100 transition-all hover:shadow-lg">
-                <p className="text-sm font-medium text-gray-500 mb-2">N/A</p>
-                <div>
-                  <p className="text-2xl font-bold text-gray-600">
-                    {dashboardData.statusSummary.na}
-                  </p>
-                  <p className="text-xs text-gray-500 mt-1 opacity-0">&nbsp;</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Card 3 */}
-          <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100 hover:shadow-xl transition-shadow duration-300">
-            <div className="flex items-center justify-center mb-4">
-              <h3 className="text-xl font-semibold text-gray-800">Projetos</h3>
-              <div className="bg-purple-500 p-2 rounded-lg ml-3">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-6 w-6 text-white"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"
-                  />
-                </svg>
-              </div>
-            </div>
-
-            {/* Grid de status de projeto */}
-            <div className="grid grid-cols-2 gap-4">
-              {/* Rascunho */}
-              <div className="bg-gradient-to-b from-white to-gray-50 rounded-lg shadow-md p-4 border border-gray-100 transition-all hover:shadow-lg">
-                <p className="text-sm font-medium text-gray-500 mb-2">
-                  Rascunho
-                </p>
-                <div>
-                  <p className="text-2xl font-bold text-gray-600">0</p>
-                  <p className="text-xs text-gray-500 mt-1 opacity-0">&nbsp;</p>
-                </div>
-              </div>
-
-              {/* Ag. Orçamento */}
-              <div className="bg-gradient-to-b from-white to-gray-50 rounded-lg shadow-md p-4 border border-gray-100 transition-all hover:shadow-lg">
-                <p className="text-sm font-medium text-gray-500 mb-2">
-                  Ag. Orçamento
-                </p>
-                <div>
-                  <p className="text-2xl font-bold text-yellow-600">0</p>
-                  <p className="text-xs text-gray-500 mt-1 opacity-0">&nbsp;</p>
-                </div>
-              </div>
-
-              {/* Ag. Aprovação */}
-              <div className="bg-gradient-to-b from-white to-gray-50 rounded-lg shadow-md p-4 border border-gray-100 transition-all hover:shadow-lg">
-                <p className="text-sm font-medium text-gray-500 mb-2">
-                  Ag. Aprovação
-                </p>
-                <div>
-                  <p className="text-2xl font-bold text-orange-600">0</p>
-                  <p className="text-xs text-gray-500 mt-1 opacity-0">&nbsp;</p>
-                </div>
-              </div>
-
-              {/* Ag. Pagamento */}
-              <div className="bg-gradient-to-b from-white to-gray-50 rounded-lg shadow-md p-4 border border-gray-100 transition-all hover:shadow-lg">
-                <p className="text-sm font-medium text-gray-500 mb-2">
-                  Ag. Pagamento
-                </p>
-                <div>
-                  <p className="text-2xl font-bold text-red-600">0</p>
-                  <p className="text-xs text-gray-500 mt-1 opacity-0">&nbsp;</p>
-                </div>
-              </div>
-
-              {/* Em Análise */}
-              <div className="bg-gradient-to-b from-white to-gray-50 rounded-lg shadow-md p-4 border border-gray-100 transition-all hover:shadow-lg">
-                <p className="text-sm font-medium text-gray-500 mb-2">
-                  Em Análise
-                </p>
-                <div>
-                  <p className="text-2xl font-bold text-blue-600">0</p>
-                  <p className="text-xs text-gray-500 mt-1 opacity-0">&nbsp;</p>
-                </div>
-              </div>
-
-              {/* Em Andamento */}
-              <div className="bg-gradient-to-b from-white to-gray-50 rounded-lg shadow-md p-4 border border-gray-100 transition-all hover:shadow-lg">
-                <p className="text-sm font-medium text-gray-500 mb-2">
-                  Em Andamento
-                </p>
-                <div>
-                  <p className="text-2xl font-bold text-green-600">0</p>
-                  <p className="text-xs text-gray-500 mt-1 opacity-0">&nbsp;</p>
-                </div>
-              </div>
-
-              {/* Cancelado */}
-              <div className="bg-gradient-to-b from-white to-gray-50 rounded-lg shadow-md p-4 border border-gray-100 transition-all hover:shadow-lg">
-                <p className="text-sm font-medium text-gray-500 mb-2">
-                  Cancelado
-                </p>
-                <div>
-                  <p className="text-2xl font-bold text-red-600">0</p>
-                  <p className="text-xs text-gray-500 mt-1 opacity-0">&nbsp;</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Card 4 */}
-          <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100 hover:shadow-xl transition-shadow duration-300">
-            <div className="flex items-center justify-center mb-4">
-              <h3 className="text-xl font-semibold text-gray-800">
-                Pagamentos
-              </h3>
-              <div className="bg-orange-500 p-2 rounded-lg ml-3">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-6 w-6 text-white"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
-              </div>
-            </div>
-
-            {/* Grid de status de pagamento */}
-            <div className="grid grid-cols-2 gap-4">
-              {/* Pendente */}
-              <div className="bg-gradient-to-b from-white to-gray-50 rounded-lg shadow-md p-4 border border-gray-100 transition-all hover:shadow-lg">
-                <p className="text-sm font-medium text-gray-500 mb-2">
-                  Pendente
-                </p>
-                <div>
-                  <p className="text-2xl font-bold text-yellow-600">R$ 0</p>
-                  <p className="text-xs text-gray-500 mt-1 opacity-0">&nbsp;</p>
-                </div>
-              </div>
-
-              {/* Pago */}
-              <div className="bg-gradient-to-b from-white to-gray-50 rounded-lg shadow-md p-4 border border-gray-100 transition-all hover:shadow-lg">
-                <p className="text-sm font-medium text-gray-500 mb-2">Pago</p>
-                <div>
-                  <p className="text-2xl font-bold text-green-600">R$ 0</p>
-                  <p className="text-xs text-gray-500 mt-1 opacity-0">&nbsp;</p>
-                </div>
-              </div>
-
-              {/* Divergência */}
-              <div className="bg-gradient-to-b from-white to-gray-50 rounded-lg shadow-md p-4 border border-gray-100 transition-all hover:shadow-lg">
-                <p className="text-sm font-medium text-gray-500 mb-2">
-                  Divergência
-                </p>
-                <div>
-                  <p className="text-2xl font-bold text-red-600">R$ 0</p>
-                  <p className="text-xs text-gray-500 mt-1 opacity-0">&nbsp;</p>
-                </div>
-              </div>
-
-              {/* Reembolso */}
-              <div className="bg-gradient-to-b from-white to-gray-50 rounded-lg shadow-md p-4 border border-gray-100 transition-all hover:shadow-lg">
-                <p className="text-sm font-medium text-gray-500 mb-2">
-                  Reembolso
-                </p>
-                <div>
-                  <p className="text-2xl font-bold text-blue-600">R$ 0</p>
-                  <p className="text-xs text-gray-500 mt-1 opacity-0">&nbsp;</p>
+                  <div>
+                    <p className="text-xl sm:text-2xl font-bold text-blue-600">
+                      R$ 0
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Reembolsos pendentes
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
+    </PageLayout>
   );
 };
 

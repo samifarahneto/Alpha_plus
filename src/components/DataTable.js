@@ -101,7 +101,7 @@ const DataTable = ({
       onDragEnd={handleDragEnd}
     >
       <div className="table-wrapper overflow-x-auto firstMobile:overflow-x-scroll">
-        <div className="table-container">
+        <div className="table-container relative">
           <table className="w-full">
             <DataTableHeader
               columns={columns}

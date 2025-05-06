@@ -22,7 +22,7 @@ const SortableItem = ({ id, column, isFixed, sortConfig, onSort }) => {
     position: isDragging ? "fixed" : "relative",
     zIndex: isDragging ? 1000 : "auto",
     minWidth: "100px",
-    backgroundColor: "oklch(87% 0.065 274.039)é",
+    backgroundColor: "white",
     cursor: isDragging ? "grabbing" : "grab",
     boxShadow: isDragging
       ? "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)"
@@ -33,7 +33,7 @@ const SortableItem = ({ id, column, isFixed, sortConfig, onSort }) => {
     <th
       ref={setNodeRef}
       style={style}
-      className={`table-header-cell !py-0 whitespace-nowrap truncate text-center firstMobile:min-w-[120px] ${
+      className={`table-header-cell !py-0 whitespace-nowrap truncate text-center firstMobile:min-w-[120px] bg-white ${
         isDragging ? "shadow-lg" : ""
       }`}
     >
@@ -83,7 +83,7 @@ const DataTableHeader = ({
   fixedColumns = [],
 }) => {
   return (
-    <thead className="table-header">
+    <thead className="table-header sticky top-0 z-10 bg-white">
       <tr>
         <SortableContext
           items={columnOrder}

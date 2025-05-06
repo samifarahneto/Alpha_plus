@@ -52,6 +52,11 @@ const MasterClient = () => {
   });
   const [sortField, setSortField] = useState(null);
   const [sortDirection, setSortDirection] = useState("asc");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(() => {
+    const savedItemsPerPage = localStorage.getItem("masterClientItemsPerPage");
+    return savedItemsPerPage ? Number(savedItemsPerPage) : 10;
+  });
 
   useEffect(() => {
     const fetchGlobalRates = async () => {
@@ -376,6 +381,103 @@ const MasterClient = () => {
 
     return matchesPtToEn && matchesEsToEn && matchesClientType;
   });
+
+  // Lógica de paginação
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = filteredClients.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(filteredClients.length / itemsPerPage);
+
+  const handlePageChange = (pageNumber) => {
+    setCurrentPage(pageNumber);
+  };
+
+  const handleItemsPerPageChange = (value) => {
+    const newValue = Number(value);
+    setItemsPerPage(newValue);
+    setCurrentPage(1);
+    localStorage.setItem("masterClientItemsPerPage", newValue);
+  };
+
+  const renderPagination = () => {
+    const pageNumbers = [];
+    for (let i = 1; i <= totalPages; i++) {
+      pageNumbers.push(i);
+    }
+
+    const startItem = (currentPage - 1) * itemsPerPage + 1;
+    const endItem = Math.min(
+      currentPage * itemsPerPage,
+      filteredClients.length
+    );
+    const totalItems = filteredClients.length;
+
+    return (
+      <div className="flex flex-col items-center gap-4 mt-4">
+        <div className="text-sm text-gray-600 text-center">
+          Mostrando {startItem} a {endItem} de {totalItems} itens
+        </div>
+        <div className="flex flex-col md:flex-row items-center gap-4">
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-600">Itens por página:</span>
+            <select
+              value={itemsPerPage}
+              onChange={(e) => handleItemsPerPageChange(e.target.value)}
+              className="w-auto min-w-[60px] h-7 text-sm bg-white border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-300 transition-colors appearance-none cursor-pointer pr-6 pl-2 py-0"
+              style={{
+                backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236B7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
+                backgroundRepeat: "no-repeat",
+                backgroundPosition: "right 0.5rem center",
+                backgroundSize: "1.5em 1.5em",
+              }}
+            >
+              <option value={5}>5</option>
+              <option value={10}>10</option>
+              <option value={20}>20</option>
+              <option value={50}>50</option>
+            </select>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+              className={`px-3 py-1 rounded-md ${
+                currentPage === 1
+                  ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                  : "bg-white text-gray-700 hover:bg-gray-50"
+              } border border-gray-200`}
+            >
+              Anterior
+            </button>
+            {pageNumbers.map((number) => (
+              <button
+                key={number}
+                onClick={() => handlePageChange(number)}
+                className={`px-3 py-1 rounded-md ${
+                  currentPage === number
+                    ? "bg-blue-50 text-blue-600 border-blue-200"
+                    : "bg-white text-gray-700 hover:bg-gray-50 border-gray-200"
+                } border`}
+              >
+                {number}
+              </button>
+            ))}
+            <button
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage === totalPages}
+              className={`px-3 py-1 rounded-md ${
+                currentPage === totalPages
+                  ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                  : "bg-white text-gray-700 hover:bg-gray-50"
+              } border border-gray-200`}
+            >
+              Próxima
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   const isAnySelected = filteredClients.some(
     (client) =>
@@ -773,117 +875,180 @@ const MasterClient = () => {
   };
 
   return (
-    <div className="w-full max-w-[95%] mx-auto p-2 md:p-8 space-y-4 md:space-y-8">
-      <div className="glass-card">
-        <div className="text-center mb-4 md:mb-8">
-          <div className="w-full bg-white rounded-2xl shadow-lg border border-gray-100 p-3 md:p-6">
-            <div className="flex flex-col md:flex-row items-center justify-between gap-4 md:gap-8">
-              {/* Valores por Página */}
-              <div className="w-full md:flex-1">
-                <h4 className="font-medium text-gray-700 mb-2">
-                  Valores por Página
-                </h4>
-                <div className="flex flex-col md:flex-row items-center justify-between gap-2 md:gap-4">
-                  <div className="w-full md:w-auto">
-                    <label className="block text-sm text-gray-600 mb-1">
-                      Português para Inglês:
-                    </label>
-                    <span className="text-lg font-bold text-gray-700">
-                      U$: {globalTranslationRates.pttoen}
-                    </span>
-                  </div>
-                  <div className="w-full md:w-auto">
-                    <label className="block text-sm text-gray-600 mb-1">
-                      Espanhol para Inglês:
-                    </label>
-                    <span className="text-lg font-bold text-gray-700">
-                      U$: {globalTranslationRates.esptoen}
-                    </span>
-                  </div>
-                  <div className="w-full md:w-auto">
-                    <label className="block text-sm text-gray-600 mb-1">
-                      Valor na Home:
-                    </label>
-                    <span className="text-lg font-bold text-gray-700">
-                      U$: {globalTranslationRates.price_home}
-                    </span>
-                  </div>
+    <div className="glass-card w-full max-w-[95%] mx-auto p-2 md:p-8 space-y-4 md:space-y-8">
+      <div className="text-center mb-4 md:mb-8">
+        <div className="w-full bg-white rounded-2xl shadow-lg border border-gray-100 p-3 md:p-6">
+          {/* Grid principal - 1 coluna no mobile, 3 colunas no desktop */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
+            {/* Valores por Página */}
+            <div className="w-full bg-gradient-to-br from-blue-50 to-white rounded-xl p-3 md:p-4 border border-blue-100">
+              <h4 className="font-medium text-gray-700 mb-2 md:mb-3 flex items-center justify-center gap-2 text-sm md:text-base">
+                <span className="bg-blue-500 p-1.5 md:p-2 rounded-lg">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-3.5 w-3.5 md:h-4 md:w-4 text-white"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                </span>
+                Valores por Página
+              </h4>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 md:gap-3">
+                <div className="bg-white rounded-lg p-2 md:p-3 shadow-sm border border-gray-100 h-[80px] flex flex-col justify-center">
+                  <label className="block text-xs md:text-sm text-gray-600 mb-1">
+                    Português:
+                  </label>
+                  <span className="text-base md:text-lg font-bold text-blue-600">
+                    U$: {globalTranslationRates.pttoen}
+                  </span>
+                </div>
+                <div className="bg-white rounded-lg p-2 md:p-3 shadow-sm border border-gray-100 h-[80px] flex flex-col justify-center">
+                  <label className="block text-xs md:text-sm text-gray-600 mb-1">
+                    Espanhol:
+                  </label>
+                  <span className="text-base md:text-lg font-bold text-blue-600">
+                    U$: {globalTranslationRates.esptoen}
+                  </span>
+                </div>
+                <div className="bg-white rounded-lg p-2 md:p-3 shadow-sm border border-gray-100 h-[80px] flex flex-col justify-center">
+                  <label className="block text-xs md:text-sm text-gray-600 mb-1">
+                    Valor na Home:
+                  </label>
+                  <span className="text-base md:text-lg font-bold text-blue-600">
+                    U$: {globalTranslationRates.price_home}
+                  </span>
                 </div>
               </div>
+            </div>
 
-              {/* Percentuais B2B */}
-              <div className="w-full md:flex-1 border-t md:border-t-0 md:border-l pt-4 md:pt-0 md:pl-8">
-                <h4 className="font-medium text-gray-700 mb-2">
-                  Prioridades B2B
-                </h4>
-                <div className="flex flex-col md:flex-row items-center justify-between gap-2 md:gap-4">
-                  <div className="w-full md:w-auto">
-                    <label className="block text-sm text-gray-600 mb-1">
-                      Desconto no Tempo:
-                    </label>
-                    <span className="text-lg font-bold text-gray-700 flex items-center justify-center gap-1">
-                      {globalTranslationRates.b2bTimePercentage}%
-                      <IoMdArrowDropdown className="text-red-500" />
-                    </span>
-                  </div>
-                  <div className="w-full md:w-auto">
-                    <label className="block text-sm text-gray-600 mb-1">
-                      Acréscimo no Preço:
-                    </label>
-                    <span className="text-lg font-bold text-gray-700 flex items-center justify-center gap-1">
-                      {globalTranslationRates.b2bPricePercentage}%
-                      <IoMdArrowDropup className="text-green-500" />
-                    </span>
-                  </div>
+            {/* Percentuais B2B */}
+            <div className="w-full bg-gradient-to-br from-purple-50 to-white rounded-xl p-3 md:p-4 border border-purple-100">
+              <h4 className="font-medium text-gray-700 mb-2 md:mb-3 flex items-center justify-center gap-2 text-sm md:text-base">
+                <span className="bg-purple-500 p-1.5 md:p-2 rounded-lg">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-3.5 w-3.5 md:h-4 md:w-4 text-white"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                    />
+                  </svg>
+                </span>
+                Prioridades B2B
+              </h4>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 md:gap-3">
+                <div className="bg-white rounded-lg p-2 md:p-3 shadow-sm border border-gray-100 h-[80px] flex flex-col justify-center">
+                  <label className="block text-xs md:text-sm text-gray-600 mb-1">
+                    Desconto no Tempo:
+                  </label>
+                  <span className="text-base md:text-lg font-bold text-purple-600 flex items-center justify-center gap-1">
+                    {globalTranslationRates.b2bTimePercentage}%
+                    <IoMdArrowDropdown className="text-red-500" />
+                  </span>
+                </div>
+                <div className="bg-white rounded-lg p-2 md:p-3 shadow-sm border border-gray-100 h-[80px] flex flex-col justify-center">
+                  <label className="block text-xs md:text-sm text-gray-600 mb-1">
+                    Acréscimo no Preço:
+                  </label>
+                  <span className="text-base md:text-lg font-bold text-purple-600 flex items-center justify-center gap-1">
+                    {globalTranslationRates.b2bPricePercentage}%
+                    <IoMdArrowDropup className="text-green-500" />
+                  </span>
                 </div>
               </div>
+            </div>
 
-              {/* Percentuais B2C */}
-              <div className="w-full md:flex-1 border-t md:border-t-0 md:border-l pt-4 md:pt-0 md:pl-8">
-                <h4 className="font-medium text-gray-700 mb-2">
-                  Prioridades B2C
-                </h4>
-                <div className="flex flex-col md:flex-row items-center justify-between gap-2 md:gap-4">
-                  <div className="w-full md:w-auto">
-                    <label className="block text-sm text-gray-600 mb-1">
-                      Desconto no Tempo:
-                    </label>
-                    <span className="text-lg font-bold text-gray-700 flex items-center justify-center gap-1">
-                      {globalTranslationRates.b2cTimePercentage}%
-                      <IoMdArrowDropdown className="text-red-500" />
-                    </span>
-                  </div>
-                  <div className="w-full md:w-auto">
-                    <label className="block text-sm text-gray-600 mb-1">
-                      Acréscimo no Preço:
-                    </label>
-                    <span className="text-lg font-bold text-gray-700 flex items-center justify-center gap-1">
-                      {globalTranslationRates.b2cPricePercentage}%
-                      <IoMdArrowDropup className="text-green-500" />
-                    </span>
-                  </div>
+            {/* Percentuais B2C */}
+            <div className="w-full bg-gradient-to-br from-green-50 to-white rounded-xl p-3 md:p-4 border border-green-100">
+              <h4 className="font-medium text-gray-700 mb-2 md:mb-3 flex items-center justify-center gap-2 text-sm md:text-base">
+                <span className="bg-green-500 p-1.5 md:p-2 rounded-lg">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-3.5 w-3.5 md:h-4 md:w-4 text-white"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"
+                    />
+                  </svg>
+                </span>
+                Prioridades B2C
+              </h4>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 md:gap-3">
+                <div className="bg-white rounded-lg p-2 md:p-3 shadow-sm border border-gray-100 h-[80px] flex flex-col justify-center">
+                  <label className="block text-xs md:text-sm text-gray-600 mb-1">
+                    Desconto no Tempo:
+                  </label>
+                  <span className="text-base md:text-lg font-bold text-green-600 flex items-center justify-center gap-1">
+                    {globalTranslationRates.b2cTimePercentage}%
+                    <IoMdArrowDropdown className="text-red-500" />
+                  </span>
+                </div>
+                <div className="bg-white rounded-lg p-2 md:p-3 shadow-sm border border-gray-100 h-[80px] flex flex-col justify-center">
+                  <label className="block text-xs md:text-sm text-gray-600 mb-1">
+                    Acréscimo no Preço:
+                  </label>
+                  <span className="text-base md:text-lg font-bold text-green-600 flex items-center justify-center gap-1">
+                    {globalTranslationRates.b2cPricePercentage}%
+                    <IoMdArrowDropup className="text-green-500" />
+                  </span>
                 </div>
               </div>
             </div>
           </div>
         </div>
+      </div>
 
-        <div className="mb-4 md:mb-8">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4 md:gap-6 mb-4 md:mb-6">
-            <div className="flex flex-col md:flex-row items-center gap-2 md:gap-4 w-full md:w-auto">
-              <div className="w-full md:w-auto">
-                <div className="flex items-center gap-2">
-                  <label className="text-sm font-medium text-gray-700 whitespace-nowrap">
-                    Por/Ing:
-                  </label>
+      <div className="mb-4 md:mb-8">
+        {/* Cabeçalho com Filtros e Botões */}
+        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-3 md:p-6 mb-4 md:mb-6">
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            {/* Filtros */}
+            <div className="w-full md:w-auto grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="flex items-center gap-2">
+                <label className="text-xs md:text-sm font-medium text-gray-700 whitespace-nowrap">
+                  Por/Ing:
+                </label>
+                <div className="relative flex-1 w-[120px]">
                   <select
                     value={filterPtToEn}
-                    className="input-default !h-7 !py-0 text-sm w-full md:min-w-[100px] bg-white border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full h-7 text-[11px] md:text-xs bg-white border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-300 transition-colors appearance-none cursor-pointer pr-6 pl-2 py-0"
                     onChange={(e) => setFilterPtToEn(e.target.value)}
+                    style={{
+                      backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236B7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
+                      backgroundRepeat: "no-repeat",
+                      backgroundPosition: "right 0.5rem center",
+                      backgroundSize: "1.5em 1.5em",
+                    }}
                   >
-                    <option value="">Todos</option>
+                    <option value="" className="text-[11px] md:text-xs py-0">
+                      Todos
+                    </option>
                     {uniquePtToEnValues.map((value) => (
-                      <option key={value} value={value}>
+                      <option
+                        key={value}
+                        value={value}
+                        className="text-[11px] md:text-xs py-0"
+                      >
                         {value}
                       </option>
                     ))}
@@ -891,19 +1056,31 @@ const MasterClient = () => {
                 </div>
               </div>
 
-              <div className="w-full md:w-auto">
-                <div className="flex items-center gap-2">
-                  <label className="text-sm font-medium text-gray-700 whitespace-nowrap">
-                    Esp/Ing:
-                  </label>
+              <div className="flex items-center gap-2">
+                <label className="text-xs md:text-sm font-medium text-gray-700 whitespace-nowrap">
+                  Esp/Ing:
+                </label>
+                <div className="relative flex-1 w-[120px]">
                   <select
                     value={filterEsToEn}
-                    className="input-default !h-7 !py-0 text-sm w-full md:min-w-[100px] bg-white border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full h-7 text-[11px] md:text-xs bg-white border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-300 transition-colors appearance-none cursor-pointer pr-6 pl-2 py-0"
                     onChange={(e) => setFilterEsToEn(e.target.value)}
+                    style={{
+                      backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236B7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
+                      backgroundRepeat: "no-repeat",
+                      backgroundPosition: "right 0.5rem center",
+                      backgroundSize: "1.5em 1.5em",
+                    }}
                   >
-                    <option value="">Todos</option>
+                    <option value="" className="text-[11px] md:text-xs py-0">
+                      Todos
+                    </option>
                     {uniqueEsToEnValues.map((value) => (
-                      <option key={value} value={value}>
+                      <option
+                        key={value}
+                        value={value}
+                        className="text-[11px] md:text-xs py-0"
+                      >
                         {value}
                       </option>
                     ))}
@@ -911,23 +1088,31 @@ const MasterClient = () => {
                 </div>
               </div>
 
-              <div className="w-full md:w-auto">
-                <div className="flex items-center gap-2">
-                  <label className="text-sm font-medium text-gray-700 whitespace-nowrap">
-                    Tipo de Cliente:
-                  </label>
+              <div className="flex items-center gap-2">
+                <label className="text-xs md:text-sm font-medium text-gray-700 whitespace-nowrap">
+                  Tipo de Cliente:
+                </label>
+                <div className="relative flex-1 w-[120px]">
                   <select
                     value={
                       filterClientType === "Cliente" ? "B2C" : filterClientType
                     }
-                    className="input-default !h-7 !py-0 text-sm w-full md:min-w-[120px] bg-white border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full h-7 text-[11px] md:text-xs bg-white border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-300 transition-colors appearance-none cursor-pointer pr-6 pl-2 py-0"
                     onChange={(e) =>
                       setFilterClientType(
                         e.target.value === "B2C" ? "Cliente" : e.target.value
                       )
                     }
+                    style={{
+                      backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236B7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
+                      backgroundRepeat: "no-repeat",
+                      backgroundPosition: "right 0.5rem center",
+                      backgroundSize: "1.5em 1.5em",
+                    }}
                   >
-                    <option value="">Todos</option>
+                    <option value="" className="text-[11px] md:text-xs py-0">
+                      Todos
+                    </option>
                     {uniqueClientTypes.map((type) => {
                       let displayType = type;
                       if (type === "Cliente") displayType = "B2C";
@@ -935,6 +1120,7 @@ const MasterClient = () => {
                         <option
                           key={type}
                           value={type === "Cliente" ? "B2C" : type}
+                          className="text-[11px] md:text-xs py-0"
                         >
                           {displayType}
                         </option>
@@ -945,7 +1131,8 @@ const MasterClient = () => {
               </div>
             </div>
 
-            <div className="flex flex-wrap gap-2 w-full md:w-auto justify-center md:justify-end">
+            {/* Botões */}
+            <div className="w-full md:w-auto grid grid-cols-1 sm:grid-cols-3 gap-2">
               <button
                 disabled={!isAnySelected}
                 onClick={handleOpenPriceModal}
@@ -953,309 +1140,299 @@ const MasterClient = () => {
                   isAnySelected
                     ? "bg-blue-50 hover:bg-blue-100 text-blue-600"
                     : "bg-gray-50 text-gray-400 cursor-not-allowed"
-                } border border-gray-200 rounded-full px-4 py-1.5 text-sm font-medium transition-all duration-200 w-full md:w-auto`}
+                } border border-gray-200 rounded-full px-3 py-1.5 text-xs md:text-sm font-medium transition-all duration-200`}
               >
                 Alterar Preços
               </button>
 
               <button
                 onClick={() => setShowGlobalModal(true)}
-                className="btn bg-blue-50 hover:bg-blue-100 text-blue-600 border border-gray-200 rounded-full px-4 py-1.5 text-sm font-medium transition-all duration-200 w-full md:w-auto"
+                className="btn bg-blue-50 hover:bg-blue-100 text-blue-600 border border-gray-200 rounded-full px-3 py-1.5 text-xs md:text-sm font-medium transition-all duration-200"
               >
                 Alterar Valor Global
               </button>
 
               <button
                 onClick={handleSelectAll}
-                className="btn bg-blue-50 hover:bg-blue-100 text-blue-600 border border-gray-200 rounded-full px-4 py-1.5 text-sm font-medium transition-all duration-200 w-full md:w-auto"
+                className="btn bg-blue-50 hover:bg-blue-100 text-blue-600 border border-gray-200 rounded-full px-3 py-1.5 text-xs md:text-sm font-medium transition-all duration-200"
               >
                 {allSelected ? "Desmarcar" : "Sel. Todos"}
               </button>
             </div>
           </div>
+        </div>
 
-          <div className="overflow-x-auto w-full">
-            <div className="overflow-hidden rounded-2xl shadow-lg border border-gray-100 min-w-[1000px] md:min-w-[1200px]">
-              <table className="table-default w-full">
-                <thead className="table-header">
-                  <tr className="table-header-row">
-                    <th className="table-header-cell !py-2 whitespace-nowrap max-w-[120px] text-center">
-                      <div className="table-header-cell-content">
-                        <span
-                          className="cursor-pointer"
-                          onClick={() => handleSort("nomeCompleto")}
-                        >
-                          Nome
-                          {sortField === "nomeCompleto" &&
-                            (sortDirection === "asc" ? (
-                              <IoMdArrowDropup className="inline ml-1" />
-                            ) : (
-                              <IoMdArrowDropdown className="inline ml-1" />
-                            ))}
+        {/* Tabela */}
+        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[1000px]">
+              <thead>
+                <tr className="bg-gray-50 border-b border-gray-200">
+                  <th className="w-[25%] px-2 py-2 text-left text-xs md:text-sm font-medium text-gray-700 whitespace-nowrap">
+                    <div className="flex items-center gap-1">
+                      <span
+                        className="cursor-pointer hover:text-blue-600 transition-colors"
+                        onClick={() => handleSort("nomeCompleto")}
+                      >
+                        Nome
+                        {sortField === "nomeCompleto" &&
+                          (sortDirection === "asc" ? (
+                            <IoMdArrowDropup className="inline ml-1" />
+                          ) : (
+                            <IoMdArrowDropdown className="inline ml-1" />
+                          ))}
+                      </span>
+                    </div>
+                  </th>
+                  <th className="w-[25%] px-2 py-2 text-left text-xs md:text-sm font-medium text-gray-700 whitespace-nowrap">
+                    <div className="flex items-center gap-1">
+                      <span
+                        className="cursor-pointer hover:text-blue-600 transition-colors"
+                        onClick={() => handleSort("email")}
+                      >
+                        Email
+                        {sortField === "email" &&
+                          (sortDirection === "asc" ? (
+                            <IoMdArrowDropup className="inline ml-1" />
+                          ) : (
+                            <IoMdArrowDropdown className="inline ml-1" />
+                          ))}
+                      </span>
+                    </div>
+                  </th>
+                  <th className="w-[25%] px-2 py-2 text-left text-xs md:text-sm font-medium text-gray-700 whitespace-nowrap">
+                    <div className="flex items-center gap-1">
+                      <span
+                        className="cursor-pointer hover:text-blue-600 transition-colors"
+                        onClick={() => handleSort("registeredBy")}
+                      >
+                        Registrado
+                        {sortField === "registeredBy" &&
+                          (sortDirection === "asc" ? (
+                            <IoMdArrowDropup className="inline ml-1" />
+                          ) : (
+                            <IoMdArrowDropdown className="inline ml-1" />
+                          ))}
+                      </span>
+                    </div>
+                  </th>
+                  <th className="w-[5%] px-2 py-2 text-left text-xs md:text-sm font-medium text-gray-700 whitespace-nowrap">
+                    <div className="flex items-center gap-1">
+                      <span
+                        className="cursor-pointer hover:text-blue-600 transition-colors"
+                        onClick={() => handleSort("clientType")}
+                      >
+                        Tipo
+                        {sortField === "clientType" &&
+                          (sortDirection === "asc" ? (
+                            <IoMdArrowDropup className="inline ml-1" />
+                          ) : (
+                            <IoMdArrowDropdown className="inline ml-1" />
+                          ))}
+                      </span>
+                    </div>
+                  </th>
+                  <th className="w-[5%] px-2 py-2 text-left text-xs md:text-sm font-medium text-gray-700 whitespace-nowrap">
+                    <div className="flex items-center gap-1">
+                      <span
+                        className="cursor-pointer hover:text-blue-600 transition-colors"
+                        onClick={() => handleSort("pttoen")}
+                      >
+                        Por/Ing
+                        {sortField === "pttoen" &&
+                          (sortDirection === "asc" ? (
+                            <IoMdArrowDropup className="inline ml-1" />
+                          ) : (
+                            <IoMdArrowDropdown className="inline ml-1" />
+                          ))}
+                      </span>
+                    </div>
+                  </th>
+                  <th className="w-[5%] px-2 py-2 text-left text-xs md:text-sm font-medium text-gray-700 whitespace-nowrap">
+                    <div className="flex items-center gap-1">
+                      <span
+                        className="cursor-pointer hover:text-blue-600 transition-colors"
+                        onClick={() => handleSort("esptoen")}
+                      >
+                        Esp/Ing
+                        {sortField === "esptoen" &&
+                          (sortDirection === "asc" ? (
+                            <IoMdArrowDropup className="inline ml-1" />
+                          ) : (
+                            <IoMdArrowDropdown className="inline ml-1" />
+                          ))}
+                      </span>
+                    </div>
+                  </th>
+                  <th className="w-[5%] px-2 py-2 text-left text-xs md:text-sm font-medium text-gray-700 whitespace-nowrap">
+                    <div className="flex items-center gap-1">
+                      Aprovação{" "}
+                      <FontAwesomeIcon
+                        icon={faInfoCircle}
+                        className="text-gray-500 hover:text-gray-700 cursor-pointer ml-1"
+                        onClick={() => setShowInfoModal(true)}
+                      />
+                    </div>
+                  </th>
+                  <th className="w-[5%] px-2 py-2 text-center text-xs md:text-sm font-medium text-gray-700 whitespace-nowrap">
+                    Sel.
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {currentItems.map((client) => (
+                  <tr
+                    key={client.id}
+                    className="hover:bg-gray-50 transition-colors"
+                  >
+                    <td className="px-2 py-2 text-xs md:text-sm text-gray-700">
+                      <div className="flex items-center">
+                        <span className="truncate max-w-[150px]">
+                          {client.nomeCompleto || "N/A"}
                         </span>
                       </div>
-                    </th>
-                    <th className="table-header-cell !py-2 whitespace-nowrap max-w-[120px] text-center">
-                      <div className="table-header-cell-content">
-                        <span
-                          className="cursor-pointer"
-                          onClick={() => handleSort("email")}
-                        >
-                          Email
-                          {sortField === "email" &&
-                            (sortDirection === "asc" ? (
-                              <IoMdArrowDropup className="inline ml-1" />
-                            ) : (
-                              <IoMdArrowDropdown className="inline ml-1" />
-                            ))}
+                    </td>
+                    <td className="px-2 py-2 text-xs md:text-sm text-gray-700">
+                      <div className="flex items-center">
+                        <span className="truncate max-w-[150px]">
+                          {client.email}
                         </span>
                       </div>
-                    </th>
-                    <th className="table-header-cell !py-2 whitespace-nowrap max-w-[150px] text-center">
-                      <div className="table-header-cell-content">
-                        <span
-                          className="cursor-pointer"
-                          onClick={() => handleSort("clientType")}
-                        >
-                          Tipo
-                          {sortField === "clientType" &&
-                            (sortDirection === "asc" ? (
-                              <IoMdArrowDropup className="inline ml-1" />
-                            ) : (
-                              <IoMdArrowDropdown className="inline ml-1" />
-                            ))}
+                    </td>
+                    <td className="px-2 py-2 text-xs md:text-sm text-gray-700">
+                      <div className="flex items-center">
+                        <span className="truncate max-w-[150px]">
+                          {client.registeredBy || "N/A"}
                         </span>
                       </div>
-                    </th>
-                    <th className="table-header-cell !py-2 whitespace-nowrap max-w-[120px] text-center">
-                      <div className="table-header-cell-content">
-                        <span
-                          className="cursor-pointer"
-                          onClick={() => handleSort("userType")}
+                    </td>
+                    <td className="px-2 py-2 text-xs md:text-sm text-gray-700">
+                      <div className="relative flex-1">
+                        <select
+                          value={
+                            client.userType === "b2b"
+                              ? "B2B"
+                              : client.userType === "b2c"
+                              ? "B2C"
+                              : client.userType === "colab"
+                              ? "Colab"
+                              : "Desconhecido"
+                          }
+                          onChange={(e) =>
+                            handleTypeChangeRequest(client.id, e.target.value)
+                          }
+                          disabled={client.userType === "colab"}
+                          className="w-full min-w-[80px] h-7 text-[11px] md:text-xs bg-white border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-300 transition-colors appearance-none cursor-pointer pr-6 pl-2 py-0"
                         >
-                          Usuário
-                          {sortField === "userType" &&
-                            (sortDirection === "asc" ? (
-                              <IoMdArrowDropup className="inline ml-1" />
-                            ) : (
-                              <IoMdArrowDropdown className="inline ml-1" />
-                            ))}
-                        </span>
+                          {client.userType === "colab" ? (
+                            <option
+                              value="Colab"
+                              className="text-[11px] md:text-xs py-1"
+                            >
+                              Colab
+                            </option>
+                          ) : (
+                            <>
+                              <option
+                                value="B2C"
+                                className="text-[11px] md:text-xs py-1"
+                              >
+                                B2C
+                              </option>
+                              <option
+                                value="B2B"
+                                className="text-[11px] md:text-xs py-1"
+                              >
+                                B2B
+                              </option>
+                            </>
+                          )}
+                        </select>
                       </div>
-                    </th>
-                    <th className="table-header-cell !py-2 whitespace-nowrap max-w-[120px] text-center">
-                      <div className="table-header-cell-content">
-                        <span
-                          className="cursor-pointer"
-                          onClick={() => handleSort("registeredBy")}
+                    </td>
+                    <td className="px-2 py-2 text-xs md:text-sm text-gray-700">
+                      <input
+                        type="number"
+                        value={client.pttoen || ""}
+                        readOnly
+                        className="w-full h-8 text-xs md:text-sm bg-gray-50 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent px-2"
+                      />
+                    </td>
+                    <td className="px-2 py-2 text-xs md:text-sm text-gray-700">
+                      <input
+                        type="number"
+                        value={client.esptoen || ""}
+                        readOnly
+                        className="w-full h-8 text-xs md:text-sm bg-gray-50 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent px-2"
+                      />
+                    </td>
+                    <td className="px-2 py-2 text-xs md:text-sm text-gray-700">
+                      {client.userType === "b2b" && (
+                        <button
+                          onClick={() =>
+                            handleEnableTest(client.id, client.canTest)
+                          }
+                          className={`relative inline-flex items-center h-5 w-10 rounded-full transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
+                            client.canTest ? "bg-green-500" : "bg-gray-300"
+                          }`}
+                          role="switch"
+                          aria-checked={client.canTest}
                         >
-                          Registrado
-                          {sortField === "registeredBy" &&
-                            (sortDirection === "asc" ? (
-                              <IoMdArrowDropup className="inline ml-1" />
-                            ) : (
-                              <IoMdArrowDropdown className="inline ml-1" />
-                            ))}
-                        </span>
-                      </div>
-                    </th>
-                    <th className="table-header-cell !py-2 whitespace-nowrap max-w-[120px] text-center">
-                      <div className="table-header-cell-content">
-                        <span
-                          className="cursor-pointer"
-                          onClick={() => handleSort("pttoen")}
-                        >
-                          Por/Ing
-                          {sortField === "pttoen" &&
-                            (sortDirection === "asc" ? (
-                              <IoMdArrowDropup className="inline ml-1" />
-                            ) : (
-                              <IoMdArrowDropdown className="inline ml-1" />
-                            ))}
-                        </span>
-                      </div>
-                    </th>
-                    <th className="table-header-cell !py-2 whitespace-nowrap max-w-[120px] text-center">
-                      <div className="table-header-cell-content">
-                        <span
-                          className="cursor-pointer"
-                          onClick={() => handleSort("esptoen")}
-                        >
-                          Esp/Ing
-                          {sortField === "esptoen" &&
-                            (sortDirection === "asc" ? (
-                              <IoMdArrowDropup className="inline ml-1" />
-                            ) : (
-                              <IoMdArrowDropdown className="inline ml-1" />
-                            ))}
-                        </span>
-                      </div>
-                    </th>
-                    <th className="table-header-cell !py-2 whitespace-nowrap max-w-[120px] text-center">
-                      <div className="table-header-cell-content">
-                        Aprovação{" "}
-                        <FontAwesomeIcon
-                          icon={faInfoCircle}
-                          className="text-gray-500 hover:text-gray-700 cursor-pointer ml-1"
-                          onClick={() => setShowInfoModal(true)}
-                        />
-                      </div>
-                    </th>
-                    <th className="table-header-cell !py-2 whitespace-nowrap max-w-[80px] text-center">
-                      <div className="table-header-cell-content">Sel.</div>
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="table-body">
-                  {filteredClients.map((client) => (
-                    <tr key={client.id} className="table-row">
-                      <td className="table-cell">
-                        {client.nomeCompleto?.length > 15
-                          ? `${client.nomeCompleto.slice(0, 15)}...`
-                          : client.nomeCompleto || "N/A"}
-                      </td>
-                      <td className="table-cell">
-                        {client.email?.length > 15
-                          ? `${client.email.slice(0, 15)}...`
-                          : client.email}
-                      </td>
-                      <td className="table-cell !overflow-visible">
-                        <div className="flex items-center justify-center">
-                          <select
-                            value={
-                              client.userType === "b2b"
-                                ? "B2B"
-                                : client.userType === "b2c"
-                                ? "B2C"
-                                : client.userType === "colab"
-                                ? "Colab"
-                                : "Desconhecido"
-                            }
-                            onChange={(e) =>
-                              handleTypeChangeRequest(client.id, e.target.value)
-                            }
-                            disabled={client.userType === "colab"}
-                            className="table-select w-full h-7 text-sm bg-white border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent min-w-[100px]"
-                          >
-                            {client.userType === "colab" ? (
-                              <option value="Colab">Colab</option>
-                            ) : (
-                              <>
-                                <option value="B2C">B2C</option>
-                                <option value="B2B">B2B</option>
-                              </>
-                            )}
-                          </select>
-                        </div>
-                      </td>
-                      <td className="table-cell">
-                        <div className="whitespace-nowrap">
-                          {client.userType === "b2c"
-                            ? "B2C"
-                            : client.userType === "b2b"
-                            ? "B2B"
-                            : client.userType === "colab"
-                            ? "Colab"
-                            : "Desconhecido"}
-                        </div>
-                      </td>
-                      <td className="table-cell">
-                        <div className="whitespace-nowrap">
-                          {(() => {
-                            const text = client.registeredBy || "";
-                            return text.length > 15
-                              ? `${text.slice(0, 15)}...`
-                              : text;
-                          })()}
-                        </div>
-                      </td>
-                      <td className="table-cell">
-                        <div className="whitespace-nowrap">
-                          <input
-                            type="number"
-                            value={client.pttoen || ""}
-                            readOnly
-                            className="table-input w-full h-7 text-sm bg-gray-50 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                          />
-                        </div>
-                      </td>
-                      <td className="table-cell">
-                        <div className="whitespace-nowrap">
-                          <input
-                            type="number"
-                            value={client.esptoen || ""}
-                            readOnly
-                            className="table-input w-full h-7 text-sm bg-gray-50 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                          />
-                        </div>
-                      </td>
-                      <td className="table-cell">
-                        {client.userType === "b2b" && (
-                          <button
-                            onClick={() =>
-                              handleEnableTest(client.id, client.canTest)
-                            }
-                            className={`relative inline-flex items-center h-6 w-11 rounded-full transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
-                              client.canTest ? "bg-green-500" : "bg-gray-300"
+                          <span
+                            className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform duration-200 ease-in-out ${
+                              client.canTest ? "translate-x-5" : "translate-x-1"
                             }`}
-                            role="switch"
-                            aria-checked={client.canTest}
-                          >
-                            <span
-                              className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform duration-200 ease-in-out ${
-                                client.canTest
-                                  ? "translate-x-6"
-                                  : "translate-x-1"
-                              }`}
-                            />
-                          </button>
-                        )}
-                        {client.userType === "b2c" && (
-                          <span className="text-gray-500">N/A</span>
-                        )}
-                      </td>
-                      <td className="table-cell">
-                        {client.userType !== "colab" ? (
-                          <input
-                            type="checkbox"
-                            checked={client.isSelected || false}
-                            onChange={(e) => {
-                              const isChecked = e.target.checked;
-                              setClients((prevClients) => {
-                                const updatedClients = prevClients.map((c) =>
-                                  c.id === client.id
-                                    ? { ...c, isSelected: isChecked }
-                                    : c
-                                );
-
-                                const allChecked = updatedClients.every((c) =>
-                                  filteredClients.some(
-                                    (filtered) => filtered.id === c.id
-                                  )
-                                    ? c.isSelected
-                                    : true
-                                );
-                                setAllSelected(allChecked);
-
-                                return updatedClients;
-                              });
-                            }}
-                            className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                           />
-                        ) : (
-                          <span>-</span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                        </button>
+                      )}
+                      {client.userType === "b2c" && (
+                        <span className="text-gray-500">N/A</span>
+                      )}
+                    </td>
+                    <td className="px-2 py-2 text-center text-xs md:text-sm text-gray-700">
+                      {client.userType !== "colab" ? (
+                        <input
+                          type="checkbox"
+                          checked={client.isSelected || false}
+                          onChange={(e) => {
+                            const isChecked = e.target.checked;
+                            setClients((prevClients) => {
+                              const updatedClients = prevClients.map((c) =>
+                                c.id === client.id
+                                  ? { ...c, isSelected: isChecked }
+                                  : c
+                              );
+
+                              const allChecked = updatedClients.every((c) =>
+                                filteredClients.some(
+                                  (filtered) => filtered.id === c.id
+                                )
+                                  ? c.isSelected
+                                  : true
+                              );
+                              setAllSelected(allChecked);
+
+                              return updatedClients;
+                            });
+                          }}
+                          className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        />
+                      ) : (
+                        <span className="text-gray-400">-</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
 
-      {/* Modal de Preços */}
+      {/* Paginação */}
+      <div className="bg-white rounded-2xl p-3">{renderPagination()}</div>
+
+      {/* Modais */}
       {showPriceModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
           <div className="bg-white rounded-2xl shadow-xl p-4 md:p-6 w-[90%] md:w-[400px]">
@@ -1302,7 +1479,6 @@ const MasterClient = () => {
         </div>
       )}
 
-      {/* Modal de Valores Globais */}
       {showGlobalModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
           <div className="bg-white rounded-2xl shadow-xl p-4 md:p-6 w-[90%] md:w-[400px]">
@@ -1454,7 +1630,6 @@ const MasterClient = () => {
         </div>
       )}
 
-      {/* Modal de Confirmação */}
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
           <div className="bg-white rounded-2xl shadow-xl p-4 md:p-6 w-[90%] md:w-[400px] text-center">
@@ -1479,7 +1654,6 @@ const MasterClient = () => {
         </div>
       )}
 
-      {/* Modal de Informação */}
       {showInfoModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-2xl shadow-xl p-4 md:p-6 w-[90%] md:w-[400px]">

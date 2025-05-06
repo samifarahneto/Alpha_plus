@@ -3,11 +3,13 @@
   width: 100%;
   overflow-x: auto;
   background-color: #ffffff;
+  position: relative;
 }
 
 .table-container {
   display: table;
   width: 100%;
+  position: relative;
 }
 
 /* Estilos base da tabela */
@@ -21,7 +23,7 @@
 
 /* Cabeçalho da tabela */
 .table-header {
-  background: linear-gradient(to right, #f8f9fa, #e9ecef);
+  background: white;
   position: sticky;
   top: 0;
   z-index: 10;
@@ -42,6 +44,7 @@
   text-overflow: ellipsis;
   min-width: fit-content;
   max-width: none;
+  background-color: white;
 }
 
 .table-header-cell-content {
@@ -333,19 +336,24 @@
 
 @media (max-width: 768px) {
   .table-default {
-    display: block;
-    overflow-x: auto;
-    white-space: nowrap;
+    font-size: 0.75rem;
   }
 
   .table-header,
-  .table-body {
-    display: table;
-    width: 100%;
+  .table-header-cell {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background-color: white;
   }
 
-  .table-header-cell,
+  .table-header-cell {
+    min-width: 120px;
+    padding: 0.25rem;
+  }
+
   .table-cell {
-    min-width: 100px;
+    min-width: 120px;
+    padding: 0.25rem;
   }
 }

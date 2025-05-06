@@ -1050,7 +1050,7 @@ const MasterProjects = ({ style, isMobile }) => {
   };
 
   return (
-    <div className="w-full px-2 md:px-4">
+    <div className="w-full px-10 md:px-10">
       {!loading && (
         <div className="w-full">
           <div className="flex flex-col md:flex-row items-end gap-2.5 mb-8 px-2 md:px-10">
@@ -1383,7 +1383,7 @@ const MasterProjects = ({ style, isMobile }) => {
           </div>
 
           <div className="w-full overflow-x-auto">
-            <div className="w-full">
+            <div className="w-full shadow-lg rounded-lg">
               <DataTable
                 columns={columns}
                 data={currentRows.map((row) => ({
@@ -1488,7 +1488,7 @@ const MasterProjects = ({ style, isMobile }) => {
                       }}
                       onClick={(e) => e.stopPropagation()}
                       disabled={row.collection === "b2bdocprojects"}
-                      className={`w-36 !h-6 !py-0 !text-xs font-medium rounded-full text-center mr-2 ${
+                      className={`w-full !h-6 !py-0 !text-xs font-medium rounded-full text-center ${
                         row.translation_status === "Finalizado"
                           ? "bg-green-50 text-green-700 border border-green-200"
                           : row.translation_status === "Em Andamento"
