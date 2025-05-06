@@ -1,0 +1,28 @@
+.nav-link {
+  position: relative;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-bottom: 2px solid transparent;
+}
+
+.nav-link-active {
+  color: #2563eb;
+  border-bottom-color: #2563eb;
+  font-weight: 500;
+}
+
+.nav-link-inactive {
+  color: #6b7280;
+}
+
+.nav-link-inactive:hover {
+  color: #374151;
+  background-color: #f9fafb;
+}
+
+@media (max-width: 768px) {
+  .nav-link {
+    padding: 0.5rem;
+    font-size: 0.875rem;
+  }
+}

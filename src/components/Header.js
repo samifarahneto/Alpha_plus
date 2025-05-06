@@ -11,6 +11,36 @@ const Header = () => {
   const navigate = useNavigate();
   const sidebarRef = useRef(null);
 
+  const isPublicRoute = () => {
+    const publicRoutes = ["/", "/login", "/register"];
+    return publicRoutes.includes(location.pathname);
+  };
+
+  const isMasterRoute = () => {
+    return location.pathname.startsWith("/company/master");
+  };
+
+  const isB2BRoute = () => {
+    return (
+      location.pathname.startsWith("/company/b2b") ||
+      location.pathname.startsWith("/client")
+    );
+  };
+
+  const isB2CRoute = () => {
+    return (
+      location.pathname.startsWith("/company/b2c") ||
+      location.pathname.startsWith("/client")
+    );
+  };
+
+  // Debug logs
+  console.log("Current path:", location.pathname);
+  console.log("Is B2B route:", isB2BRoute());
+  console.log("Is B2C route:", isB2CRoute());
+  console.log("Is Master route:", isMasterRoute());
+  console.log("Is Public route:", isPublicRoute());
+
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (
@@ -35,15 +65,6 @@ const Header = () => {
     } catch (error) {
       console.error("Erro ao fazer logout:", error);
     }
-  };
-
-  const isPublicRoute = () => {
-    const publicRoutes = ["/", "/login", "/register"];
-    return publicRoutes.includes(location.pathname);
-  };
-
-  const isMasterRoute = () => {
-    return location.pathname.startsWith("/company/master");
   };
 
   const renderPublicHeader = () => (
@@ -377,12 +398,166 @@ const Header = () => {
     </>
   );
 
+  const renderB2BOrB2CHeader = () => {
+    console.log("Rendering B2B/B2C header");
+    return (
+      <>
+        {renderMasterHeader()}
+        <div
+          ref={sidebarRef}
+          className={`fixed left-0 top-[70px] h-[calc(100vh-70px)] w-64 bg-white shadow-md z-30 transform transition-transform duration-300 ease-in-out ${
+            isSidebarOpen ? "translate-x-0" : "-translate-x-full"
+          }`}
+        >
+          <div className="flex flex-col h-full">
+            <div className="flex items-center justify-between p-4 border-b">
+              <img src={logo} alt="Logo" className="h-[40px] w-auto" />
+              <button
+                onClick={() => setIsSidebarOpen(false)}
+                className="p-2 text-gray-500 hover:text-gray-700 focus:outline-none"
+                aria-label="Fechar menu"
+              >
+                <svg
+                  className="h-6 w-6"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
+
+            <nav className="flex-1 px-4 py-2">
+              <ul className="space-y-1">
+                <li>
+                  <Link
+                    to="/client/dashboard"
+                    className={`flex items-center px-4 py-3 text-gray-700 hover:text-primary ${
+                      location.pathname.includes("/dashboard")
+                        ? "text-primary font-medium"
+                        : ""
+                    }`}
+                  >
+                    <svg
+                      className="w-5 h-5 mr-3"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+                      />
+                    </svg>
+                    Dashboard
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    to="/client/projects"
+                    className={`flex items-center px-4 py-3 text-gray-700 hover:text-primary ${
+                      location.pathname.includes("/projects")
+                        ? "text-primary font-medium"
+                        : ""
+                    }`}
+                  >
+                    <svg
+                      className="w-5 h-5 mr-3"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                      />
+                    </svg>
+                    Projetos
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    to="/client/activity-logs"
+                    className={`flex items-center px-4 py-3 text-gray-700 hover:text-primary ${
+                      location.pathname.includes("/activity-logs")
+                        ? "text-primary font-medium"
+                        : ""
+                    }`}
+                  >
+                    <svg
+                      className="w-5 h-5 mr-3"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"
+                      />
+                    </svg>
+                    Log de Atividades
+                  </Link>
+                </li>
+              </ul>
+            </nav>
+
+            <div className="p-4 border-t">
+              <button
+                onClick={handleLogout}
+                className="w-full flex items-center justify-center px-4 py-2 text-gray-700 hover:text-primary"
+              >
+                <svg
+                  className="w-5 h-5 mr-2"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                  />
+                </svg>
+                Sair
+              </button>
+            </div>
+          </div>
+        </div>
+      </>
+    );
+  };
+
+  // Debug log para verificar qual header será renderizado
+  console.log("Rendering decision:", {
+    isPublic: isPublicRoute(),
+    isMaster: isMasterRoute(),
+    isB2B: isB2BRoute(),
+    isB2C: isB2CRoute(),
+  });
+
   if (isPublicRoute()) {
     return renderPublicHeader();
   }
 
   if (isMasterRoute()) {
     return renderMasterSidebar();
+  }
+
+  if (isB2BRoute() || isB2CRoute()) {
+    return renderB2BOrB2CHeader();
   }
 
   return null;

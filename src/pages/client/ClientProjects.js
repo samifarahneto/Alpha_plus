@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import {
   getFirestore,
   collection,
@@ -17,14 +17,6 @@ import {
   IoMdArrowDropdown,
   IoMdSettings,
 } from "react-icons/io";
-import {
-  FolderIcon,
-  ClipboardDocumentCheckIcon,
-  CheckCircleIcon,
-  CurrencyDollarIcon,
-  CreditCardIcon,
-  ArrowPathIcon,
-} from "@heroicons/react/24/outline";
 import { FaDownload } from "react-icons/fa";
 import "../../styles/Pagination.css";
 import {
@@ -43,6 +35,10 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import Filter from "../../components/Filter";
+import "../../components/FilterBar.css";
+import ClientLayout from "../../components/layouts/ClientLayout";
+import "../../styles/Navigation.css";
 
 const SortableColumn = ({
   column,
@@ -160,6 +156,8 @@ const ClientProjects = () => {
     const savedColumnOrder = localStorage.getItem("clientProjectsColumnOrder");
     return savedColumnOrder ? JSON.parse(savedColumnOrder) : visibleColumns;
   });
+  const [isFiltersExpanded, setIsFiltersExpanded] = useState(false);
+  const navigate = useNavigate();
 
   const fixedColumns = ["projectOwner", "userEmail", "projectName", "selector"];
 
@@ -179,9 +177,6 @@ const ClientProjects = () => {
     { id: "translation_status", label: "Tradução" },
     { id: "selector", label: "Sel.", fixed: true },
   ];
-
-  const navigate = useNavigate();
-  const location = useLocation();
 
   // Função para verificar se há páginas zeradas
   const hasZeroPages = (files) => {
@@ -700,7 +695,7 @@ const ClientProjects = () => {
 
   // Adicionar useEffect para manter a ordenação
   useEffect(() => {
-    if (projects.length > 0) {
+    if (projects.length > 0 && sortField) {
       const sortedProjects = [...projects].sort((a, b) => {
         let compareA, compareB;
 
@@ -760,15 +755,20 @@ const ClientProjects = () => {
         }
       });
 
-      // Atualiza os projetos ordenados
-      setProjects(sortedProjects);
+      // Atualiza os projetos ordenados apenas se houver mudança real
+      const currentProjectsString = JSON.stringify(projects);
+      const sortedProjectsString = JSON.stringify(sortedProjects);
+
+      if (currentProjectsString !== sortedProjectsString) {
+        setProjects(sortedProjects);
+      }
     }
   }, [
     sortField,
     sortDirection,
-    projects,
     calculateTotalPages,
     calculateTotalValue,
+    projects,
   ]);
 
   const handleSort = (field) => {
@@ -987,713 +987,664 @@ const ClientProjects = () => {
     }
   };
 
+  const renderFilterBar = () => {
+    return (
+      <div className="filter-bar">
+        <div className="filter-group">
+          <Filter
+            type="text"
+            name="authorName"
+            value={filters.authorName}
+            onChange={handleFilterChange}
+            placeholder="Filtrar por autor"
+            label="Autor"
+          />
+        </div>
+        <div className="filter-group">
+          <Filter
+            type="text"
+            name="projectName"
+            value={filters.projectName}
+            onChange={handleFilterChange}
+            placeholder="Filtrar por nome"
+            label="Nome do Projeto"
+          />
+        </div>
+        <div className="filter-group">
+          <Filter
+            type="date"
+            name="startDate"
+            value={filters.startDate}
+            onChange={handleFilterChange}
+            placeholder="Data Início"
+            label="Data Início"
+          />
+        </div>
+        <div className="filter-group">
+          <Filter
+            type="date"
+            name="endDate"
+            value={filters.endDate}
+            onChange={handleFilterChange}
+            placeholder="Data Fim"
+            label="Data Fim"
+          />
+        </div>
+      </div>
+    );
+  };
+
+  const renderApprovalModal = () => {
+    if (!showApprovalModal) return null;
+
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+        <div className="w-96 bg-white rounded-lg shadow-xl p-6">
+          <div className="mb-4">
+            <h3 className="text-lg font-semibold text-gray-900 text-center">
+              Projetos Aguardando Aprovação
+            </h3>
+          </div>
+
+          <div className="space-y-3 max-h-96 overflow-y-auto">
+            {projectsAwaitingApproval.map((projectName, index) => (
+              <div key={index} className="flex items-center">
+                <span className="text-sm text-gray-700">{projectName}</span>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-6 flex justify-center">
+            <button
+              onClick={() => setShowApprovalModal(false)}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              Fechar
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
-    <div className="w-full max-w-full p-8 space-y-8">
-      {/* Modal de Aprovação */}
-      {showApprovalModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-8 max-w-lg w-full mx-4 shadow-2xl transform transition-all">
-            <div className="flex items-center justify-center mb-6">
-              <div className="bg-red-100 p-3 rounded-full">
+    <ClientLayout>
+      {!loading && (
+        <>
+          <div className="flex flex-col md:flex-row items-end gap-2.5 mb-8 px-2 md:px-10">
+            {/* Versão Mobile - Aba Expansível */}
+            <div className="w-full lg:hidden">
+              <button
+                onClick={() => setIsFiltersExpanded(!isFiltersExpanded)}
+                className="w-full flex items-center justify-between px-4 py-3 bg-gray-100 hover:bg-gray-200 transition-colors mb-4 shadow-sm"
+              >
+                <div className="flex items-center gap-2">
+                  <svg
+                    className="w-5 h-5 text-gray-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
+                    />
+                  </svg>
+                  <span className="font-medium">Filtros</span>
+                  {isFiltersExpanded && (
+                    <span className="text-sm text-gray-500">
+                      (Clique para recolher)
+                    </span>
+                  )}
+                </div>
                 <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-8 w-8 text-red-600"
+                  className={`w-5 h-5 transform transition-transform duration-200 ${
+                    isFiltersExpanded ? "rotate-180" : ""
+                  }`}
                   fill="none"
-                  viewBox="0 0 24 24"
                   stroke="currentColor"
+                  viewBox="0 0 24 24"
                 >
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                    strokeWidth="2"
+                    d="M19 9l-7 7-7-7"
                   />
                 </svg>
+              </button>
+
+              {/* Conteúdo dos Filtros Mobile */}
+              <div
+                className={`grid grid-cols-1 gap-4 transition-all duration-300 ease-in-out ${
+                  isFiltersExpanded
+                    ? "opacity-100 max-h-[500px] overflow-y-auto"
+                    : "opacity-0 max-h-0 overflow-hidden"
+                }`}
+              >
+                {renderFilterBar()}
+              </div>
+
+              {/* Botões Mobile */}
+              <div className="flex flex-wrap gap-2 mt-4">
+                <button
+                  onClick={() => navigate("/client/projects/clientaddproject")}
+                  className="flex-1 h-[38px] px-4 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg text-sm font-medium transition-colors duration-200"
+                >
+                  Novo Projeto
+                </button>
+
+                <button
+                  onClick={handlePaymentClick}
+                  disabled={selectedProjects.length === 0}
+                  className={`flex-1 h-[38px] px-4 rounded-lg text-sm font-medium transition-colors duration-200 ${
+                    selectedProjects.length > 0
+                      ? "bg-green-50 hover:bg-green-100 text-green-700"
+                      : "bg-gray-50 text-gray-400 cursor-not-allowed"
+                  }`}
+                >
+                  Pagar Projetos
+                </button>
+
+                <button
+                  onClick={() => setShowColumnSelector(true)}
+                  className="flex-1 h-[38px] px-4 bg-gray-50 hover:bg-gray-100 text-gray-700 rounded-lg text-sm font-medium transition-colors duration-200 flex items-center justify-center gap-2"
+                >
+                  <IoMdSettings className="w-4 h-4" />
+                  <span>Personalizar Colunas</span>
+                </button>
               </div>
             </div>
 
-            <h3 className="text-2xl font-bold text-center mb-2 text-gray-800">
-              Projetos Aguardando Aprovação
-            </h3>
-            <p className="text-gray-600 text-center mb-6">
-              Os seguintes projetos estão aguardando aprovação e não podem ser
-              pagos neste momento:
-            </p>
+            {/* Versão Desktop */}
+            <div className="hidden lg:flex w-full items-end gap-2.5">
+              <div className="flex-1">{renderFilterBar()}</div>
 
-            <div className="bg-gray-50 rounded-lg p-4 mb-6">
-              <ul className="space-y-3">
-                {projectsAwaitingApproval.map((projectName, index) => (
-                  <li key={index} className="flex items-center text-gray-700">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-5 w-5 text-gray-400 mr-2"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                      />
-                    </svg>
-                    {projectName}
-                  </li>
-                ))}
-              </ul>
-            </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => navigate("/client/projects/clientaddproject")}
+                  className="h-[38px] px-4 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg text-sm font-medium transition-colors duration-200"
+                >
+                  Novo Projeto
+                </button>
 
-            <div className="flex justify-center">
-              <button
-                onClick={() => setShowApprovalModal(false)}
-                className="w-[150px] py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 shadow-md hover:shadow-lg"
-              >
-                Fechar
-              </button>
+                <button
+                  onClick={handlePaymentClick}
+                  disabled={selectedProjects.length === 0}
+                  className={`h-[38px] px-4 rounded-lg text-sm font-medium transition-colors duration-200 ${
+                    selectedProjects.length > 0
+                      ? "bg-green-50 hover:bg-green-100 text-green-700"
+                      : "bg-gray-50 text-gray-400 cursor-not-allowed"
+                  }`}
+                >
+                  Pagar Projetos
+                </button>
+
+                <button
+                  onClick={() => setShowColumnSelector(true)}
+                  className="h-[38px] px-4 bg-gray-50 hover:bg-gray-100 text-gray-700 rounded-lg text-sm font-medium transition-colors duration-200 flex items-center justify-center gap-2"
+                >
+                  <IoMdSettings className="w-4 h-4" />
+                  <span>Personalizar Colunas</span>
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
-      <div className="glass-card">
-        <h1 className="text-3xl font-bold text-center mb-8 bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
-          Todos Projetos
-        </h1>
 
-        {/* Links de Navegação */}
-        <div className="flex justify-center gap-2 mb-6 border-b border-gray-200 px-4 overflow-x-auto">
-          <span
-            onClick={() => navigate("/client/projects")}
-            className={`nav-link flex items-center justify-center gap-2 min-w-[180px] h-[40px] px-4 ${
-              location.pathname === "/client/projects"
-                ? "nav-link-active"
-                : "nav-link-inactive"
-            }`}
-          >
-            <FolderIcon className="w-5 h-5" />
-            Todos Projetos
-          </span>
-          <span
-            onClick={() => navigate("/client/projects-budget")}
-            className={`nav-link flex items-center justify-center gap-2 min-w-[180px] h-[40px] px-4 ${
-              location.pathname === "/client/projects-budget"
-                ? "nav-link-active"
-                : "nav-link-inactive"
-            }`}
-          >
-            <ClipboardDocumentCheckIcon className="w-5 h-5" />
-            Projetos Aguardando Orçamento
-          </span>
-
-          <span
-            onClick={() => navigate("/client/going-on")}
-            className={`nav-link flex items-center justify-center gap-2 min-w-[180px] h-[40px] px-4 ${
-              location.pathname === "/client/going-on"
-                ? "nav-link-active"
-                : "nav-link-inactive"
-            }`}
-          >
-            <ArrowPathIcon className="w-5 h-5" />
-            Em Andamento
-          </span>
-          <span
-            onClick={() => navigate("/client/projects-done")}
-            className={`nav-link flex items-center justify-center gap-2 min-w-[180px] h-[40px] px-4 ${
-              location.pathname === "/client/projects-done"
-                ? "nav-link-active"
-                : "nav-link-inactive"
-            }`}
-          >
-            <CheckCircleIcon className="w-5 h-5" />
-            Projetos Concluídos
-          </span>
-          <span
-            onClick={() => navigate("/client/projects-paid")}
-            className={`nav-link flex items-center justify-center gap-2 min-w-[180px] h-[40px] px-4 ${
-              location.pathname === "/client/projects-paid"
-                ? "nav-link-active"
-                : "nav-link-inactive"
-            }`}
-          >
-            <CurrencyDollarIcon className="w-5 h-5" />
-            Projetos Pagos
-          </span>
-          <span
-            onClick={() => navigate("/client/payments")}
-            className={`nav-link flex items-center justify-center gap-2 min-w-[180px] h-[40px] px-4 ${
-              location.pathname === "/client/payments"
-                ? "nav-link-active"
-                : "nav-link-inactive"
-            }`}
-          >
-            <CreditCardIcon className="w-5 h-5" />
-            Pagamentos Pendentes
-          </span>
-        </div>
-
-        {error && (
-          <div className="text-center p-5 bg-red-50 text-red-600 rounded-lg shadow-sm my-5">
-            <p>Erro ao carregar os projetos: {error}</p>
-          </div>
-        )}
-
-        {loading ? (
-          <div className="text-center p-8">
-            <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-500 mx-auto"></div>
-            <p className="text-gray-600 mt-4">Carregando projetos...</p>
-          </div>
-        ) : (
-          <>
-            {/* Filtros e Botões */}
-            <div
-              style={{
-                display: "flex",
-                gap: "15px",
-                alignItems: "center",
-                padding: "0 20px",
-                marginBottom: "20px",
-              }}
-            >
-              <input
-                type="text"
-                name="authorName"
-                value={filters.authorName}
-                onChange={handleFilterChange}
-                placeholder="Filtrar por autor do projeto"
-                style={{
-                  padding: "5px",
-                  border: "1px solid #ddd",
-                  borderRadius: "10px",
-                  fontSize: "14px",
-                  width: "200px",
-                }}
-              />
-              <input
-                type="text"
-                name="projectName"
-                value={filters.projectName}
-                onChange={handleFilterChange}
-                placeholder="Filtrar por nome do projeto"
-                style={{
-                  padding: "5px",
-                  border: "1px solid #ddd",
-                  borderRadius: "10px",
-                  fontSize: "14px",
-                  width: "200px",
-                }}
-              />
-              <input
-                type="date"
-                name="startDate"
-                value={filters.startDate}
-                onChange={handleFilterChange}
-                placeholder="Data de Início"
-                style={{
-                  padding: "5px",
-                  border: "1px solid #ddd",
-                  borderRadius: "10px",
-                  fontSize: "14px",
-                }}
-              />
-              <input
-                type="date"
-                name="endDate"
-                value={filters.endDate}
-                onChange={handleFilterChange}
-                placeholder="Data de Término"
-                style={{
-                  padding: "5px",
-                  border: "1px solid #ddd",
-                  borderRadius: "10px",
-                  fontSize: "14px",
-                }}
-              />
-
-              {/* Botão Novo Projeto */}
-              <button
-                onClick={() => navigate("/client/projects/clientaddproject")}
-                style={{
-                  padding: "5px 10px",
-                  backgroundColor: "#E0F7FA",
-                  border: "1px solid grey",
-                  borderRadius: "20px",
-                  fontSize: "14px",
-                  cursor: "pointer",
-                  color: "#333",
-                  whiteSpace: "nowrap",
-                  width: "auto",
-                  boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
-                  transition:
-                    "background-color 0.3s ease, box-shadow 0.3s ease",
-                }}
-              >
-                Novo Projeto
-              </button>
-
-              {/* Botão Pagar */}
-              <button
-                onClick={handlePaymentClick}
-                style={{
-                  padding: "5px 10px",
-                  backgroundColor:
-                    selectedProjects.length > 0 ? "#E0F7FA" : "#fff",
-                  border: "1px solid grey",
-                  borderRadius: "20px",
-                  fontSize: "14px",
-                  cursor:
-                    selectedProjects.length > 0 ? "pointer" : "not-allowed",
-                  color: "#333",
-                  whiteSpace: "nowrap",
-                  width: "auto",
-                  boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
-                  transition:
-                    "background-color 0.3s ease, box-shadow 0.3s ease",
-                }}
-                disabled={selectedProjects.length === 0}
-              >
-                Pagar Projetos
-              </button>
-
-              {/* Botão Personalizar Colunas */}
-              <button
-                onClick={() => setShowColumnSelector(true)}
-                style={{
-                  padding: "5px 10px",
-                  backgroundColor: "#E0F7FA",
-                  border: "1px solid grey",
-                  borderRadius: "20px",
-                  fontSize: "14px",
-                  cursor: "pointer",
-                  color: "#333",
-                  whiteSpace: "nowrap",
-                  width: "auto",
-                  boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
-                  transition:
-                    "background-color 0.3s ease, box-shadow 0.3s ease",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "4px",
-                }}
-              >
-                <IoMdSettings />
-                Personalizar Colunas
-              </button>
+          {error && (
+            <div className="text-center p-4 md:p-5 bg-red-50 text-red-600 rounded-lg shadow-sm my-4 md:my-5">
+              <p>Erro ao carregar os projetos: {error}</p>
             </div>
+          )}
 
-            {/* Tabela */}
-            <DndContext
-              sensors={sensors}
-              collisionDetection={closestCenter}
-              onDragEnd={handleDragEnd}
-            >
-              <div className="overflow-hidden rounded-2xl shadow-lg border border-gray-100">
-                <table className="min-w-full bg-white divide-y divide-gray-200 shadow-sm rounded-lg">
-                  <thead className="bg-gradient-to-b from-gray-50 to-gray-100">
-                    <tr>
-                      <SortableContext
-                        items={columnOrder}
-                        strategy={verticalListSortingStrategy}
-                      >
-                        {columnOrder
-                          .filter((columnId) =>
-                            visibleColumns.includes(columnId)
-                          )
-                          .map((columnId) => {
-                            const column = availableColumns.find(
-                              (col) => col.id === columnId
+          {loading ? (
+            <div className="text-center p-4 md:p-8">
+              <div className="animate-spin rounded-full h-12 md:h-16 w-12 md:w-16 border-t-2 border-b-2 border-blue-500 mx-auto"></div>
+              <p className="text-gray-600 mt-4">Carregando projetos...</p>
+            </div>
+          ) : (
+            <>
+              {/* Tabela */}
+              <div className="w-full overflow-x-auto">
+                <div className="w-full shadow-lg rounded-lg">
+                  <DndContext
+                    sensors={sensors}
+                    collisionDetection={closestCenter}
+                    onDragEnd={handleDragEnd}
+                  >
+                    <div className="min-w-full overflow-hidden rounded-lg border border-gray-200">
+                      <table className="min-w-full divide-y divide-gray-200">
+                        <thead className="bg-gray-50">
+                          <tr>
+                            <SortableContext
+                              items={columnOrder}
+                              strategy={verticalListSortingStrategy}
+                            >
+                              {columnOrder
+                                .filter((columnId) =>
+                                  visibleColumns.includes(columnId)
+                                )
+                                .map((columnId) => {
+                                  const column = availableColumns.find(
+                                    (col) => col.id === columnId
+                                  );
+                                  if (!column) return null;
+
+                                  return (
+                                    <SortableColumn
+                                      key={column.id}
+                                      column={column}
+                                      isFixed={fixedColumns.includes(column.id)}
+                                      onSort={handleSort}
+                                      sortField={sortField}
+                                      sortDirection={sortDirection}
+                                    />
+                                  );
+                                })}
+                            </SortableContext>
+                          </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
+                          {currentRows.map((project) => {
+                            const totalValue = calculateTotalValue(
+                              project.files
                             );
-                            if (!column) return null;
+                            const isPendingPayment =
+                              project.payment_status === "Pendente" &&
+                              totalValue !== "0.00";
 
                             return (
-                              <SortableColumn
-                                key={column.id}
-                                column={column}
-                                isFixed={fixedColumns.includes(column.id)}
-                                onSort={handleSort}
-                                sortField={sortField}
-                                sortDirection={sortDirection}
-                              />
+                              <tr
+                                key={project.id}
+                                onClick={() =>
+                                  handleProjectClick(
+                                    project.id,
+                                    project.collection
+                                  )
+                                }
+                                className="hover:bg-blue-50/50 cursor-pointer transition-all duration-200"
+                              >
+                                {columnOrder
+                                  .filter((columnId) =>
+                                    visibleColumns.includes(columnId)
+                                  )
+                                  .map((columnId) => {
+                                    const column = availableColumns.find(
+                                      (col) => col.id === columnId
+                                    );
+                                    if (!column) return null;
+
+                                    return (
+                                      <td
+                                        key={column.id}
+                                        className="px-4 py-1.5 whitespace-nowrap text-sm text-gray-700 text-center"
+                                      >
+                                        {column.id === "projectOwner" && (
+                                          <span>
+                                            {project.oldclientName ||
+                                              (project.authorName &&
+                                              project.authorName.length > 15
+                                                ? `${project.authorName.slice(
+                                                    0,
+                                                    15
+                                                  )}...`
+                                                : project.authorName ||
+                                                  "Não informado")}
+                                          </span>
+                                        )}
+                                        {column.id === "userEmail" && (
+                                          <span>
+                                            {project.oldclientEmail ||
+                                              project.userEmail ||
+                                              "Não informado"}
+                                          </span>
+                                        )}
+                                        {column.id === "projectName" && (
+                                          <span>
+                                            {project.projectName &&
+                                            project.projectName.length > 15
+                                              ? `${project.projectName.slice(
+                                                  0,
+                                                  15
+                                                )}...`
+                                              : project.projectName ||
+                                                "Sem Nome"}
+                                          </span>
+                                        )}
+                                        {column.id === "createdAt" && (
+                                          <span>
+                                            {formatDate(project.createdAt)}
+                                          </span>
+                                        )}
+                                        {column.id === "pages" && (
+                                          <span>
+                                            {calculateTotalPages(project.files)}
+                                          </span>
+                                        )}
+                                        {column.id === "files" && (
+                                          <div className="flex items-center justify-center gap-1">
+                                            <span>
+                                              {project.files?.length || 0}
+                                            </span>
+                                            {project.files?.length > 0 && (
+                                              <FaDownload
+                                                className="text-blue-600 hover:text-blue-800 cursor-pointer"
+                                                onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  setSelectedFiles(
+                                                    project.files
+                                                  );
+                                                  setShowFilesModal(true);
+                                                }}
+                                                size={14}
+                                              />
+                                            )}
+                                          </div>
+                                        )}
+                                        {column.id === "sourceLanguage" && (
+                                          <span>{project.sourceLanguage}</span>
+                                        )}
+                                        {column.id === "targetLanguage" && (
+                                          <span>{project.targetLanguage}</span>
+                                        )}
+                                        {column.id === "totalValue" && (
+                                          <span>U$ {totalValue}</span>
+                                        )}
+                                        {column.id === "isPaid" && (
+                                          <span
+                                            className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                              typeof project.payment_status ===
+                                                "object" &&
+                                              project.payment_status.status ===
+                                                "Pago"
+                                                ? "!bg-green-100 !text-green-700"
+                                                : typeof project.payment_status ===
+                                                    "object" &&
+                                                  project.payment_status
+                                                    .status === "Pendente"
+                                                ? "!bg-yellow-100 !text-yellow-700"
+                                                : typeof project.payment_status ===
+                                                    "object" &&
+                                                  project.payment_status
+                                                    .status === "Divergência"
+                                                ? "!bg-red-100 !text-red-700"
+                                                : typeof project.payment_status ===
+                                                    "object" &&
+                                                  project.payment_status
+                                                    .status === "Reembolso"
+                                                ? "!bg-orange-100 !text-orange-700"
+                                                : project.payment_status ===
+                                                  "Pago"
+                                                ? "!bg-green-100 !text-green-700"
+                                                : project.payment_status ===
+                                                  "Pendente"
+                                                ? "!bg-yellow-100 !text-yellow-700"
+                                                : project.payment_status ===
+                                                  "Divergência"
+                                                ? "!bg-red-100 !text-red-700"
+                                                : project.payment_status ===
+                                                  "Reembolso"
+                                                ? "!bg-orange-100 !text-orange-700"
+                                                : "!bg-gray-100 !text-gray-700"
+                                            }`}
+                                          >
+                                            {(() => {
+                                              const status =
+                                                project.payment_status;
+                                              if (!status) return "Pendente";
+                                              if (typeof status === "string")
+                                                return status;
+                                              if (
+                                                typeof status === "object" &&
+                                                status.status
+                                              )
+                                                return status.status;
+                                              return "Pendente";
+                                            })()}
+                                          </span>
+                                        )}
+                                        {column.id === "deadlineDate" && (
+                                          <span
+                                            className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                              project.deadlineDate
+                                                ? "font-medium"
+                                                : ""
+                                            }`}
+                                          >
+                                            {project.deadlineDate
+                                              ? formatDate(project.deadlineDate)
+                                              : "A definir"}
+                                          </span>
+                                        )}
+                                        {column.id === "project_status" && (
+                                          <span
+                                            className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                              project.project_status ===
+                                              "Finalizado"
+                                                ? "!bg-green-100 !text-green-700"
+                                                : project.project_status ===
+                                                  "Em Andamento"
+                                                ? "!bg-blue-100 !text-blue-700"
+                                                : project.project_status ===
+                                                  "Em Revisão"
+                                                ? "!bg-yellow-100 !text-yellow-700"
+                                                : project.project_status ===
+                                                  "Em Certificação"
+                                                ? "!bg-orange-100 !text-orange-700"
+                                                : project.project_status ===
+                                                  "Cancelado"
+                                                ? "!bg-red-100 !text-red-700"
+                                                : project.project_status ===
+                                                  "Ag. Orçamento"
+                                                ? "!bg-purple-100 !text-purple-700"
+                                                : project.project_status ===
+                                                  "Ag. Aprovação"
+                                                ? "!bg-indigo-100 !text-indigo-700"
+                                                : project.project_status ===
+                                                  "Ag. Pagamento"
+                                                ? "!bg-pink-100 !text-pink-700"
+                                                : "!bg-gray-100 !text-gray-700"
+                                            }`}
+                                          >
+                                            {(() => {
+                                              const status =
+                                                project.project_status;
+                                              if (!status) return "N/A";
+                                              if (typeof status === "string")
+                                                return status;
+                                              if (
+                                                typeof status === "object" &&
+                                                status.status
+                                              )
+                                                return status.status;
+                                              return "N/A";
+                                            })()}
+                                          </span>
+                                        )}
+                                        {column.id === "translation_status" && (
+                                          <span
+                                            className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                              project.translation_status ===
+                                              "Em Análise"
+                                                ? "!bg-yellow-100 !text-yellow-700"
+                                                : project.translation_status ===
+                                                    "Em Tradução" ||
+                                                  project.translation_status ===
+                                                    "Em Andamento"
+                                                ? "!bg-blue-100 !text-blue-700"
+                                                : project.translation_status ===
+                                                  "Finalizado"
+                                                ? "!bg-green-100 !text-green-700"
+                                                : project.translation_status ===
+                                                  "Cancelado"
+                                                ? "!bg-red-100 !text-red-700"
+                                                : "!bg-gray-100 !text-gray-700"
+                                            }`}
+                                          >
+                                            {(() => {
+                                              const status =
+                                                project.translation_status;
+                                              if (!status) return "N/A";
+                                              if (typeof status === "string")
+                                                return status;
+                                              if (
+                                                typeof status === "object" &&
+                                                status.status
+                                              )
+                                                return status.status;
+                                              return "N/A";
+                                            })()}
+                                          </span>
+                                        )}
+                                        {column.id === "selector" && (
+                                          <td
+                                            className="px-4 py-1.5 whitespace-nowrap text-sm text-center"
+                                            onClick={(e) => e.stopPropagation()}
+                                          >
+                                            {isPendingPayment &&
+                                              !hasZeroPages(project.files) && (
+                                                <input
+                                                  type="checkbox"
+                                                  checked={selectedProjects.some(
+                                                    (p) => p === project.id
+                                                  )}
+                                                  onChange={(e) => {
+                                                    e.stopPropagation();
+                                                    if (e.target.checked) {
+                                                      setSelectedProjects([
+                                                        ...selectedProjects,
+                                                        project.id,
+                                                      ]);
+                                                    } else {
+                                                      setSelectedProjects(
+                                                        selectedProjects.filter(
+                                                          (id) =>
+                                                            id !== project.id
+                                                        )
+                                                      );
+                                                    }
+                                                  }}
+                                                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 cursor-pointer"
+                                                />
+                                              )}
+                                            {hasZeroPages(project.files) && (
+                                              <span className="text-xs text-red-500">
+                                                {project.collection ===
+                                                "b2bdocsaved"
+                                                  ? "Solicitar Orçamento"
+                                                  : project.collection ===
+                                                    "b2cdocsaved"
+                                                  ? "Solicitar Orçamento"
+                                                  : "Aguardando Orçamento"}
+                                              </span>
+                                            )}
+                                          </td>
+                                        )}
+                                      </td>
+                                    );
+                                  })}
+                              </tr>
                             );
                           })}
-                      </SortableContext>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {currentRows.map((project) => {
-                      const totalValue = calculateTotalValue(project.files);
-                      const isPendingPayment =
-                        project.payment_status === "Pendente" &&
-                        totalValue !== "0.00";
-
-                      return (
-                        <tr
-                          key={project.id}
-                          onClick={() =>
-                            handleProjectClick(project.id, project.collection)
-                          }
-                          className="hover:bg-blue-50/50 cursor-pointer transition-all duration-200"
-                        >
-                          {columnOrder
-                            .filter((columnId) =>
-                              visibleColumns.includes(columnId)
-                            )
-                            .map((columnId) => {
-                              const column = availableColumns.find(
-                                (col) => col.id === columnId
-                              );
-                              if (!column) return null;
-
-                              return (
-                                <td
-                                  key={column.id}
-                                  className="px-4 py-1.5 whitespace-nowrap text-sm text-gray-700 text-center"
-                                >
-                                  {column.id === "projectOwner" && (
-                                    <span>
-                                      {project.oldclientName ||
-                                        (project.authorName &&
-                                        project.authorName.length > 15
-                                          ? `${project.authorName.slice(
-                                              0,
-                                              15
-                                            )}...`
-                                          : project.authorName ||
-                                            "Não informado")}
-                                    </span>
-                                  )}
-                                  {column.id === "userEmail" && (
-                                    <span>
-                                      {project.oldclientEmail ||
-                                        project.userEmail ||
-                                        "Não informado"}
-                                    </span>
-                                  )}
-                                  {column.id === "projectName" && (
-                                    <span>
-                                      {project.projectName &&
-                                      project.projectName.length > 15
-                                        ? `${project.projectName.slice(
-                                            0,
-                                            15
-                                          )}...`
-                                        : project.projectName || "Sem Nome"}
-                                    </span>
-                                  )}
-                                  {column.id === "createdAt" && (
-                                    <span>{formatDate(project.createdAt)}</span>
-                                  )}
-                                  {column.id === "pages" && (
-                                    <span>
-                                      {calculateTotalPages(project.files)}
-                                    </span>
-                                  )}
-                                  {column.id === "files" && (
-                                    <div className="flex items-center justify-center gap-1">
-                                      <span>{project.files?.length || 0}</span>
-                                      {project.files?.length > 0 && (
-                                        <FaDownload
-                                          className="text-blue-600 hover:text-blue-800 cursor-pointer"
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            setSelectedFiles(project.files);
-                                            setShowFilesModal(true);
-                                          }}
-                                          size={14}
-                                        />
-                                      )}
-                                    </div>
-                                  )}
-                                  {column.id === "sourceLanguage" && (
-                                    <span>{project.sourceLanguage}</span>
-                                  )}
-                                  {column.id === "targetLanguage" && (
-                                    <span>{project.targetLanguage}</span>
-                                  )}
-                                  {column.id === "totalValue" && (
-                                    <span>U$ {totalValue}</span>
-                                  )}
-                                  {column.id === "isPaid" && (
-                                    <span
-                                      className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                        typeof project.payment_status ===
-                                          "object" &&
-                                        project.payment_status.status === "Pago"
-                                          ? "!bg-green-100 !text-green-700"
-                                          : typeof project.payment_status ===
-                                              "object" &&
-                                            project.payment_status.status ===
-                                              "Pendente"
-                                          ? "!bg-yellow-100 !text-yellow-700"
-                                          : typeof project.payment_status ===
-                                              "object" &&
-                                            project.payment_status.status ===
-                                              "Divergência"
-                                          ? "!bg-red-100 !text-red-700"
-                                          : typeof project.payment_status ===
-                                              "object" &&
-                                            project.payment_status.status ===
-                                              "Reembolso"
-                                          ? "!bg-orange-100 !text-orange-700"
-                                          : project.payment_status === "Pago"
-                                          ? "!bg-green-100 !text-green-700"
-                                          : project.payment_status ===
-                                            "Pendente"
-                                          ? "!bg-yellow-100 !text-yellow-700"
-                                          : project.payment_status ===
-                                            "Divergência"
-                                          ? "!bg-red-100 !text-red-700"
-                                          : project.payment_status ===
-                                            "Reembolso"
-                                          ? "!bg-orange-100 !text-orange-700"
-                                          : "!bg-gray-100 !text-gray-700"
-                                      }`}
-                                    >
-                                      {(() => {
-                                        const status = project.payment_status;
-                                        if (!status) return "Pendente";
-                                        if (typeof status === "string")
-                                          return status;
-                                        if (
-                                          typeof status === "object" &&
-                                          status.status
-                                        )
-                                          return status.status;
-                                        return "Pendente";
-                                      })()}
-                                    </span>
-                                  )}
-                                  {column.id === "deadlineDate" && (
-                                    <span
-                                      className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                        project.deadlineDate
-                                          ? "font-medium"
-                                          : ""
-                                      }`}
-                                    >
-                                      {project.deadlineDate
-                                        ? formatDate(project.deadlineDate)
-                                        : "A definir"}
-                                    </span>
-                                  )}
-                                  {column.id === "project_status" && (
-                                    <span
-                                      className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                        project.project_status === "Finalizado"
-                                          ? "!bg-green-100 !text-green-700"
-                                          : project.project_status ===
-                                            "Em Andamento"
-                                          ? "!bg-blue-100 !text-blue-700"
-                                          : project.project_status ===
-                                            "Em Revisão"
-                                          ? "!bg-yellow-100 !text-yellow-700"
-                                          : project.project_status ===
-                                            "Em Certificação"
-                                          ? "!bg-orange-100 !text-orange-700"
-                                          : project.project_status ===
-                                            "Cancelado"
-                                          ? "!bg-red-100 !text-red-700"
-                                          : project.project_status ===
-                                            "Ag. Orçamento"
-                                          ? "!bg-purple-100 !text-purple-700"
-                                          : project.project_status ===
-                                            "Ag. Aprovação"
-                                          ? "!bg-indigo-100 !text-indigo-700"
-                                          : project.project_status ===
-                                            "Ag. Pagamento"
-                                          ? "!bg-pink-100 !text-pink-700"
-                                          : "!bg-gray-100 !text-gray-700"
-                                      }`}
-                                    >
-                                      {(() => {
-                                        const status = project.project_status;
-                                        if (!status) return "N/A";
-                                        if (typeof status === "string")
-                                          return status;
-                                        if (
-                                          typeof status === "object" &&
-                                          status.status
-                                        )
-                                          return status.status;
-                                        return "N/A";
-                                      })()}
-                                    </span>
-                                  )}
-                                  {column.id === "translation_status" && (
-                                    <span
-                                      className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                        project.translation_status ===
-                                        "Em Análise"
-                                          ? "!bg-yellow-100 !text-yellow-700"
-                                          : project.translation_status ===
-                                              "Em Tradução" ||
-                                            project.translation_status ===
-                                              "Em Andamento"
-                                          ? "!bg-blue-100 !text-blue-700"
-                                          : project.translation_status ===
-                                            "Finalizado"
-                                          ? "!bg-green-100 !text-green-700"
-                                          : project.translation_status ===
-                                            "Cancelado"
-                                          ? "!bg-red-100 !text-red-700"
-                                          : "!bg-gray-100 !text-gray-700"
-                                      }`}
-                                    >
-                                      {(() => {
-                                        const status =
-                                          project.translation_status;
-                                        if (!status) return "N/A";
-                                        if (typeof status === "string")
-                                          return status;
-                                        if (
-                                          typeof status === "object" &&
-                                          status.status
-                                        )
-                                          return status.status;
-                                        return "N/A";
-                                      })()}
-                                    </span>
-                                  )}
-                                  {column.id === "selector" && (
-                                    <td
-                                      className="px-4 py-1.5 whitespace-nowrap text-sm text-center"
-                                      onClick={(e) => e.stopPropagation()}
-                                    >
-                                      {isPendingPayment &&
-                                        !hasZeroPages(project.files) && (
-                                          <input
-                                            type="checkbox"
-                                            checked={selectedProjects.some(
-                                              (p) => p === project.id
-                                            )}
-                                            onChange={(e) => {
-                                              e.stopPropagation();
-                                              if (e.target.checked) {
-                                                setSelectedProjects([
-                                                  ...selectedProjects,
-                                                  project.id,
-                                                ]);
-                                              } else {
-                                                setSelectedProjects(
-                                                  selectedProjects.filter(
-                                                    (id) => id !== project.id
-                                                  )
-                                                );
-                                              }
-                                            }}
-                                            className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 cursor-pointer"
-                                          />
-                                        )}
-                                      {hasZeroPages(project.files) && (
-                                        <span className="text-xs text-red-500">
-                                          {project.collection === "b2bdocsaved"
-                                            ? "Solicitar Orçamento"
-                                            : project.collection ===
-                                              "b2cdocsaved"
-                                            ? "Solicitar Orçamento"
-                                            : "Aguardando Orçamento"}
-                                        </span>
-                                      )}
-                                    </td>
-                                  )}
-                                </td>
-                              );
-                            })}
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </DndContext>
-
-            {/* Paginação */}
-            <nav className="pagination-container">
-              <div className="pagination-rows-per-page">
-                <span className="pagination-rows-label">
-                  Projetos por página
-                </span>
-                <div className="pagination-rows-dropdown">
-                  <div
-                    id="rows-button"
-                    onClick={() => setShowRowsDropdown(!showRowsDropdown)}
-                    className="pagination-rows-button"
-                  >
-                    <span>{rowsPerPage}</span>
-                    <svg
-                      className="w-4 h-4 text-gray-500"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M19 9l-7 7-7-7"
-                      />
-                    </svg>
-                  </div>
-                  {showRowsDropdown && (
-                    <div
-                      id="rows-dropdown"
-                      className="pagination-rows-dropdown-content"
-                    >
-                      <div className="p-2 space-y-2">
-                        {[10, 25, 50, 100].map((value) => (
-                          <div
-                            key={value}
-                            onClick={() => handleRowsPerPageChange(value)}
-                            className="pagination-rows-option"
-                          >
-                            <span>{value}</span>
-                          </div>
-                        ))}
-                      </div>
+                        </tbody>
+                      </table>
                     </div>
-                  )}
+                  </DndContext>
                 </div>
               </div>
-              <ul className="pagination-pages">
-                <li>
+
+              {/* Paginação */}
+              <div className="flex flex-col md:flex-row items-center justify-between gap-4 mt-4 p-4">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-gray-600">
+                    Projetos por página:
+                  </span>
+                  <div className="relative">
+                    <button
+                      id="rows-button"
+                      onClick={() => setShowRowsDropdown(!showRowsDropdown)}
+                      className="flex items-center gap-2 px-3 py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-50"
+                    >
+                      {rowsPerPage}
+                      <svg
+                        className="w-4 h-4 text-gray-500"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M19 9l-7 7-7-7"
+                        />
+                      </svg>
+                    </button>
+                    {showRowsDropdown && (
+                      <div
+                        id="rows-dropdown"
+                        className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg"
+                      >
+                        <div className="py-1">
+                          {[10, 25, 50, 100].map((value) => (
+                            <button
+                              key={value}
+                              onClick={() => handleRowsPerPageChange(value)}
+                              className="w-full px-4 py-2 text-sm text-left hover:bg-gray-50"
+                            >
+                              {value}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
                   <button
                     onClick={() => paginate(currentPage - 1)}
                     disabled={currentPage === 1}
-                    className="pagination-page-button"
+                    className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
                   >
                     Anterior
                   </button>
-                </li>
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map(
-                  (page) => (
-                    <li key={page}>
-                      <button
-                        onClick={() => paginate(page)}
-                        className={`pagination-page-button ${
-                          currentPage === page ? "active" : ""
-                        }`}
-                      >
-                        {page}
-                      </button>
-                    </li>
-                  )
-                )}
-                <li>
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                      (page) => (
+                        <button
+                          key={page}
+                          onClick={() => paginate(page)}
+                          className={`w-8 h-8 text-sm border rounded-lg ${
+                            currentPage === page
+                              ? "bg-blue-500 text-white border-blue-500"
+                              : "border-gray-300 hover:bg-gray-50"
+                          }`}
+                        >
+                          {page}
+                        </button>
+                      )
+                    )}
+                  </div>
                   <button
                     onClick={() => paginate(currentPage + 1)}
                     disabled={currentPage === totalPages}
-                    className="pagination-page-button"
+                    className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
                   >
                     Próximo
                   </button>
-                </li>
-              </ul>
-            </nav>
-          </>
-        )}
-      </div>
+                </div>
+              </div>
+            </>
+          )}
+        </>
+      )}
       {renderFilesModal()}
       {renderColumnSelector()}
-    </div>
+      {renderApprovalModal()}
+    </ClientLayout>
   );
 };
 
