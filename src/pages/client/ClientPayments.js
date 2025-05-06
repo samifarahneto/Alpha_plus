@@ -10,16 +10,42 @@ import {
   getDocs,
 } from "firebase/firestore";
 import { auth } from "../../firebaseConfig";
-import { IoMdArrowDropup, IoMdArrowDropdown } from "react-icons/io";
 import ClientLayout from "../../components/layouts/ClientLayout";
+import DataTable from "../../components/DataTable";
+import "../../styles/Table.css";
 
 const ClientPayments = () => {
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [sortField, setSortField] = useState("createdAt");
-  const [sortDirection, setSortDirection] = useState("desc");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(() => {
+    const savedRowsPerPage = localStorage.getItem("clientPaymentsRowsPerPage");
+    return savedRowsPerPage ? parseInt(savedRowsPerPage) : 10;
+  });
+  const [showRowsDropdown, setShowRowsDropdown] = useState(false);
+  const [selectedProjects, setSelectedProjects] = useState([]);
+  const [columnOrder] = useState(() => {
+    const savedColumnOrder = localStorage.getItem("clientPaymentsColumnOrder");
+    return savedColumnOrder
+      ? JSON.parse(savedColumnOrder)
+      : [
+          "author",
+          "email",
+          "projectName",
+          "createdAt",
+          "pages",
+          "sourceLanguage",
+          "targetLanguage",
+          "totalValue",
+          "status",
+          "deadline",
+          "select",
+        ];
+  });
   const navigate = useNavigate();
+
+  const fixedColumns = ["author", "email", "projectName"];
 
   useEffect(() => {
     const fetchProjects = async () => {
@@ -167,23 +193,34 @@ const ClientPayments = () => {
     fetchProjects();
   }, []);
 
-  const handleSort = (field) => {
-    if (sortField === field) {
-      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
-    } else {
-      setSortField(field);
-      setSortDirection("asc");
-    }
-  };
-
   const handleProjectClick = (projectId) => {
     navigate(`/client/projects/${projectId}`);
   };
 
   const formatDate = (date) => {
     if (!date) return "";
-    const d = date.toDate();
-    return d.toLocaleDateString("pt-BR");
+
+    try {
+      // Se for um Timestamp do Firestore
+      if (date.toDate) {
+        return date.toDate().toLocaleDateString("pt-BR");
+      }
+
+      // Se for uma string de data
+      if (typeof date === "string") {
+        return new Date(date).toLocaleDateString("pt-BR");
+      }
+
+      // Se for um objeto Date
+      if (date instanceof Date) {
+        return date.toLocaleDateString("pt-BR");
+      }
+
+      return "";
+    } catch (error) {
+      console.error("Erro ao formatar data:", error);
+      return "";
+    }
   };
 
   const calculateTotalValue = (files) => {
@@ -192,171 +229,282 @@ const ClientPayments = () => {
     return total.toFixed(2);
   };
 
+  const handleProjectSelect = (projectId, isSelected) => {
+    setSelectedProjects((prev) => {
+      if (isSelected) {
+        return [...prev, projectId];
+      } else {
+        return prev.filter((id) => id !== projectId);
+      }
+    });
+  };
+
+  const handleSelectAll = (isSelected) => {
+    if (isSelected) {
+      setSelectedProjects(currentRows.map((row) => row.id));
+    } else {
+      setSelectedProjects([]);
+    }
+  };
+
+  const handlePayment = () => {
+    if (selectedProjects.length > 0) {
+      navigate("/client/checkout", {
+        state: { selectedProjects },
+      });
+    } else {
+      alert("Por favor, selecione ao menos um projeto para pagar.");
+    }
+  };
+
+  const columns = [
+    {
+      id: "author",
+      label: "Autor",
+      fixed: true,
+      render: (value) => (
+        <span>
+          {value && value.length > 15
+            ? `${value.slice(0, 15)}...`
+            : value || "Não informado"}
+        </span>
+      ),
+    },
+    {
+      id: "email",
+      label: "Email",
+      fixed: true,
+      render: (value) => (
+        <span>
+          {value && value.length > 20
+            ? `${value.slice(0, 20)}...`
+            : value || "Não informado"}
+        </span>
+      ),
+    },
+    {
+      id: "projectName",
+      label: "Nome do Projeto",
+      fixed: true,
+      render: (value) => (
+        <span>
+          {value && value.length > 15
+            ? `${value.slice(0, 15)}...`
+            : value || "Sem Nome"}
+        </span>
+      ),
+    },
+    {
+      id: "createdAt",
+      label: "Data",
+      render: (value) => formatDate(value),
+    },
+    {
+      id: "pages",
+      label: "Págs",
+      render: (value, row) => {
+        if (!row.files) return "0";
+        return row.files.reduce((sum, file) => sum + (file.pages || 0), 0);
+      },
+    },
+    {
+      id: "sourceLanguage",
+      label: "Origem",
+    },
+    {
+      id: "targetLanguage",
+      label: "Destino",
+    },
+    {
+      id: "totalValue",
+      label: "Valor U$",
+      render: (value, row) => `U$ ${calculateTotalValue(row.files)}`,
+    },
+    {
+      id: "status",
+      label: "Status",
+      render: (value) => value || "Pendente",
+    },
+    {
+      id: "deadline",
+      label: "Prazo",
+      render: (value) => formatDate(value),
+    },
+    {
+      id: "select",
+      label: "Sel.",
+      render: (value, row) => (
+        <div onClick={(e) => e.stopPropagation()}>
+          <input
+            type="checkbox"
+            checked={selectedProjects.includes(row.id)}
+            onChange={(e) => {
+              e.stopPropagation();
+              handleProjectSelect(row.id, e.target.checked);
+            }}
+            className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+          />
+        </div>
+      ),
+    },
+  ];
+
+  // Calcular índices para paginação
+  const indexOfLastRow = currentPage * rowsPerPage;
+  const indexOfFirstRow = indexOfLastRow - rowsPerPage;
+  const currentRows = projects.slice(indexOfFirstRow, indexOfLastRow);
+  const totalPages = Math.ceil(projects.length / rowsPerPage);
+
+  // Função para mudar página
+  const paginate = (pageNumber) => setCurrentPage(pageNumber);
+
+  const handleRowsPerPageChange = (value) => {
+    setRowsPerPage(value);
+    setCurrentPage(1);
+    setShowRowsDropdown(false);
+    localStorage.setItem("clientPaymentsRowsPerPage", value.toString());
+  };
+
   return (
     <ClientLayout>
       {error && (
-        <div className="text-center p-4 bg-red-50 text-red-600 rounded-lg shadow-sm my-4 md:p-5 md:my-5">
+        <div className="text-center p-4 md:p-5 bg-red-50 text-red-600 rounded-lg shadow-sm my-4 md:my-5">
           <p>Erro ao carregar os projetos: {error}</p>
         </div>
       )}
 
       {loading ? (
-        <div className="text-center p-4">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto md:h-16 md:w-16"></div>
+        <div className="text-center p-4 md:p-8">
+          <div className="animate-spin rounded-full h-12 md:h-16 w-12 md:w-16 border-t-2 border-b-2 border-blue-500 mx-auto"></div>
           <p className="text-gray-600 mt-4">Carregando projetos...</p>
         </div>
       ) : (
-        <div className="w-full overflow-x-auto">
-          <div className="w-full shadow-lg rounded-lg">
-            <div className="min-w-full overflow-hidden rounded-lg border border-gray-200">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th
-                      scope="col"
-                      className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer md:px-4 md:py-3"
-                      onClick={() => handleSort("projectName")}
-                    >
-                      <div className="flex items-center gap-1 md:gap-2">
-                        Nome do Projeto
-                        {sortField === "projectName" && (
-                          <span>
-                            {sortDirection === "asc" ? (
-                              <IoMdArrowDropup className="w-3 h-3 md:w-4 md:h-4" />
-                            ) : (
-                              <IoMdArrowDropdown className="w-3 h-3 md:w-4 md:h-4" />
-                            )}
-                          </span>
-                        )}
-                      </div>
-                    </th>
-                    <th
-                      scope="col"
-                      className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer md:px-4 md:py-3"
-                      onClick={() => handleSort("projectOwner")}
-                    >
-                      <div className="flex items-center gap-1 md:gap-2">
-                        Proprietário
-                        {sortField === "projectOwner" && (
-                          <span>
-                            {sortDirection === "asc" ? (
-                              <IoMdArrowDropup className="w-3 h-3 md:w-4 md:h-4" />
-                            ) : (
-                              <IoMdArrowDropdown className="w-3 h-3 md:w-4 md:h-4" />
-                            )}
-                          </span>
-                        )}
-                      </div>
-                    </th>
-                    <th
-                      scope="col"
-                      className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer md:px-4 md:py-3"
-                      onClick={() => handleSort("createdAt")}
-                    >
-                      <div className="flex items-center gap-1 md:gap-2">
-                        Data de Criação
-                        {sortField === "createdAt" && (
-                          <span>
-                            {sortDirection === "asc" ? (
-                              <IoMdArrowDropup className="w-3 h-3 md:w-4 md:h-4" />
-                            ) : (
-                              <IoMdArrowDropdown className="w-3 h-3 md:w-4 md:h-4" />
-                            )}
-                          </span>
-                        )}
-                      </div>
-                    </th>
-                    <th
-                      scope="col"
-                      className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer md:px-4 md:py-3"
-                      onClick={() => handleSort("sourceLanguage")}
-                    >
-                      <div className="flex items-center gap-1 md:gap-2">
-                        Idioma de Origem
-                        {sortField === "sourceLanguage" && (
-                          <span>
-                            {sortDirection === "asc" ? (
-                              <IoMdArrowDropup className="w-3 h-3 md:w-4 md:h-4" />
-                            ) : (
-                              <IoMdArrowDropdown className="w-3 h-3 md:w-4 md:h-4" />
-                            )}
-                          </span>
-                        )}
-                      </div>
-                    </th>
-                    <th
-                      scope="col"
-                      className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer md:px-4 md:py-3"
-                      onClick={() => handleSort("targetLanguage")}
-                    >
-                      <div className="flex items-center gap-1 md:gap-2">
-                        Idioma de Destino
-                        {sortField === "targetLanguage" && (
-                          <span>
-                            {sortDirection === "asc" ? (
-                              <IoMdArrowDropup className="w-3 h-3 md:w-4 md:h-4" />
-                            ) : (
-                              <IoMdArrowDropdown className="w-3 h-3 md:w-4 md:h-4" />
-                            )}
-                          </span>
-                        )}
-                      </div>
-                    </th>
-                    <th
-                      scope="col"
-                      className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer md:px-4 md:py-3"
-                      onClick={() => handleSort("totalValue")}
-                    >
-                      <div className="flex items-center gap-1 md:gap-2">
-                        Valor Total
-                        {sortField === "totalValue" && (
-                          <span>
-                            {sortDirection === "asc" ? (
-                              <IoMdArrowDropup className="w-3 h-3 md:w-4 md:h-4" />
-                            ) : (
-                              <IoMdArrowDropdown className="w-3 h-3 md:w-4 md:h-4" />
-                            )}
-                          </span>
-                        )}
-                      </div>
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {projects.map((project) => {
-                    const totalValue = calculateTotalValue(project.files);
-                    return (
-                      <tr
-                        key={project.id}
-                        onClick={() => handleProjectClick(project.id)}
-                        className="hover:bg-blue-50/50 cursor-pointer transition-all duration-200"
-                      >
-                        <td className="px-2 py-1.5 whitespace-nowrap text-xs text-gray-700 md:px-4 md:text-sm">
-                          {project.projectName}
-                        </td>
-                        <td className="px-2 py-1.5 whitespace-nowrap text-xs text-gray-700 md:px-4 md:text-sm">
-                          {project.projectOwner}
-                        </td>
-                        <td className="px-2 py-1.5 whitespace-nowrap text-xs text-gray-700 md:px-4 md:text-sm">
-                          {formatDate(project.createdAt)}
-                        </td>
-                        <td className="px-2 py-1.5 whitespace-nowrap text-xs text-gray-700 md:px-4 md:text-sm">
-                          {project.sourceLanguage}
-                        </td>
-                        <td className="px-2 py-1.5 whitespace-nowrap text-xs text-gray-700 md:px-4 md:text-sm">
-                          {project.targetLanguage}
-                        </td>
-                        <td className="px-2 py-1.5 whitespace-nowrap text-xs text-gray-700 md:px-4 md:text-sm">
-                          R$ {totalValue}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+        <>
+          {/* Botão Pagar */}
+          <div className="flex justify-end mb-4">
+            <button
+              onClick={handlePayment}
+              style={{
+                padding: "5px 10px",
+                backgroundColor:
+                  selectedProjects.length > 0 ? "#E0F7FA" : "#fff",
+                border: "1px solid grey",
+                borderRadius: "20px",
+                fontSize: "14px",
+                cursor: selectedProjects.length > 0 ? "pointer" : "not-allowed",
+                color: "#333",
+                whiteSpace: "nowrap",
+                width: "auto",
+                boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
+                transition: "background-color 0.3s ease, box-shadow 0.3s ease",
+              }}
+              disabled={selectedProjects.length === 0}
+            >
+              Pagar Projetos
+            </button>
+          </div>
+
+          <div className="w-full overflow-x-auto">
+            <div className="w-full shadow-lg rounded-lg">
+              <DataTable
+                columns={columns}
+                data={currentRows}
+                initialColumnOrder={columnOrder}
+                fixedColumns={fixedColumns}
+                onRowClick={(row) => handleProjectClick(row.id)}
+                getRowClassName={(row) =>
+                  "hover:bg-blue-50/50 cursor-pointer transition-all duration-200"
+                }
+                selectable={true}
+                onSelectAll={handleSelectAll}
+                selectedRows={selectedProjects}
+              />
             </div>
           </div>
-        </div>
+
+          {/* Paginação */}
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4 mt-4 p-4">
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-600">
+                Projetos por página:
+              </span>
+              <div className="relative">
+                <button
+                  id="rows-button"
+                  onClick={() => setShowRowsDropdown(!showRowsDropdown)}
+                  className="flex items-center gap-2 px-3 py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-50"
+                >
+                  {rowsPerPage}
+                  <svg
+                    className="w-4 h-4 text-gray-500"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M19 9l-7 7-7-7"
+                    />
+                  </svg>
+                </button>
+                {showRowsDropdown && (
+                  <div
+                    id="rows-dropdown"
+                    className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg"
+                  >
+                    <div className="py-1">
+                      {[10, 25, 50, 100].map((value) => (
+                        <button
+                          key={value}
+                          onClick={() => handleRowsPerPageChange(value)}
+                          className="w-full px-4 py-2 text-sm text-left hover:bg-gray-50"
+                        >
+                          {value}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => paginate(currentPage - 1)}
+                disabled={currentPage === 1}
+                className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+              >
+                Anterior
+              </button>
+              <div className="flex items-center gap-1">
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                  (page) => (
+                    <button
+                      key={page}
+                      onClick={() => paginate(page)}
+                      className={`w-8 h-8 text-sm border rounded-lg ${
+                        currentPage === page
+                          ? "bg-blue-500 text-white border-blue-500"
+                          : "border-gray-300 hover:bg-gray-50"
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  )
+                )}
+              </div>
+              <button
+                onClick={() => paginate(currentPage + 1)}
+                disabled={currentPage === totalPages}
+                className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+              >
+                Próximo
+              </button>
+            </div>
+          </div>
+        </>
       )}
     </ClientLayout>
   );
