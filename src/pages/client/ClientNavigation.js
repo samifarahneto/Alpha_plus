@@ -53,7 +53,7 @@ const ClientNavigation = ({
   return (
     <div
       ref={navRef}
-      className="flex w-full mb-6 border-b border-gray-200 overflow-x-auto scroll-smooth"
+      className="flex w-full mb-6 border-b border-gray-200 overflow-x-auto scroll-smooth md:justify-center"
     >
       <span
         ref={activeLink === "projects" ? activeLinkRef : null}
