@@ -34,10 +34,11 @@ const ProjectsPaid = () => {
     { id: "sourceLanguage", label: "Origem" },
     { id: "targetLanguage", label: "Destino" },
     { id: "convertCurrency", label: "Conv." },
-    { id: "totalValue", label: "Valor (U$)" },
-    { id: "paymentStatus", label: "Status Pgto" },
     { id: "deadline", label: "Prazo" },
-    { id: "status", label: "Status", fixed: true },
+    { id: "totalValue", label: "Valor (U$)" },
+    { id: "paymentStatus", label: "Pgto" },
+    { id: "projectStatus", label: "Status", fixed: true },
+    { id: "translationStatus", label: "Tradução", fixed: true },
   ];
 
   const fixedColumns = columns.filter((col) => col.fixed).map((col) => col.id);
@@ -150,9 +151,6 @@ const ProjectsPaid = () => {
       return;
     }
 
-    // Garantir que files seja um array
-    const files = Array.isArray(row.files) ? row.files : [];
-
     // Criar um objeto limpo com apenas os dados necessários
     const cleanProjectData = {
       id: row.id,
@@ -167,14 +165,15 @@ const ProjectsPaid = () => {
       deadline: row.deadline,
       deadlineDate: row.deadlineDate,
       isPriority: row.isPriority,
-      files: files.map((file) => ({
-        name: file.name,
-        url: file.url,
-        fileUrl: file.fileUrl,
-        pageCount: file.pageCount,
-        total: file.total,
-        valuePerPage: file.valuePerPage,
-      })),
+      files:
+        row.files?.map((file) => ({
+          name: file.name,
+          url: file.url,
+          fileUrl: file.fileUrl,
+          pageCount: file.pageCount,
+          total: file.total,
+          valuePerPage: file.valuePerPage,
+        })) || [],
       project_status: row.project_status || "Em Andamento",
       payment_status: "Pago",
       translation_status: row.translation_status,
@@ -208,49 +207,6 @@ const ProjectsPaid = () => {
       }
       return 0;
     });
-  };
-
-  const calculateTotalValue = (files) => {
-    if (!files || !Array.isArray(files)) return 0;
-    return files.reduce((total, file) => {
-      const fileTotal = Number(file.total) || 0;
-      return total + fileTotal;
-    }, 0);
-  };
-
-  const renderPaymentStatusBadge = (status) => {
-    const statusConfig = {
-      Pago: {
-        bg: "bg-green-50",
-        text: "text-green-700",
-        border: "border-green-200",
-      },
-      Pendente: {
-        bg: "bg-yellow-50",
-        text: "text-yellow-700",
-        border: "border-yellow-200",
-      },
-      Atrasado: {
-        bg: "bg-red-50",
-        text: "text-red-700",
-        border: "border-red-200",
-      },
-      "N/A": {
-        bg: "bg-gray-50",
-        text: "text-gray-700",
-        border: "border-gray-200",
-      },
-    };
-
-    const config = statusConfig[status] || statusConfig["N/A"];
-
-    return (
-      <div
-        className={`w-full px-2 py-1 rounded-full border ${config.bg} ${config.text} ${config.border} text-center text-xs font-medium`}
-      >
-        {status || "N/A"}
-      </div>
-    );
   };
 
   const renderProjectStatusBadge = (status) => {
@@ -313,6 +269,130 @@ const ProjectsPaid = () => {
     );
   };
 
+  const renderPaymentStatusBadge = (status) => {
+    const statusConfig = {
+      Pago: {
+        bg: "bg-green-50",
+        text: "text-green-700",
+        border: "border-green-200",
+      },
+      Pendente: {
+        bg: "bg-yellow-50",
+        text: "text-yellow-700",
+        border: "border-yellow-200",
+      },
+      Atrasado: {
+        bg: "bg-red-50",
+        text: "text-red-700",
+        border: "border-red-200",
+      },
+      "N/A": {
+        bg: "bg-gray-50",
+        text: "text-gray-700",
+        border: "border-gray-200",
+      },
+    };
+
+    const config = statusConfig[status] || statusConfig["N/A"];
+
+    return (
+      <div
+        className={`w-full px-2 py-1 rounded-full border ${config.bg} ${config.text} ${config.border} text-center text-xs font-medium`}
+      >
+        {status || "N/A"}
+      </div>
+    );
+  };
+
+  const renderTranslationStatusBadge = (status) => {
+    const statusConfig = {
+      "Em Andamento": {
+        bg: "bg-blue-50",
+        text: "text-blue-700",
+        border: "border-blue-200",
+      },
+      Finalizado: {
+        bg: "bg-green-50",
+        text: "text-green-700",
+        border: "border-green-200",
+      },
+      "Em Revisão": {
+        bg: "bg-yellow-50",
+        text: "text-yellow-700",
+        border: "border-yellow-200",
+      },
+      Cancelado: {
+        bg: "bg-red-50",
+        text: "text-red-700",
+        border: "border-red-200",
+      },
+      "N/A": {
+        bg: "bg-gray-50",
+        text: "text-gray-700",
+        border: "border-gray-200",
+      },
+    };
+
+    const config = statusConfig[status] || statusConfig["N/A"];
+
+    return (
+      <div
+        className={`w-full px-2 py-1 rounded-full border ${config.bg} ${config.text} ${config.border} text-center text-xs font-medium`}
+      >
+        {status || "N/A"}
+      </div>
+    );
+  };
+
+  const formatDeadline = (deadline, deadlineDate) => {
+    // Se deadlineDate for "A Definir" ou null, retorna "A Definir"
+    if (deadlineDate === "A Definir" || deadlineDate === null) {
+      return "A Definir";
+    }
+
+    // Se deadlineDate for uma data ISO (contém "T")
+    if (deadlineDate && deadlineDate.includes("T")) {
+      const date = new Date(deadlineDate);
+      // Ajustar para GMT-3
+      date.setHours(date.getHours() + 3);
+      return date.toLocaleDateString("pt-BR", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+      });
+    }
+
+    // Se deadlineDate já estiver no formato dd/mm/yyyy
+    if (deadlineDate && deadlineDate.includes("/")) {
+      return deadlineDate;
+    }
+
+    // Se não houver deadlineDate, usa o deadline para calcular
+    if (deadline) {
+      const days = parseInt(deadline);
+      if (!isNaN(days)) {
+        const today = new Date();
+        let businessDays = 0;
+        let currentDate = new Date(today);
+
+        while (businessDays < days) {
+          currentDate.setDate(currentDate.getDate() + 1);
+          if (currentDate.getDay() !== 0 && currentDate.getDay() !== 6) {
+            businessDays++;
+          }
+        }
+
+        return currentDate.toLocaleDateString("pt-BR", {
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric",
+        });
+      }
+    }
+
+    return "A Definir";
+  };
+
   const paginatedData = React.useMemo(() => {
     if (!projects || !Array.isArray(projects)) return [];
 
@@ -323,81 +403,65 @@ const ProjectsPaid = () => {
   }, [projects, currentPage, rowsPerPage, sortConfig]);
 
   const formattedData = React.useMemo(() => {
-    return paginatedData.map((row) => {
-      // Criar um objeto base com os dados brutos
-      const formattedRow = {
-        ...row, // Mantém todos os dados brutos, incluindo o id
-        client: clientTypes[row.userEmail]?.nomeCompleto || "N/A",
-        clientOrigin: row.userEmail || "N/A",
-        type: (() => {
-          const userInfo = clientTypes[row.userEmail];
-          if (!userInfo) return "Desconhecido";
-          if (userInfo.userType === "colaborator" && userInfo.registeredBy) {
-            const registeredByInfo = clientTypes[userInfo.registeredBy];
-            if (registeredByInfo && registeredByInfo.userType === "b2b")
-              return "B2B";
-            if (
-              registeredByInfo &&
-              (registeredByInfo.clientType === "Cliente" ||
-                registeredByInfo.clientType === "Colab")
-            )
-              return "B2C";
-          }
+    return paginatedData.map((row) => ({
+      ...row,
+      client: clientTypes[row.userEmail]?.nomeCompleto || "N/A",
+      clientOrigin: row.userEmail || "N/A",
+      type: (() => {
+        const userInfo = clientTypes[row.userEmail];
+        if (!userInfo) return "Desconhecido";
+        if (userInfo.userType === "colaborator" && userInfo.registeredBy) {
+          const registeredByInfo = clientTypes[userInfo.registeredBy];
+          if (registeredByInfo && registeredByInfo.userType === "b2b")
+            return "B2B";
           if (
-            userInfo.clientType === "Colab" ||
-            userInfo.clientType === "Cliente"
+            registeredByInfo &&
+            (registeredByInfo.clientType === "Cliente" ||
+              registeredByInfo.clientType === "Colab")
           )
             return "B2C";
-          return userInfo.clientType || "Desconhecido";
-        })(),
-        origin: (() => {
-          const text =
-            clientTypes[row.userEmail]?.registeredBy &&
-            clientTypes[row.userEmail]?.registeredBy.trim() !== ""
-              ? clientTypes[row.userEmail]?.registeredBy
-              : row.userEmail || "N/A";
-          return text.length > 20 ? `${text.slice(0, 20)}...` : text;
-        })(),
-        projectName:
-          row.projectName && row.projectName.length > 20
-            ? `${row.projectName.slice(0, 20)}...`
-            : row.projectName || "Sem Nome",
-        createdAt: row.createdAt?.seconds
-          ? new Date(row.createdAt.seconds * 1000).toLocaleDateString("pt-BR")
-          : "Sem Data",
-        monthYear: row.createdAt?.seconds
-          ? new Date(row.createdAt.seconds * 1000).toLocaleDateString("pt-BR", {
-              month: "2-digit",
-              year: "2-digit",
-            })
-          : "Sem Data",
-        sourceLanguage: row.sourceLanguage || "N/A",
-        targetLanguage: row.targetLanguage || "N/A",
-        convertCurrency: row.convertCurrency ? "Sim" : "Não",
-        totalValue: `U$ ${Number(
-          row.totalProjectValue ||
-            row.totalValue ||
-            calculateTotalValue(row.files)
-        ).toFixed(2)}`,
-        paymentStatus: renderPaymentStatusBadge("Pago"),
-        deadline: row.deadlineDate
-          ? new Date(row.deadlineDate).toLocaleDateString("pt-BR")
-          : "A definir",
-        status: renderProjectStatusBadge(row.project_status || "N/A"),
-      };
-
-      // Garantir que o id e a collection estejam presentes
-      if (!formattedRow.id) {
-        console.warn("ID não encontrado para o projeto:", row);
-        formattedRow.id = row.id;
-      }
-      if (!formattedRow.collection) {
-        console.warn("Collection não encontrada para o projeto:", row);
-        formattedRow.collection = row.collection;
-      }
-
-      return formattedRow;
-    });
+        }
+        if (
+          userInfo.clientType === "Colab" ||
+          userInfo.clientType === "Cliente"
+        )
+          return "B2C";
+        return userInfo.clientType || "Desconhecido";
+      })(),
+      origin: (() => {
+        const text =
+          clientTypes[row.userEmail]?.registeredBy &&
+          clientTypes[row.userEmail]?.registeredBy.trim() !== ""
+            ? clientTypes[row.userEmail]?.registeredBy
+            : row.userEmail || "N/A";
+        return text.length > 20 ? `${text.slice(0, 20)}...` : text;
+      })(),
+      projectName:
+        row.projectName && row.projectName.length > 20
+          ? `${row.projectName.slice(0, 20)}...`
+          : row.projectName || "Sem Nome",
+      createdAt: row.createdAt?.seconds
+        ? new Date(row.createdAt.seconds * 1000).toLocaleDateString("pt-BR")
+        : "Sem Data",
+      monthYear: row.createdAt?.seconds
+        ? new Date(row.createdAt.seconds * 1000).toLocaleDateString("pt-BR", {
+            month: "2-digit",
+            year: "2-digit",
+          })
+        : "Sem Data",
+      sourceLanguage: row.sourceLanguage || "N/A",
+      targetLanguage: row.targetLanguage || "N/A",
+      convertCurrency: row.convertCurrency ? "Sim" : "Não",
+      deadline: formatDeadline(row.deadline, row.deadlineDate),
+      totalValue: `U$ ${Number(
+        row.totalProjectValue || row.totalValue || 0
+      ).toFixed(2)}`,
+      paymentStatus: renderPaymentStatusBadge("Pago"),
+      projectStatus: renderProjectStatusBadge(row.project_status || "N/A"),
+      translationStatus: renderTranslationStatusBadge(
+        row.translation_status || "N/A"
+      ),
+    }));
   }, [paginatedData, clientTypes]);
 
   return (
