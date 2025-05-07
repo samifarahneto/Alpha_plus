@@ -125,12 +125,13 @@ const ProjectsBudget = () => {
   }, [clientTypes]);
 
   const handleRowClick = (row) => {
-    if (!row.id) {
+    if (!row || !row.id) {
       console.error("ID do projeto não encontrado:", row);
       return;
     }
 
-    const projectData = {
+    // Criar um objeto limpo com apenas os dados necessários
+    const cleanProjectData = {
       id: row.id,
       collection: row.collection,
       projectName: row.projectName,
@@ -163,12 +164,12 @@ const ProjectsBudget = () => {
     console.log("Navegando para projeto:", {
       id: row.id,
       collection: row.collection,
-      projectData,
+      cleanProjectData,
     });
 
-    navigate(`/company/master/project/${row.id}`, {
+    navigate(`/company/master/project/${row.id}?collection=${row.collection}`, {
       state: {
-        projectData,
+        project: cleanProjectData,
         collection: row.collection,
       },
     });
@@ -292,78 +293,80 @@ const ProjectsBudget = () => {
   };
 
   const formattedData = React.useMemo(() => {
-    return paginatedData.map((row) => ({
-      id: row.id,
-      client: clientTypes[row.userEmail]?.nomeCompleto || "N/A",
-      clientOrigin: row.userEmail || "N/A",
-      type: (() => {
-        const userInfo = clientTypes[row.userEmail];
-        if (!userInfo) return "Desconhecido";
-        if (userInfo.userType === "colaborator" && userInfo.registeredBy) {
-          const registeredByInfo = clientTypes[userInfo.registeredBy];
-          if (registeredByInfo && registeredByInfo.userType === "b2b")
-            return "B2B";
+    return paginatedData
+      .filter((row) => row && row.id) // Filtrar apenas linhas válidas com ID
+      .map((row) => ({
+        ...row,
+        id: row.id || `temp-${Math.random()}`, // Garantir que sempre tenha um ID
+        client: clientTypes[row.userEmail]?.nomeCompleto || "N/A",
+        clientOrigin: row.userEmail || "N/A",
+        type: (() => {
+          const userInfo = clientTypes[row.userEmail];
+          if (!userInfo) return "Desconhecido";
+          if (userInfo.userType === "colaborator" && userInfo.registeredBy) {
+            const registeredByInfo = clientTypes[userInfo.registeredBy];
+            if (registeredByInfo && registeredByInfo.userType === "b2b")
+              return "B2B";
+            if (
+              registeredByInfo &&
+              (registeredByInfo.clientType === "Cliente" ||
+                registeredByInfo.clientType === "Colab")
+            )
+              return "B2C";
+          }
           if (
-            registeredByInfo &&
-            (registeredByInfo.clientType === "Cliente" ||
-              registeredByInfo.clientType === "Colab")
+            userInfo.clientType === "Colab" ||
+            userInfo.clientType === "Cliente"
           )
             return "B2C";
-        }
-        if (
-          userInfo.clientType === "Colab" ||
-          userInfo.clientType === "Cliente"
-        )
-          return "B2C";
-        return userInfo.clientType || "Desconhecido";
-      })(),
-      collection: row.collection,
-      origin: (() => {
-        const text =
-          clientTypes[row.userEmail]?.registeredBy &&
-          clientTypes[row.userEmail]?.registeredBy.trim() !== ""
-            ? clientTypes[row.userEmail]?.registeredBy
-            : row.userEmail || "N/A";
-        return text.length > 20 ? `${text.slice(0, 20)}...` : text;
-      })(),
-      projectName:
-        row.projectName && row.projectName.length > 20
-          ? `${row.projectName.slice(0, 20)}...`
-          : row.projectName || "Sem Nome",
-      createdAt: row.createdAt?.seconds
-        ? new Date(row.createdAt.seconds * 1000).toLocaleDateString("pt-BR")
-        : "Sem Data",
-      monthYear: row.createdAt?.seconds
-        ? new Date(row.createdAt.seconds * 1000).toLocaleDateString("pt-BR", {
-            month: "2-digit",
-            year: "2-digit",
-          })
-        : "Sem Data",
-      sourceLanguage: row.sourceLanguage || "N/A",
-      targetLanguage: row.targetLanguage || "N/A",
-      convertCurrency: row.convertCurrency ? "Sim" : "Não",
-      totalValue: `U$ ${Number(
-        row.totalProjectValue || row.totalValue || 0
-      ).toFixed(2)}`,
-      paymentStatus: renderPaymentStatusBadge(
-        typeof row.payment_status === "object"
-          ? row.payment_status.status || "N/A"
-          : row.payment_status || "N/A"
-      ),
-      deadline: row.deadlineDate
-        ? new Date(row.deadlineDate).toLocaleDateString("pt-BR", {
-            day: "2-digit",
-            month: "2-digit",
-            year: "numeric",
-          }) +
-          " " +
-          new Date(row.deadlineDate).toLocaleTimeString("pt-BR", {
-            hour: "2-digit",
-            minute: "2-digit",
-          })
-        : "Sem Prazo",
-      status: renderProjectStatusBadge("Ag. Orçamento"),
-    }));
+          return userInfo.clientType || "Desconhecido";
+        })(),
+        origin: (() => {
+          const text =
+            clientTypes[row.userEmail]?.registeredBy &&
+            clientTypes[row.userEmail]?.registeredBy.trim() !== ""
+              ? clientTypes[row.userEmail]?.registeredBy
+              : row.userEmail || "N/A";
+          return text.length > 20 ? `${text.slice(0, 20)}...` : text;
+        })(),
+        projectName:
+          row.projectName && row.projectName.length > 20
+            ? `${row.projectName.slice(0, 20)}...`
+            : row.projectName || "Sem Nome",
+        createdAt: row.createdAt?.seconds
+          ? new Date(row.createdAt.seconds * 1000).toLocaleDateString("pt-BR")
+          : "Sem Data",
+        monthYear: row.createdAt?.seconds
+          ? new Date(row.createdAt.seconds * 1000).toLocaleDateString("pt-BR", {
+              month: "2-digit",
+              year: "2-digit",
+            })
+          : "Sem Data",
+        sourceLanguage: row.sourceLanguage || "N/A",
+        targetLanguage: row.targetLanguage || "N/A",
+        convertCurrency: row.convertCurrency ? "Sim" : "Não",
+        totalValue: `U$ ${Number(
+          row.totalProjectValue || row.totalValue || 0
+        ).toFixed(2)}`,
+        paymentStatus: renderPaymentStatusBadge(
+          typeof row.payment_status === "object"
+            ? row.payment_status.status || "N/A"
+            : row.payment_status || "N/A"
+        ),
+        deadline: row.deadlineDate
+          ? new Date(row.deadlineDate).toLocaleDateString("pt-BR", {
+              day: "2-digit",
+              month: "2-digit",
+              year: "numeric",
+            }) +
+            " " +
+            new Date(row.deadlineDate).toLocaleTimeString("pt-BR", {
+              hour: "2-digit",
+              minute: "2-digit",
+            })
+          : "Sem Prazo",
+        status: renderProjectStatusBadge("Ag. Orçamento"),
+      }));
   }, [paginatedData, clientTypes]);
 
   return (

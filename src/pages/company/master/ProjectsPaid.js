@@ -145,7 +145,56 @@ const ProjectsPaid = () => {
   }, [clientTypes, user]);
 
   const handleRowClick = (row) => {
-    navigate(`/company/master/project/${row.id}?collection=${row.collection}`);
+    if (!row || !row.id) {
+      console.error("ID do projeto não encontrado:", row);
+      return;
+    }
+
+    // Garantir que files seja um array
+    const files = Array.isArray(row.files) ? row.files : [];
+
+    // Criar um objeto limpo com apenas os dados necessários
+    const cleanProjectData = {
+      id: row.id,
+      collection: row.collection,
+      projectName: row.projectName,
+      userEmail: row.userEmail,
+      createdAt: row.createdAt,
+      sourceLanguage: row.sourceLanguage,
+      targetLanguage: row.targetLanguage,
+      totalPages: row.totalPages,
+      totalProjectValue: row.totalProjectValue,
+      deadline: row.deadline,
+      deadlineDate: row.deadlineDate,
+      isPriority: row.isPriority,
+      files: files.map((file) => ({
+        name: file.name,
+        url: file.url,
+        fileUrl: file.fileUrl,
+        pageCount: file.pageCount,
+        total: file.total,
+        valuePerPage: file.valuePerPage,
+      })),
+      project_status: row.project_status || "Em Andamento",
+      payment_status: "Pago",
+      translation_status: row.translation_status,
+      valuePerPage: row.valuePerPage,
+      hasManualQuoteFiles: row.hasManualQuoteFiles,
+      convertCurrency: row.convertCurrency,
+    };
+
+    console.log("Navegando para projeto:", {
+      id: row.id,
+      collection: row.collection,
+      cleanProjectData,
+    });
+
+    navigate(`/company/master/project/${row.id}?collection=${row.collection}`, {
+      state: {
+        project: cleanProjectData,
+        collection: row.collection,
+      },
+    });
   };
 
   const sortData = (data, config) => {
@@ -274,65 +323,81 @@ const ProjectsPaid = () => {
   }, [projects, currentPage, rowsPerPage, sortConfig]);
 
   const formattedData = React.useMemo(() => {
-    return paginatedData.map((row) => ({
-      client: clientTypes[row.userEmail]?.nomeCompleto || "N/A",
-      clientOrigin: row.userEmail || "N/A",
-      type: (() => {
-        const userInfo = clientTypes[row.userEmail];
-        if (!userInfo) return "Desconhecido";
-        if (userInfo.userType === "colaborator" && userInfo.registeredBy) {
-          const registeredByInfo = clientTypes[userInfo.registeredBy];
-          if (registeredByInfo && registeredByInfo.userType === "b2b")
-            return "B2B";
+    return paginatedData.map((row) => {
+      // Criar um objeto base com os dados brutos
+      const formattedRow = {
+        ...row, // Mantém todos os dados brutos, incluindo o id
+        client: clientTypes[row.userEmail]?.nomeCompleto || "N/A",
+        clientOrigin: row.userEmail || "N/A",
+        type: (() => {
+          const userInfo = clientTypes[row.userEmail];
+          if (!userInfo) return "Desconhecido";
+          if (userInfo.userType === "colaborator" && userInfo.registeredBy) {
+            const registeredByInfo = clientTypes[userInfo.registeredBy];
+            if (registeredByInfo && registeredByInfo.userType === "b2b")
+              return "B2B";
+            if (
+              registeredByInfo &&
+              (registeredByInfo.clientType === "Cliente" ||
+                registeredByInfo.clientType === "Colab")
+            )
+              return "B2C";
+          }
           if (
-            registeredByInfo &&
-            (registeredByInfo.clientType === "Cliente" ||
-              registeredByInfo.clientType === "Colab")
+            userInfo.clientType === "Colab" ||
+            userInfo.clientType === "Cliente"
           )
             return "B2C";
-        }
-        if (
-          userInfo.clientType === "Colab" ||
-          userInfo.clientType === "Cliente"
-        )
-          return "B2C";
-        return userInfo.clientType || "Desconhecido";
-      })(),
-      origin: (() => {
-        const text =
-          clientTypes[row.userEmail]?.registeredBy &&
-          clientTypes[row.userEmail]?.registeredBy.trim() !== ""
-            ? clientTypes[row.userEmail]?.registeredBy
-            : row.userEmail || "N/A";
-        return text.length > 20 ? `${text.slice(0, 20)}...` : text;
-      })(),
-      projectName:
-        row.projectName && row.projectName.length > 20
-          ? `${row.projectName.slice(0, 20)}...`
-          : row.projectName || "Sem Nome",
-      createdAt: row.createdAt?.seconds
-        ? new Date(row.createdAt.seconds * 1000).toLocaleDateString("pt-BR")
-        : "Sem Data",
-      monthYear: row.createdAt?.seconds
-        ? new Date(row.createdAt.seconds * 1000).toLocaleDateString("pt-BR", {
-            month: "2-digit",
-            year: "2-digit",
-          })
-        : "Sem Data",
-      sourceLanguage: row.sourceLanguage || "N/A",
-      targetLanguage: row.targetLanguage || "N/A",
-      convertCurrency: row.convertCurrency ? "Sim" : "Não",
-      totalValue: `U$ ${Number(
-        row.totalProjectValue ||
-          row.totalValue ||
-          calculateTotalValue(row.files)
-      ).toFixed(2)}`,
-      paymentStatus: renderPaymentStatusBadge("Pago"),
-      deadline: row.deadlineDate
-        ? new Date(row.deadlineDate).toLocaleDateString("pt-BR")
-        : "A definir",
-      status: renderProjectStatusBadge(row.project_status || "N/A"),
-    }));
+          return userInfo.clientType || "Desconhecido";
+        })(),
+        origin: (() => {
+          const text =
+            clientTypes[row.userEmail]?.registeredBy &&
+            clientTypes[row.userEmail]?.registeredBy.trim() !== ""
+              ? clientTypes[row.userEmail]?.registeredBy
+              : row.userEmail || "N/A";
+          return text.length > 20 ? `${text.slice(0, 20)}...` : text;
+        })(),
+        projectName:
+          row.projectName && row.projectName.length > 20
+            ? `${row.projectName.slice(0, 20)}...`
+            : row.projectName || "Sem Nome",
+        createdAt: row.createdAt?.seconds
+          ? new Date(row.createdAt.seconds * 1000).toLocaleDateString("pt-BR")
+          : "Sem Data",
+        monthYear: row.createdAt?.seconds
+          ? new Date(row.createdAt.seconds * 1000).toLocaleDateString("pt-BR", {
+              month: "2-digit",
+              year: "2-digit",
+            })
+          : "Sem Data",
+        sourceLanguage: row.sourceLanguage || "N/A",
+        targetLanguage: row.targetLanguage || "N/A",
+        convertCurrency: row.convertCurrency ? "Sim" : "Não",
+        totalValue: `U$ ${Number(
+          row.totalProjectValue ||
+            row.totalValue ||
+            calculateTotalValue(row.files)
+        ).toFixed(2)}`,
+        paymentStatus: renderPaymentStatusBadge("Pago"),
+        deadline: row.deadlineDate
+          ? new Date(row.deadlineDate).toLocaleDateString("pt-BR")
+          : "A definir",
+        status: renderProjectStatusBadge(row.project_status || "N/A"),
+      };
+
+      // Garantir que o id e a collection estejam presentes
+      if (!formattedRow.id) {
+        console.warn("ID não encontrado para o projeto:", row);
+        formattedRow.id = row.id;
+      }
+      if (!formattedRow.collection) {
+        console.warn("Collection não encontrada para o projeto:", row);
+        formattedRow.collection = row.collection;
+      }
+
+      return formattedRow;
+    });
   }, [paginatedData, clientTypes]);
 
   return (

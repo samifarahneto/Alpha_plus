@@ -130,7 +130,56 @@ const ProjectsApproved = () => {
   }, [clientTypes, user]);
 
   const handleRowClick = (row) => {
-    navigate(`/company/master/project/${row.id}?collection=${row.collection}`);
+    if (!row || !row.id) {
+      console.error("ID do projeto não encontrado:", row);
+      return;
+    }
+
+    // Garantir que files seja um array
+    const files = Array.isArray(row.files) ? row.files : [];
+
+    // Criar um objeto limpo com apenas os dados necessários
+    const cleanProjectData = {
+      id: row.id,
+      collection: row.collection,
+      projectName: row.projectName,
+      userEmail: row.userEmail,
+      createdAt: row.createdAt,
+      sourceLanguage: row.sourceLanguage,
+      targetLanguage: row.targetLanguage,
+      totalPages: row.totalPages,
+      totalProjectValue: row.totalProjectValue,
+      deadline: row.deadline,
+      deadlineDate: row.deadlineDate,
+      isPriority: row.isPriority,
+      files: files.map((file) => ({
+        name: file.name,
+        url: file.url,
+        fileUrl: file.fileUrl,
+        pageCount: file.pageCount,
+        total: file.total,
+        valuePerPage: file.valuePerPage,
+      })),
+      project_status: row.project_status || "Aprovado",
+      payment_status: row.payment_status,
+      translation_status: row.translation_status,
+      valuePerPage: row.valuePerPage,
+      hasManualQuoteFiles: row.hasManualQuoteFiles,
+      convertCurrency: row.convertCurrency,
+    };
+
+    console.log("Navegando para projeto:", {
+      id: row.id,
+      collection: row.collection,
+      cleanProjectData,
+    });
+
+    navigate(`/company/master/project/${row.id}?collection=${row.collection}`, {
+      state: {
+        project: cleanProjectData,
+        collection: row.collection,
+      },
+    });
   };
 
   const sortData = (data, config) => {
@@ -242,6 +291,7 @@ const ProjectsApproved = () => {
 
   const formattedData = React.useMemo(() => {
     return paginatedData.map((row) => ({
+      ...row, // Mantém todos os dados brutos
       projectName:
         row.projectName && row.projectName.length > 20
           ? `${row.projectName.slice(0, 20)}...`
