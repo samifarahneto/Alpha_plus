@@ -542,49 +542,52 @@ const MasterProjects = ({ style, isMobile }) => {
   };
 
   const formatDeadline = (deadline, deadlineDate) => {
-    if (!deadline && !deadlineDate) return "A definir";
+    // Se deadlineDate for "A Definir" ou null, retorna "A Definir"
+    if (deadlineDate === "A Definir" || deadlineDate === null) {
+      return "A Definir";
+    }
 
-    // Se for uma data ISO, converter para dd/mm/yyyy
+    // Se deadlineDate for uma data ISO (contém "T")
     if (deadlineDate && deadlineDate.includes("T")) {
       const date = new Date(deadlineDate);
       // Ajustar para GMT-3
-      date.setHours(date.getHours() - 3);
-      const day = date.getDate().toString().padStart(2, "0");
-      const month = (date.getMonth() + 1).toString().padStart(2, "0");
-      const year = date.getFullYear();
-      return `${day}/${month}/${year}`;
+      date.setHours(date.getHours() + 3);
+      return date.toLocaleDateString("pt-BR", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+      });
     }
 
-    // Se já estiver no formato dd/mm/yyyy, retornar como está
+    // Se deadlineDate já estiver no formato dd/mm/yyyy
     if (deadlineDate && deadlineDate.includes("/")) {
       return deadlineDate;
     }
 
-    // Se for dias úteis, calcular a data de entrega
-    if (deadline && deadline.includes("dias úteis")) {
+    // Se não houver deadlineDate, usa o deadline para calcular
+    if (deadline) {
       const days = parseInt(deadline);
       if (!isNaN(days)) {
-        const currentDate = new Date();
-        // Ajustar para GMT-3
-        currentDate.setHours(currentDate.getHours() - 3);
-        let businessDays = days;
-        let currentDay = new Date(currentDate);
+        const today = new Date();
+        let businessDays = 0;
+        let currentDate = new Date(today);
 
-        while (businessDays > 0) {
-          currentDay.setDate(currentDay.getDate() + 1);
-          if (currentDay.getDay() !== 0 && currentDay.getDay() !== 6) {
-            businessDays -= 1;
+        while (businessDays < days) {
+          currentDate.setDate(currentDate.getDate() + 1);
+          if (currentDate.getDay() !== 0 && currentDate.getDay() !== 6) {
+            businessDays++;
           }
         }
 
-        const day = currentDay.getDate().toString().padStart(2, "0");
-        const month = (currentDay.getMonth() + 1).toString().padStart(2, "0");
-        const year = currentDay.getFullYear();
-        return `${day}/${month}/${year}`;
+        return currentDate.toLocaleDateString("pt-BR", {
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric",
+        });
       }
     }
 
-    return deadline || "A definir";
+    return "A Definir";
   };
 
   const renderFilesModal = () => {

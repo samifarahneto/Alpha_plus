@@ -1088,9 +1088,10 @@ const ProjectDetails = () => {
         totalPages: totalPages,
         totalProjectValue: newTotalProjectValue,
         deadline: `${deadlineDays} dias úteis`,
+        deadlineDate: "A Definir",
         status: "Aprovado",
-        updatedAt: new Date(),
-        approvedAt: new Date(),
+        updatedAt: serverTimestamp(),
+        approvedAt: serverTimestamp(),
         approvedBy: project.userEmail,
         approvedByName: userData.nomeCompleto || "N/A",
         project_status:
