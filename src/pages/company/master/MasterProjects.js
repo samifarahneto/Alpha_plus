@@ -186,6 +186,12 @@ const MasterProjects = ({ style, isMobile }) => {
               collection: collectionName,
             };
 
+            console.log("Processando projeto:", {
+              id: projectData.id,
+              collection: collectionName,
+              hasFiles: !!projectData.files,
+            });
+
             const index = newUploads.findIndex((p) => p.id === change.doc.id);
 
             if (change.type === "added" && index === -1) {
@@ -444,80 +450,27 @@ const MasterProjects = ({ style, isMobile }) => {
     }
   };
 
-  const handleRowClick = async (project) => {
-    console.log("Projeto clicado:", project);
-    console.log("Total de projetos disponíveis:", allUploads.length);
-
-    const firestore = getFirestore();
-
-    // Extrair o ID do projeto
-    const uploadId = project.id;
-
-    // Encontrar o projeto em todas as listas
-    const selectedUpload = allUploads.find((upload) => {
+  const handleRowClick = (row) => {
+    console.log("Projeto clicado:", row);
+    const uploadId = row.id;
+    const upload = allUploads.find((upload) => {
       console.log("Verificando projeto:", upload.id);
       return upload.id === uploadId;
     });
 
-    if (!selectedUpload) {
-      console.error("Projeto não encontrado. ID:", uploadId);
-      console.error(
+    if (upload) {
+      console.log("Projeto encontrado:", upload);
+      const collection = upload.collection;
+      console.log("Coleção do projeto:", collection);
+      navigate(`/company/master/project/${uploadId}?collection=${collection}`, {
+        state: { project: upload, collection: collection },
+      });
+    } else {
+      console.error("Projeto não encontrado:", uploadId);
+      console.log(
         "Projetos disponíveis:",
-        allUploads.map((u) => u.id)
+        allUploads.map((u) => ({ id: u.id, collection: u.collection }))
       );
-      return;
-    }
-
-    console.log("Projeto encontrado:", selectedUpload);
-
-    // Determinar a coleção correta
-    const collectionName = selectedUpload.collection;
-    console.log("Coleção do projeto:", collectionName);
-
-    if (!collectionName) {
-      console.error("Coleção não encontrada no projeto:", selectedUpload);
-      return;
-    }
-
-    const uploadDoc = doc(firestore, collectionName, uploadId);
-
-    try {
-      // Atualiza os arquivos como lidos
-      const updatedFiles = selectedUpload.files.map((file) => ({
-        ...file,
-        isRead: true,
-      }));
-
-      // Atualizar o documento no Firestore com os arquivos lidos e o isRead do documento principal
-      await updateDoc(uploadDoc, {
-        files: updatedFiles,
-        isRead: true,
-      });
-
-      // Navegar para a página de detalhes com a coleção correta
-      const url = `/company/master/project/${uploadId}?collection=${collectionName}`;
-      console.log("Navegando para:", url);
-      console.log("Estado sendo passado:", {
-        project: selectedUpload,
-        collection: collectionName,
-      });
-
-      // Garantir que o projeto tenha todos os dados necessários
-      const projectToPass = {
-        ...selectedUpload,
-        id: uploadId,
-        collection: collectionName,
-        files: updatedFiles,
-      };
-
-      navigate(url, {
-        state: {
-          project: projectToPass,
-          collection: collectionName,
-        },
-      });
-    } catch (error) {
-      console.error("Erro ao atualizar o projeto:", error);
     }
   };
 

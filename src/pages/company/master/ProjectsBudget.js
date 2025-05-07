@@ -125,7 +125,53 @@ const ProjectsBudget = () => {
   }, [clientTypes]);
 
   const handleRowClick = (row) => {
-    navigate(`/company/master/projects-budget/${row.id}`);
+    if (!row.id) {
+      console.error("ID do projeto não encontrado:", row);
+      return;
+    }
+
+    const projectData = {
+      id: row.id,
+      collection: row.collection,
+      projectName: row.projectName,
+      userEmail: row.userEmail,
+      createdAt: row.createdAt,
+      sourceLanguage: row.sourceLanguage,
+      targetLanguage: row.targetLanguage,
+      totalPages: row.totalPages,
+      totalProjectValue: row.totalProjectValue,
+      deadline: row.deadline,
+      deadlineDate: row.deadlineDate,
+      isPriority: row.isPriority,
+      files:
+        row.files?.map((file) => ({
+          name: file.name,
+          url: file.url,
+          fileUrl: file.fileUrl,
+          pageCount: file.pageCount,
+          total: file.total,
+          valuePerPage: file.valuePerPage,
+        })) || [],
+      project_status: row.project_status || "Ag. Orçamento",
+      payment_status: row.payment_status,
+      translation_status: row.translation_status,
+      valuePerPage: row.valuePerPage,
+      hasManualQuoteFiles: row.hasManualQuoteFiles,
+      convertCurrency: row.convertCurrency,
+    };
+
+    console.log("Navegando para projeto:", {
+      id: row.id,
+      collection: row.collection,
+      projectData,
+    });
+
+    navigate(`/company/master/project/${row.id}`, {
+      state: {
+        projectData,
+        collection: row.collection,
+      },
+    });
   };
 
   const sortData = (data, config) => {
@@ -247,6 +293,7 @@ const ProjectsBudget = () => {
 
   const formattedData = React.useMemo(() => {
     return paginatedData.map((row) => ({
+      id: row.id,
       client: clientTypes[row.userEmail]?.nomeCompleto || "N/A",
       clientOrigin: row.userEmail || "N/A",
       type: (() => {
@@ -270,6 +317,7 @@ const ProjectsBudget = () => {
           return "B2C";
         return userInfo.clientType || "Desconhecido";
       })(),
+      collection: row.collection,
       origin: (() => {
         const text =
           clientTypes[row.userEmail]?.registeredBy &&

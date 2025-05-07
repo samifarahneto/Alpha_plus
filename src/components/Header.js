@@ -18,30 +18,47 @@ const Header = () => {
   };
 
   const isMasterRoute = () => {
-    return location.pathname.startsWith("/company/master");
+    console.log("Checking Master route - User:", user);
+    console.log("Current path:", location.pathname);
+    const isMaster = user?.userType === "master";
+    const isMasterPath = location.pathname.startsWith("/company/master");
+    console.log("Is Master user:", isMaster);
+    console.log("Is master path:", isMasterPath);
+    return isMaster && isMasterPath;
   };
 
   const isB2BRoute = () => {
-    return (
-      location.pathname.startsWith("/company/b2b") ||
-      (location.pathname.startsWith("/client") && user?.userType === "b2b")
-    );
+    console.log("Checking B2B route - User:", user);
+    console.log("Current path:", location.pathname);
+    const isB2B = user?.userType === "b2b";
+    const isClientRoute = location.pathname.startsWith("/client");
+    console.log("Is B2B user:", isB2B);
+    console.log("Is client route:", isClientRoute);
+    return isB2B && isClientRoute;
   };
 
   const isB2CRoute = () => {
-    return (
-      location.pathname.startsWith("/company/b2c") ||
-      (location.pathname.startsWith("/client") && user?.userType === "b2c")
-    );
+    console.log("Checking B2C route - User:", user);
+    console.log("Current path:", location.pathname);
+    const isB2C = user?.userType === "b2c";
+    const isClientRoute = location.pathname.startsWith("/client");
+    console.log("Is B2C user:", isB2C);
+    console.log("Is client route:", isClientRoute);
+    return isB2C && isClientRoute;
   };
 
   const isColabRoute = () => {
-    return (
-      location.pathname.startsWith("/client") && user?.userType === "colab"
-    );
+    console.log("Checking Colab route - User:", user);
+    console.log("Current path:", location.pathname);
+    const isColab = user?.userType === "colab";
+    const isClientRoute = location.pathname.startsWith("/client");
+    console.log("Is Colab user:", isColab);
+    console.log("Is client route:", isClientRoute);
+    return isColab && isClientRoute;
   };
 
   // Debug logs
+  console.log("Current user:", user);
   console.log("Current path:", location.pathname);
   console.log("Is B2B route:", isB2BRoute());
   console.log("Is B2C route:", isB2CRoute());
@@ -767,16 +784,7 @@ const Header = () => {
     );
   };
 
-  // Debug log para verificar qual header será renderizado
-  console.log("Rendering decision:", {
-    isPublic: isPublicRoute(),
-    isMaster: isMasterRoute(),
-    isB2B: isB2BRoute(),
-    isB2C: isB2CRoute(),
-    isColab: isColabRoute(),
-    userType: user?.userType,
-  });
-
+  // Renderização condicional do header
   if (isPublicRoute()) {
     return renderPublicHeader();
   }
@@ -785,15 +793,17 @@ const Header = () => {
     return renderMasterSidebar();
   }
 
-  if (isColabRoute()) {
-    return renderColabHeader();
-  }
-
   if (isB2BRoute() || isB2CRoute()) {
     return renderB2BOrB2CHeader();
   }
 
-  return null;
+  if (isColabRoute()) {
+    return renderColabHeader();
+  }
+
+  // Fallback para rotas não reconhecidas
+  console.log("No matching header found, rendering public header");
+  return renderPublicHeader();
 };
 
 export default Header;

@@ -21,15 +21,24 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
-        // Busca os dados adicionais do usuário no Firestore
-        const userDoc = await getDoc(doc(db, "users", user.uid));
-        if (userDoc.exists()) {
-          // Combina os dados do Auth com os dados do Firestore
-          setUser({
-            ...user,
-            ...userDoc.data(),
-          });
-        } else {
+        try {
+          // Busca os dados adicionais do usuário no Firestore
+          const userDoc = await getDoc(doc(db, "users", user.uid));
+          if (userDoc.exists()) {
+            const userData = userDoc.data();
+            console.log("User data loaded:", userData);
+            // Combina os dados do Auth com os dados do Firestore
+            setUser({
+              ...user,
+              ...userData,
+              userType: userData.userType?.toLowerCase() || "b2c", // Garante que userType seja sempre lowercase
+            });
+          } else {
+            console.log("User document not found");
+            setUser(user);
+          }
+        } catch (error) {
+          console.error("Error loading user data:", error);
           setUser(user);
         }
       } else {

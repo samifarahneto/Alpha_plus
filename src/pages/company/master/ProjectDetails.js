@@ -248,113 +248,97 @@ const ProjectDetails = () => {
     debouncedSetEditedPages.cancel();
   }, [debouncedSetEditedPages]);
 
-  // Efeito para inicializar o projectId
+  // Efeito para inicializar o ID do projeto
   useEffect(() => {
     console.log("URL Project ID:", urlProjectId);
     console.log("Location State:", location.state);
 
-    // Se temos o ID na URL, usamos ele
-    if (urlProjectId) {
-      setProjectId(urlProjectId);
-    }
-    // Se não temos na URL mas temos no estado, usamos do estado
-    else if (location.state?.project?.id) {
-      setProjectId(location.state.project.id);
-    }
-    // Se não temos em nenhum lugar, redirecionamos
-    else {
+    // Tenta obter o ID do projeto da URL ou do estado
+    const id = urlProjectId || location.state?.project?.id;
+
+    if (id) {
+      console.log("ID do projeto encontrado:", id);
+      setProjectId(id);
+    } else {
       console.error("Nenhum ID de projeto encontrado");
       navigate("/company/master/projects");
     }
   }, [urlProjectId, location.state, navigate]);
 
+  // Efeito para carregar os dados do projeto
   useEffect(() => {
     console.log("useEffect iniciado - projectId:", projectId);
     console.log("Location state:", location.state);
 
-    const fetchProjectDetails = async () => {
+    if (!projectId) {
+      console.log("Project ID não disponível");
+      return;
+    }
+
+    const loadProject = async () => {
       try {
-        console.log("Iniciando busca de detalhes do projeto...");
+        const searchParams = new URLSearchParams(location.search);
+        const collection =
+          searchParams.get("collection") || location.state?.collection;
+
+        if (!projectId || !collection) {
+          console.error("ID do projeto ou coleção não encontrados");
+          navigate("/company/master/projects");
+          return;
+        }
+
         const firestore = getFirestore();
-
-        // Verificação mais robusta do Firestore
-        if (!firestore) {
-          console.error("Firestore não está inicializado");
-          throw new Error("Firestore não está inicializado");
-        }
-
-        console.log("Firestore inicializado com sucesso");
-
-        // Se temos o estado do projeto, usamos ele diretamente
-        if (location.state?.project) {
-          console.log("Usando projeto do estado:", location.state.project);
-          setProject(location.state.project);
-          return;
-        }
-
-        const urlParams = new URLSearchParams(window.location.search);
-        const collectionName =
-          urlParams.get("collection") || location.state?.collection;
-        console.log("Collection name:", collectionName);
-
-        if (!collectionName) {
-          console.error("Coleção não especificada na URL ou no estado");
-          navigate("/company/master/projects");
-          return;
-        }
-
-        if (!projectId) {
-          console.error("ID do projeto não disponível");
-          navigate("/company/master/projects");
-          return;
-        }
-
-        const projectRef = doc(firestore, collectionName, projectId);
-        console.log("Project ID:", projectId);
-        console.log("Project Ref:", projectRef);
-
+        const projectRef = doc(firestore, collection, projectId);
         const projectDoc = await getDoc(projectRef);
-        console.log("Project Doc exists:", projectDoc.exists());
-        console.log("Project Doc data:", projectDoc.data());
 
-        if (projectDoc.exists()) {
-          const projectData = {
-            ...projectDoc.data(),
-            id: projectId,
-            collection: collectionName,
-          };
-          console.log("Project Data antes de setar:", projectData);
-
-          // Verificar se os dados são válidos
-          if (!projectData || typeof projectData !== "object") {
-            console.error("Dados do projeto inválidos:", projectData);
-            throw new Error("Dados do projeto inválidos");
-          }
-
-          // Atualizar o estado diretamente
-          setProject(projectData);
-          console.log("Estado do projeto atualizado:", projectData);
-        } else {
+        if (!projectDoc.exists()) {
           console.error("Projeto não encontrado");
           navigate("/company/master/projects");
+          return;
         }
+
+        const projectData = projectDoc.data();
+
+        // Garantir que todos os campos necessários existam
+        const processedProjectData = {
+          ...projectData,
+          id: projectId,
+          collection: collection,
+          projectName: projectData.projectName || "Sem Nome",
+          userEmail: projectData.userEmail || "",
+          createdAt: projectData.createdAt || null,
+          sourceLanguage: projectData.sourceLanguage || "N/A",
+          targetLanguage: projectData.targetLanguage || "N/A",
+          totalPages: projectData.totalPages || 0,
+          totalProjectValue: projectData.totalProjectValue || 0,
+          deadline: projectData.deadline || null,
+          deadlineDate: projectData.deadlineDate || null,
+          isPriority: projectData.isPriority || false,
+          files: (projectData.files || []).map((file) => ({
+            name: file.name || "",
+            url: file.url || "",
+            fileUrl: file.fileUrl || file.url || "",
+            pageCount: file.pageCount || 0,
+            total: file.total || 0,
+            valuePerPage: file.valuePerPage || 0,
+          })),
+          project_status: projectData.project_status || "Ag. Orçamento",
+          payment_status: projectData.payment_status || { status: "N/A" },
+          translation_status: projectData.translation_status || "N/A",
+          valuePerPage: projectData.valuePerPage || 0,
+          hasManualQuoteFiles: projectData.hasManualQuoteFiles || false,
+          convertCurrency: projectData.convertCurrency || false,
+        };
+
+        setProject(processedProjectData);
       } catch (error) {
-        console.error("Erro ao buscar detalhes do projeto:", error);
-        alert(
-          "Erro ao buscar detalhes do projeto. Por favor, tente novamente."
-        );
+        console.error("Erro ao carregar projeto:", error);
         navigate("/company/master/projects");
       }
     };
 
-    // Iniciar a busca se tivermos o ID do projeto
-    if (projectId) {
-      console.log("Project ID disponível, iniciando busca...");
-      fetchProjectDetails();
-    } else {
-      console.log("Project ID não disponível");
-    }
-  }, [projectId, navigate, location.state]);
+    loadProject();
+  }, [projectId, location.search, location.state, navigate]);
 
   // Adicionar um useEffect para monitorar mudanças no estado do projeto
   useEffect(() => {
@@ -2669,6 +2653,16 @@ const ProjectDetails = () => {
               >
                 Salvar
               </button>
+              {(project.collection === "b2bdocprojects" ||
+                project.collection === "b2cdocprojects") && (
+                <button
+                  onClick={handleSendToApproval}
+                  disabled={isSendingApproval}
+                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isSendingApproval ? "Enviando..." : "Enviar para Aprovação"}
+                </button>
+              )}
             </div>
           </div>
         </div>
