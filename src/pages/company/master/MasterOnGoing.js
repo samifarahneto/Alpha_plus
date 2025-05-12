@@ -277,6 +277,11 @@ const MasterOnGoing = () => {
         text: "text-red-700",
         border: "border-red-200",
       },
+      Divergência: {
+        bg: "bg-red-50",
+        text: "text-red-700",
+        border: "border-red-200",
+      },
       "N/A": {
         bg: "bg-gray-50",
         text: "text-gray-700",

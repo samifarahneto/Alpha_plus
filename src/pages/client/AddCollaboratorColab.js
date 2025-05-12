@@ -218,15 +218,16 @@ const AddCollaboratorColab = () => {
         "b2cprojectspaid",
       ];
 
-      // Primeiro, precisamos obter o registeredBy do usuário que está sendo desvinculado
+      // Primeiro, verifica se o email existe na coleção users
       const userToDeleteQuery = query(
         collection(firestore, "users"),
         where("email", "==", emailToDelete)
       );
       const userToDeleteSnapshot = await getDocs(userToDeleteQuery);
 
+      // Se o usuário não existir na coleção users, retorna true pois não há nada para atualizar
       if (userToDeleteSnapshot.empty) {
-        throw new Error("Usuário a ser desvinculado não encontrado");
+        return true;
       }
 
       const userToDeleteData = userToDeleteSnapshot.docs[0].data();
@@ -332,62 +333,80 @@ const AddCollaboratorColab = () => {
 
       const registeredBy = currentUser.email;
 
-      // Primeiro, atualiza todos os projetos e documentos do colaborador
-      await updateAllCollections(firestore, emailToDelete, registeredBy);
+      // Verifica se o email está na lista de pendingEmails
+      const isPendingEmail = pendingEmails.includes(emailToDelete);
 
-      // Depois de atualizar todos os projetos, remove o colaborador da lista
-      const userQuery = query(
-        collection(firestore, "users"),
-        where("email", "==", currentUser.email)
-      );
-      const userSnapshot = await getDocs(userQuery);
-
-      if (!userSnapshot.empty) {
-        const userDoc = userSnapshot.docs[0];
-        const userData = userDoc.data();
-        const colaboradores = userData.colaboradores || [];
-
-        // Remove o email da lista de colaboradores
-        const updatedColaboradores = colaboradores.filter(
-          (email) => email !== emailToDelete
+      if (isPendingEmail) {
+        // Se for um email pendente, apenas remove da coleção emailcheck
+        const emailCheckQuery = query(
+          collection(firestore, "emailcheck"),
+          where("email", "==", emailToDelete)
         );
+        const emailCheckSnapshot = await getDocs(emailCheckQuery);
 
-        // Atualiza o documento do usuário com a nova lista de colaboradores
-        await updateDoc(userDoc.ref, {
-          colaboradores: updatedColaboradores,
-          updatedAt: new Date(),
-        });
-      }
+        if (!emailCheckSnapshot.empty) {
+          const emailCheckDoc = emailCheckSnapshot.docs[0];
+          await deleteDoc(emailCheckDoc.ref);
 
-      // Atualiza o documento do colaborador para remover o vínculo
-      const colaboradorQuery = query(
-        collection(firestore, "users"),
-        where("email", "==", emailToDelete)
-      );
-      const colaboradorSnapshot = await getDocs(colaboradorQuery);
+          // Adicionar log de remoção de colaborador pendente
+          const logData = {
+            timestamp: new Date(),
+            userEmail: currentUser.email,
+            action: "remoção de colaborador pendente",
+            details: {
+              emailRemovido: emailToDelete,
+              status: "removido",
+            },
+          };
+          await addDoc(collection(firestore, "activity_logs"), logData);
+        }
+      } else {
+        // Se for um colaborador registrado, executa o processo completo de remoção
+        // Primeiro, atualiza todos os projetos e documentos do colaborador
+        await updateAllCollections(firestore, emailToDelete, registeredBy);
 
-      if (!colaboradorSnapshot.empty) {
-        const colaboradorDoc = colaboradorSnapshot.docs[0];
-        await updateDoc(colaboradorDoc.ref, {
-          registeredBy: null,
-          registeredByType: null,
-          userType: "b2c",
-          updatedAt: new Date(),
-        });
-      }
+        // Depois de atualizar todos os projetos, remove o colaborador da lista
+        const userQuery = query(
+          collection(firestore, "users"),
+          where("email", "==", currentUser.email)
+        );
+        const userSnapshot = await getDocs(userQuery);
 
-      // Por último, remove o documento do emailcheck
-      const emailCheckQuery = query(
-        collection(firestore, "emailcheck"),
-        where("email", "==", emailToDelete)
-      );
-      const emailCheckSnapshot = await getDocs(emailCheckQuery);
+        if (!userSnapshot.empty) {
+          const userDoc = userSnapshot.docs[0];
+          const userData = userDoc.data();
+          const colaboradores = userData.colaboradores || [];
 
-      if (!emailCheckSnapshot.empty) {
-        const emailCheckDoc = emailCheckSnapshot.docs[0];
-        await deleteDoc(emailCheckDoc.ref);
+          // Remove o email da lista de colaboradores
+          const updatedColaboradores = colaboradores.filter(
+            (email) => email !== emailToDelete
+          );
 
-        // Adicionar log de remoção de colaborador
+          // Atualiza o documento do usuário com a nova lista de colaboradores
+          await updateDoc(userDoc.ref, {
+            colaboradores: updatedColaboradores,
+            updatedAt: new Date(),
+          });
+        }
+
+        // Atualiza o documento do colaborador para remover o vínculo
+        const colaboradorQuery = query(
+          collection(firestore, "users"),
+          where("email", "==", emailToDelete)
+        );
+        const colaboradorSnapshot = await getDocs(colaboradorQuery);
+
+        if (!colaboradorSnapshot.empty) {
+          const colaboradorDoc = colaboradorSnapshot.docs[0];
+          await updateDoc(colaboradorDoc.ref, {
+            registeredBy: null,
+            registeredByType: null,
+            userType: "b2c",
+            updatedAt: new Date(),
+          });
+        }
+
+        // Adicionar log de remoção de colaborador registrado
         const logData = {
           timestamp: new Date(),
           userEmail: currentUser.email,
@@ -401,7 +420,9 @@ const AddCollaboratorColab = () => {
       }
 
       setSuccessMessage(
-        "Colaborador removido com sucesso e todos os projetos foram transferidos!"
+        isPendingEmail
+          ? "Requisição de colaborador removida com sucesso!"
+          : "Colaborador removido com sucesso e todos os projetos foram transferidos!"
       );
       setErrorMessage("");
       await fetchEmails();

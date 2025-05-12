@@ -5,7 +5,7 @@ import {
   setPersistence,
   browserLocalPersistence,
 } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
+import { getFirestore, enableIndexedDbPersistence } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 
 // Configurações do Firebase
@@ -30,6 +30,15 @@ const storage = getStorage(app);
 // Configurar persistência
 setPersistence(auth, browserLocalPersistence).catch((error) => {
   console.error("Erro ao configurar persistência:", error);
+});
+
+// Habilitar persistência offline do Firestore
+enableIndexedDbPersistence(db).catch((err) => {
+  if (err.code === "failed-precondition") {
+    console.warn("Persistência múltipla não é suportada");
+  } else if (err.code === "unimplemented") {
+    console.warn("O navegador não suporta persistência");
+  }
 });
 
 export { auth, db, storage };

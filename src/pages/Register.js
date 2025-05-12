@@ -111,7 +111,7 @@ const Register = () => {
         // Buscar informações do usuário que registrou o colaborador
         const q = query(
           collection(db, "users"),
-          where("email", "===", emailCheckResult.registeredBy)
+          where("email", "==", emailCheckResult.registeredBy)
         );
         const querySnapshot = await getDocs(q);
 
@@ -126,7 +126,7 @@ const Register = () => {
           // Atualizar o log de atividade para o convite de colaborador
           const emailCheckQuery = query(
             collection(db, "emailcheck"),
-            where("email", "===", email)
+            where("email", "==", email)
           );
           const emailCheckSnapshot = await getDocs(emailCheckQuery);
 
@@ -186,6 +186,7 @@ const Register = () => {
         createdAt: new Date(),
         pttoen,
         esptoen,
+        canTest: emailCheckResult.userType === "colab" ? canTest : false,
       });
 
       // Remover entrada da coleção emailcheck, se for colaborador
