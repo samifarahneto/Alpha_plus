@@ -1,5 +1,5 @@
-import React from "react";
-import { Link } from "react-router-dom";
+import React, { useEffect } from "react";
+import { Link, useLocation } from "react-router-dom";
 import {
   FaList,
   FaClock,
@@ -18,6 +18,29 @@ const NavigationLinks = ({
   unreadBudgetCount = 0,
   unreadApprovalCount = 0,
 }) => {
+  const location = useLocation();
+
+  useEffect(() => {
+    const pathToId = {
+      "/company/master/projects": "masterProjects",
+      "/company/master/projects-budget": "projectsBudget",
+      "/company/master/projects-approval": "projectsApproval",
+      "/company/master/projects-approved": "projectsCanceled",
+      "/company/master/projects-in-analysis": "projectsInAnalysis",
+      "/company/master/ongoing": "ongoing",
+      "/company/master/projects-done": "projectsDone",
+      "/company/master/projects-paid": "projectsPaid",
+      "/company/master/payments": "payments",
+    };
+
+    const currentPath = location.pathname;
+    const newActiveLink = pathToId[currentPath];
+
+    if (newActiveLink && newActiveLink !== activeLink) {
+      setActiveLink(newActiveLink);
+    }
+  }, [location.pathname, setActiveLink, activeLink]);
+
   const links = [
     {
       id: "masterProjects",
@@ -45,6 +68,12 @@ const NavigationLinks = ({
       path: "/company/master/projects-approved",
       label: "Aprovados",
       icon: <FaCheck className="w-4 h-4" />,
+    },
+    {
+      id: "projectsInAnalysis",
+      path: "/company/master/projects-in-analysis",
+      label: "Em Análise",
+      icon: <FaSpinner className="w-4 h-4" />,
     },
     {
       id: "ongoing",

@@ -42,6 +42,7 @@ import ProjectsPaid from "./pages/company/master/ProjectsPaid";
 import MasterPayments from "./pages/company/master/MasterPayments";
 import MasterOnGoing from "./pages/company/master/MasterOnGoing";
 import ProjectsApproved from "./pages/company/master/ProjectsApproved";
+import ProjectsInAnalysis from "./pages/company/master/ProjectsInAnalysis";
 import MasterDashboard from "./pages/company/master/MasterDashboard";
 import ActivityLog from "./pages/company/master/ActivityLog";
 
@@ -140,6 +141,10 @@ const AppContent = () => {
             <Route path="projects-budget" element={<ProjectsBudget />} />
             <Route path="projects-approval" element={<ProjectsApproval />} />
             <Route path="projects-approved" element={<ProjectsApproved />} />
+            <Route
+              path="projects-in-analysis"
+              element={<ProjectsInAnalysis />}
+            />
             <Route path="ongoing" element={<MasterOnGoing />} />
             <Route path="projects-done" element={<ProjectsDone />} />
             <Route path="projects-paid" element={<ProjectsPaid />} />
