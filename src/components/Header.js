@@ -1,13 +1,23 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import logo from "../assets/logo.png";
+import { FaBars, FaTimes } from "react-icons/fa";
 
 const Header = () => {
   const { logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  const toggleSidebar = () => {
+    setIsSidebarOpen(!isSidebarOpen);
+  };
+
+  const closeSidebar = () => {
+    setIsSidebarOpen(false);
+  };
 
   const isPublicRoute = () => {
     const publicRoutes = ["/", "/login", "/register"];
@@ -51,8 +61,54 @@ const Header = () => {
     }
   };
 
+  const renderMobileMenu = (links) => (
+    <div
+      className={`fixed inset-y-0 left-0 transform ${
+        isSidebarOpen ? "translate-x-0" : "-translate-x-full"
+      } w-64 bg-white shadow-lg transition-transform duration-300 ease-in-out z-50`}
+    >
+      <div className="flex justify-between items-center p-4 border-b">
+        <img src={logo} alt="Logo" className="h-8 w-auto" />
+        <button
+          onClick={closeSidebar}
+          className="text-gray-500 hover:text-gray-700"
+        >
+          <FaTimes className="w-5 h-5" />
+        </button>
+      </div>
+      <div className="p-4">
+        <p className="text-gray-700 text-sm mb-4">Olá, {user?.email}</p>
+        <nav className="flex flex-col space-y-2">
+          {links.map((link) => (
+            <Link
+              key={link.to}
+              to={link.to}
+              onClick={closeSidebar}
+              className={`text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium ${
+                location.pathname.includes(link.activePath)
+                  ? "text-primary font-bold bg-blue-50"
+                  : ""
+              }`}
+            >
+              {link.label}
+            </Link>
+          ))}
+          <button
+            onClick={() => {
+              closeSidebar();
+              handleLogout();
+            }}
+            className="text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium text-left"
+          >
+            Sair
+          </button>
+        </nav>
+      </div>
+    </div>
+  );
+
   const renderPublicHeader = () => (
-    <nav className="bg-white shadow-md fixed w-full top-0 z-50">
+    <nav className="bg-white shadow-md fixed w-full top-0 z-40">
       <div className="w-full mx-auto">
         <div className="flex justify-between items-end h-[70px] px-4 md:px-[100px]">
           <div className="flex items-end">
@@ -65,7 +121,7 @@ const Header = () => {
             </Link>
           </div>
 
-          <div className="flex items-end space-x-4">
+          <div className="hidden md:flex items-end space-x-4">
             <Link
               to="/"
               className={`text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium ${
@@ -98,240 +154,267 @@ const Header = () => {
     </nav>
   );
 
-  const renderMasterHeader = () => (
-    <nav className="bg-white shadow-md fixed w-full top-0 z-50">
-      <div className="w-full mx-auto">
-        <div className="flex justify-between items-end h-[70px] px-4 md:px-[100px]">
-          <div className="flex items-end">
-            <Link to="/company/master/dashboard">
-              <img
-                src={logo}
-                alt="Logo"
-                className="h-[60px] w-auto object-contain"
-              />
-            </Link>
-          </div>
+  const renderMasterHeader = () => {
+    const masterLinks = [
+      {
+        to: "/company/master/dashboard",
+        label: "Dashboard",
+        activePath: "/dashboard",
+      },
+      {
+        to: "/company/master/clients",
+        label: "Clientes",
+        activePath: "/clients",
+      },
+      {
+        to: "/company/master/employees",
+        label: "Funcionários",
+        activePath: "/employees",
+      },
+      {
+        to: "/company/master/projects",
+        label: "Projetos",
+        activePath: "/projects",
+      },
+      {
+        to: "/company/master/activity-logs",
+        label: "Log de Atividades",
+        activePath: "/activity-logs",
+      },
+    ];
 
-          <div className="absolute left-1/2 transform -translate-x-1/2 text-center">
-            <p className="text-gray-700 text-sm">Olá, {user?.email}</p>
-          </div>
+    return (
+      <>
+        <nav className="bg-white shadow-md fixed w-full top-0 z-40">
+          <div className="w-full mx-auto">
+            <div className="flex justify-between items-end h-[70px] px-4 md:px-[100px]">
+              <div className="flex items-end md:flex-none">
+                <button
+                  onClick={toggleSidebar}
+                  className="md:hidden text-gray-700 hover:text-primary p-2"
+                >
+                  <FaBars className="w-6 h-6" />
+                </button>
+                <Link
+                  to="/company/master/dashboard"
+                  className="hidden md:block"
+                >
+                  <img
+                    src={logo}
+                    alt="Logo"
+                    className="h-[60px] w-auto object-contain"
+                  />
+                </Link>
+              </div>
 
-          <div className="flex items-end space-x-4">
-            <Link
-              to="/company/master/dashboard"
-              className={`text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium ${
-                location.pathname === "/company/master/dashboard"
-                  ? "text-primary font-bold"
-                  : ""
-              }`}
-            >
-              Dashboard
-            </Link>
-            <Link
-              to="/company/master/clients"
-              className={`text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium ${
-                location.pathname === "/company/master/clients"
-                  ? "text-primary font-bold"
-                  : ""
-              }`}
-            >
-              Clientes
-            </Link>
-            <Link
-              to="/company/master/employees"
-              className={`text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium ${
-                location.pathname === "/company/master/employees"
-                  ? "text-primary font-bold"
-                  : ""
-              }`}
-            >
-              Funcionários
-            </Link>
-            <Link
-              to="/company/master/projects"
-              className={`text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium ${
-                location.pathname === "/company/master/projects"
-                  ? "text-primary font-bold"
-                  : ""
-              }`}
-            >
-              Projetos
-            </Link>
-            <Link
-              to="/company/master/activity-logs"
-              className={`text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium ${
-                location.pathname === "/company/master/activity-logs"
-                  ? "text-primary font-bold"
-                  : ""
-              }`}
-            >
-              Log de Atividades
-            </Link>
-            <button
-              onClick={handleLogout}
-              className="text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium"
-            >
-              Sair
-            </button>
-          </div>
-        </div>
-      </div>
-    </nav>
-  );
+              <div className="hidden md:block absolute left-1/2 transform -translate-x-1/2 text-center">
+                <p className="text-gray-700 text-sm">Olá, {user?.email}</p>
+              </div>
 
-  const renderB2BOrB2CHeader = () => (
-    <nav className="bg-white shadow-md fixed w-full top-0 z-50">
-      <div className="w-full mx-auto">
-        <div className="flex justify-between items-end h-[70px] px-4 md:px-[100px]">
-          <div className="flex items-end">
-            <Link to="/client/dashboard">
-              <img
-                src={logo}
-                alt="Logo"
-                className="h-[60px] w-auto object-contain"
-              />
-            </Link>
+              <div className="flex items-end">
+                <Link
+                  to="/company/master/dashboard"
+                  className="md:hidden flex-1 flex justify-center"
+                >
+                  <img
+                    src={logo}
+                    alt="Logo"
+                    className="h-[50px] w-auto object-contain"
+                  />
+                </Link>
+                <div className="hidden md:flex items-end space-x-4">
+                  {masterLinks.map((link) => (
+                    <Link
+                      key={link.to}
+                      to={link.to}
+                      className={`text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium ${
+                        location.pathname.includes(link.activePath)
+                          ? "text-primary font-bold"
+                          : ""
+                      }`}
+                    >
+                      {link.label}
+                    </Link>
+                  ))}
+                  <button
+                    onClick={handleLogout}
+                    className="text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium"
+                  >
+                    Sair
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
+        </nav>
+        {renderMobileMenu(masterLinks)}
+      </>
+    );
+  };
 
-          <div className="absolute left-1/2 transform -translate-x-1/2 text-center">
-            <p className="text-gray-700 text-sm">Olá, {user?.email}</p>
-          </div>
+  const renderB2BOrB2CHeader = () => {
+    const clientLinks = [
+      { to: "/client/dashboard", label: "Dashboard", activePath: "/dashboard" },
+      {
+        to: "/client/projects/clientaddproject",
+        label: "Criar Projetos",
+        activePath: "/clientaddproject",
+      },
+      { to: "/client/projects", label: "Projetos", activePath: "/projects" },
+      { to: "/client/profile", label: "Meu Perfil", activePath: "/profile" },
+    ];
 
-          <div className="flex items-end space-x-4">
-            <Link
-              to="/client/dashboard"
-              className={`text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium ${
-                location.pathname.includes("/dashboard")
-                  ? "text-primary font-bold"
-                  : ""
-              }`}
-            >
-              Dashboard
-            </Link>
-            <Link
-              to="/client/projects/clientaddproject"
-              className={`text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium ${
-                location.pathname.includes("/clientaddproject")
-                  ? "text-primary font-bold"
-                  : ""
-              }`}
-            >
-              Criar Projetos
-            </Link>
-            <Link
-              to="/client/projects"
-              className={`text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium ${
-                location.pathname.includes("/projects")
-                  ? "text-primary font-bold"
-                  : ""
-              }`}
-            >
-              Projetos
-            </Link>
-            {canAccessCollaborators() && (
-              <Link
-                to="/client/add-collaborator"
-                className={`text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium ${
-                  location.pathname.includes("/add-collaborator")
-                    ? "text-primary font-bold"
-                    : ""
-                }`}
-              >
-                Colaboradores
-              </Link>
-            )}
-            <Link
-              to="/client/profile"
-              className={`text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium ${
-                location.pathname.includes("/profile")
-                  ? "text-primary font-bold"
-                  : ""
-              }`}
-            >
-              Meu Perfil
-            </Link>
-            <button
-              onClick={handleLogout}
-              className="text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium"
-            >
-              Sair
-            </button>
-          </div>
-        </div>
-      </div>
-    </nav>
-  );
+    if (canAccessCollaborators()) {
+      clientLinks.splice(3, 0, {
+        to: "/client/add-collaborator",
+        label: "Colaboradores",
+        activePath: "/add-collaborator",
+      });
+    }
 
-  const renderColabHeader = () => (
-    <nav className="bg-white shadow-md fixed w-full top-0 z-50">
-      <div className="w-full mx-auto">
-        <div className="flex justify-between items-end h-[70px] px-4 md:px-[100px]">
-          <div className="flex items-end">
-            <Link to="/client/dashboard">
-              <img
-                src={logo}
-                alt="Logo"
-                className="h-[60px] w-auto object-contain"
-              />
-            </Link>
-          </div>
+    return (
+      <>
+        <nav className="bg-white shadow-md fixed w-full top-0 z-40">
+          <div className="w-full mx-auto">
+            <div className="flex justify-between items-end h-[70px] px-4 md:px-[100px]">
+              <div className="flex items-end md:flex-none">
+                <button
+                  onClick={toggleSidebar}
+                  className="md:hidden text-gray-700 hover:text-primary p-2"
+                >
+                  <FaBars className="w-6 h-6" />
+                </button>
+                <Link to="/client/dashboard" className="hidden md:block">
+                  <img
+                    src={logo}
+                    alt="Logo"
+                    className="h-[60px] w-auto object-contain"
+                  />
+                </Link>
+              </div>
 
-          <div className="absolute left-1/2 transform -translate-x-1/2 text-center">
-            <p className="text-gray-700 text-sm">Olá, {user?.email}</p>
-          </div>
+              <div className="hidden md:block absolute left-1/2 transform -translate-x-1/2 text-center">
+                <p className="text-gray-700 text-sm">Olá, {user?.email}</p>
+              </div>
 
-          <div className="flex items-end space-x-4">
-            <Link
-              to="/client/dashboard"
-              className={`text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium ${
-                location.pathname.includes("/dashboard")
-                  ? "text-primary font-bold"
-                  : ""
-              }`}
-            >
-              Dashboard
-            </Link>
-            <Link
-              to="/client/projects/clientaddproject"
-              className={`text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium ${
-                location.pathname.includes("/clientaddproject")
-                  ? "text-primary font-bold"
-                  : ""
-              }`}
-            >
-              Criar Projetos
-            </Link>
-            <Link
-              to="/client/projects"
-              className={`text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium ${
-                location.pathname.includes("/projects")
-                  ? "text-primary font-bold"
-                  : ""
-              }`}
-            >
-              Projetos
-            </Link>
-            <Link
-              to="/client/profile"
-              className={`text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium ${
-                location.pathname.includes("/profile")
-                  ? "text-primary font-bold"
-                  : ""
-              }`}
-            >
-              Meu Perfil
-            </Link>
-            <button
-              onClick={handleLogout}
-              className="text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium"
-            >
-              Sair
-            </button>
+              <div className="flex items-end">
+                <Link
+                  to="/client/dashboard"
+                  className="md:hidden flex-1 flex justify-center"
+                >
+                  <img
+                    src={logo}
+                    alt="Logo"
+                    className="h-[50px] w-auto object-contain"
+                  />
+                </Link>
+                <div className="hidden md:flex items-end space-x-4">
+                  {clientLinks.map((link) => (
+                    <Link
+                      key={link.to}
+                      to={link.to}
+                      className={`text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium ${
+                        location.pathname.includes(link.activePath)
+                          ? "text-primary font-bold"
+                          : ""
+                      }`}
+                    >
+                      {link.label}
+                    </Link>
+                  ))}
+                  <button
+                    onClick={handleLogout}
+                    className="text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium"
+                  >
+                    Sair
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
-    </nav>
-  );
+        </nav>
+        {renderMobileMenu(clientLinks)}
+      </>
+    );
+  };
+
+  const renderColabHeader = () => {
+    const colabLinks = [
+      { to: "/client/dashboard", label: "Dashboard", activePath: "/dashboard" },
+      {
+        to: "/client/projects/clientaddproject",
+        label: "Criar Projetos",
+        activePath: "/clientaddproject",
+      },
+      { to: "/client/projects", label: "Projetos", activePath: "/projects" },
+      { to: "/client/profile", label: "Meu Perfil", activePath: "/profile" },
+    ];
+
+    return (
+      <>
+        <nav className="bg-white shadow-md fixed w-full top-0 z-40">
+          <div className="w-full mx-auto">
+            <div className="flex justify-between items-end h-[70px] px-4 md:px-[100px]">
+              <div className="flex items-end md:flex-none">
+                <button
+                  onClick={toggleSidebar}
+                  className="md:hidden text-gray-700 hover:text-primary p-2"
+                >
+                  <FaBars className="w-6 h-6" />
+                </button>
+                <Link to="/client/dashboard" className="hidden md:block">
+                  <img
+                    src={logo}
+                    alt="Logo"
+                    className="h-[60px] w-auto object-contain"
+                  />
+                </Link>
+              </div>
+
+              <div className="hidden md:block absolute left-1/2 transform -translate-x-1/2 text-center">
+                <p className="text-gray-700 text-sm">Olá, {user?.email}</p>
+              </div>
+
+              <div className="flex items-end">
+                <Link
+                  to="/client/dashboard"
+                  className="md:hidden flex-1 flex justify-center"
+                >
+                  <img
+                    src={logo}
+                    alt="Logo"
+                    className="h-[50px] w-auto object-contain"
+                  />
+                </Link>
+                <div className="hidden md:flex items-end space-x-4">
+                  {colabLinks.map((link) => (
+                    <Link
+                      key={link.to}
+                      to={link.to}
+                      className={`text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium ${
+                        location.pathname.includes(link.activePath)
+                          ? "text-primary font-bold"
+                          : ""
+                      }`}
+                    >
+                      {link.label}
+                    </Link>
+                  ))}
+                  <button
+                    onClick={handleLogout}
+                    className="text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium"
+                  >
+                    Sair
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </nav>
+        {renderMobileMenu(colabLinks)}
+      </>
+    );
+  };
 
   if (isPublicRoute()) {
     return renderPublicHeader();

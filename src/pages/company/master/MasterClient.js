@@ -875,7 +875,7 @@ const MasterClient = () => {
   };
 
   return (
-    <div className="glass-card w-full max-w-[95%] mx-auto p-2 md:p-8 space-y-4 md:space-y-8 px-4 md:px-10">
+    <div className="w-full max-w-full p-4 sm:p-6 md:p-8 space-y-4 sm:space-y-6 md:space-y-8 px-4 md:px-10">
       <div className="text-center mb-4 md:mb-8">
         <div className="w-full bg-white rounded-2xl shadow-lg border border-gray-100 p-3 md:p-6">
           {/* Grid principal - 1 coluna no mobile, 3 colunas no desktop */}
