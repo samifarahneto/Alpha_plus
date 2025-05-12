@@ -655,7 +655,7 @@ const ClientProfile = () => {
                       : "bg-green-500 hover:bg-green-600 text-white"
                   }`}
               >
-                Atualizar Informações
+                Atualizar
               </button>
             </div>
           </div>

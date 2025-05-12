@@ -38,11 +38,12 @@ const AddCollaboratorColab = () => {
         email: doc.data().email,
         nomeCompleto: doc.data().nomeCompleto || "N/A",
         registeredBy: doc.data().registeredBy || "N/A",
+        projectPermissions: doc.data().projectPermissions || [],
         createdAt: doc.data().createdAt
           ? new Date(doc.data().createdAt.seconds * 1000).toLocaleDateString(
               "pt-BR"
             )
-          : "N/A", // Converta para formato legível
+          : "N/A",
       }));
 
       const emailCheckSnapshot = await getDocs(
@@ -715,6 +716,9 @@ const AddCollaboratorColab = () => {
                       Data de Cadastro
                     </th>
                     <th className="px-4 py-2 text-xs font-medium text-gray-500 uppercase tracking-wider text-center whitespace-nowrap">
+                      Permissões
+                    </th>
+                    <th className="px-4 py-2 text-xs font-medium text-gray-500 uppercase tracking-wider text-center whitespace-nowrap">
                       Ações
                     </th>
                   </tr>
@@ -733,6 +737,27 @@ const AddCollaboratorColab = () => {
                       </td>
                       <td className="px-4 py-1.5 whitespace-nowrap text-sm text-gray-700 text-center">
                         {item.createdAt}
+                      </td>
+                      <td className="px-4 py-1.5 text-sm text-gray-700">
+                        <div className="flex items-center justify-center gap-1">
+                          <span className="text-xs font-medium text-gray-500">
+                            Pode ver:
+                          </span>
+                          <span
+                            className="text-xs font-medium text-green-600 cursor-help"
+                            title={
+                              item.projectPermissions &&
+                              item.projectPermissions.length > 0
+                                ? item.projectPermissions.join("\n")
+                                : "Sem permissões"
+                            }
+                          >
+                            {item.projectPermissions
+                              ? item.projectPermissions.length
+                              : 0}{" "}
+                            usuários
+                          </span>
+                        </div>
                       </td>
                       <td className="px-2 py-1.5 whitespace-nowrap text-center">
                         <div className="flex justify-center gap-2">
