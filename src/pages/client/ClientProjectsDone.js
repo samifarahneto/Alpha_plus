@@ -7,6 +7,7 @@ import {
   where,
   orderBy,
   onSnapshot,
+  getDocs,
 } from "firebase/firestore";
 import { auth } from "../../firebaseConfig";
 import { FaDownload } from "react-icons/fa";
@@ -62,34 +63,102 @@ const ClientProjectsDone = () => {
         const currentUser = auth.currentUser;
         if (!currentUser) return;
 
-        const db = getFirestore();
-        const collections = [
-          "b2bprojectspaid",
-          "b2cprojectspaid",
-          "b2bapproved",
-        ];
+        const firestore = getFirestore();
+        const userDoc = await getDocs(
+          query(
+            collection(firestore, "users"),
+            where("email", "==", currentUser.email)
+          )
+        );
 
-        const queries = collections.map((collectionName) => {
-          const projectsRef = collection(db, collectionName);
-          return query(
-            projectsRef,
-            where("userEmail", "==", currentUser.email),
-            where("translation_status", "in", ["Finalizado", "Concluído"]),
-            orderBy("createdAt", "desc")
+        if (userDoc.empty) {
+          console.error("Documento do usuário não encontrado");
+          setLoading(false);
+          return;
+        }
+
+        const userData = userDoc.docs[0].data();
+        const userType = userData.userType.toLowerCase();
+        const registeredByType = userData.registeredByType;
+        const projectPermissions = userData.projectPermissions || [];
+
+        // Array para armazenar os emails dos projetos a serem buscados
+        let emailsToSearch = [];
+
+        // Se for colab, busca apenas os projetos do próprio usuário e dos usuários que ele tem permissão
+        if (userType === "colab") {
+          emailsToSearch = [currentUser.email, ...projectPermissions];
+        } else {
+          // Para b2b/b2c, busca projetos do usuário e dos vinculados
+          const userRegisteredBy = userData.registeredBy;
+          const colaboradores = userData.colaboradores || [];
+
+          const usersWithSameRegisteredBy = query(
+            collection(firestore, "users"),
+            where("registeredBy", "==", userRegisteredBy || currentUser.email)
           );
-        });
+          const usersSnapshot = await getDocs(usersWithSameRegisteredBy);
+          emailsToSearch = usersSnapshot.docs
+            .map((doc) => doc.data().email)
+            .filter((email) => email);
 
-        const queries2 = collections.map((collectionName) => {
-          const projectsRef = collection(db, collectionName);
-          return query(
-            projectsRef,
-            where("userEmail", "==", currentUser.email),
-            where("project_status", "==", "Finalizado"),
-            orderBy("createdAt", "desc")
-          );
-        });
+          if (
+            currentUser.email &&
+            !emailsToSearch.includes(currentUser.email)
+          ) {
+            emailsToSearch.push(currentUser.email);
+          }
 
-        const allQueries = [...queries, ...queries2];
+          colaboradores.forEach((colab) => {
+            if (colab.email && !emailsToSearch.includes(colab.email)) {
+              emailsToSearch.push(colab.email);
+            }
+          });
+        }
+
+        // Determinar as coleções baseadas no tipo de usuário
+        let collections = [];
+        if (userType === "colab") {
+          if (registeredByType === "b2b") {
+            collections = ["b2bprojectspaid", "b2bapproved"];
+          } else if (registeredByType === "b2c") {
+            collections = ["b2cprojectspaid"];
+          }
+        } else {
+          if (userType === "b2b") {
+            collections = ["b2bprojectspaid", "b2bapproved"];
+          } else if (userType === "b2c") {
+            collections = ["b2cprojectspaid"];
+          }
+        }
+
+        // Criar queries para projetos finalizados (translation_status)
+        const translationQueries = collections.flatMap((collectionName) =>
+          emailsToSearch.map((email) => {
+            const projectsRef = collection(firestore, collectionName);
+            return query(
+              projectsRef,
+              where("userEmail", "==", email),
+              where("translation_status", "in", ["Finalizado", "Concluído"]),
+              orderBy("createdAt", "desc")
+            );
+          })
+        );
+
+        // Criar queries para projetos finalizados (project_status)
+        const projectQueries = collections.flatMap((collectionName) =>
+          emailsToSearch.map((email) => {
+            const projectsRef = collection(firestore, collectionName);
+            return query(
+              projectsRef,
+              where("userEmail", "==", email),
+              where("project_status", "==", "Finalizado"),
+              orderBy("createdAt", "desc")
+            );
+          })
+        );
+
+        const allQueries = [...translationQueries, ...projectQueries];
 
         const unsubscribes = allQueries.map((q) =>
           onSnapshot(

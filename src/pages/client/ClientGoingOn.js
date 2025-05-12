@@ -7,6 +7,7 @@ import {
   where,
   orderBy,
   onSnapshot,
+  getDocs,
 } from "firebase/firestore";
 import { auth } from "../../firebaseConfig";
 import ClientLayout from "../../components/layouts/ClientLayout";
@@ -50,22 +51,90 @@ const ClientGoingOn = () => {
   useEffect(() => {
     const fetchProjects = async () => {
       try {
-        const db = getFirestore();
-        const collections = [
-          "b2bprojectspaid",
-          "b2cprojectspaid",
-          "b2bapproved",
-        ];
+        setLoading(true);
+        const currentUser = auth.currentUser;
+        if (!currentUser) return;
 
-        const queries = collections.map((collectionName) => {
-          const projectsRef = collection(db, collectionName);
-          return query(
-            projectsRef,
-            where("userEmail", "==", auth.currentUser.email),
-            where("translation_status", "==", "Em Andamento"),
-            orderBy("createdAt", "desc")
+        const firestore = getFirestore();
+        const userDoc = await getDocs(
+          query(
+            collection(firestore, "users"),
+            where("email", "==", currentUser.email)
+          )
+        );
+
+        if (userDoc.empty) {
+          console.error("Documento do usuário não encontrado");
+          setLoading(false);
+          return;
+        }
+
+        const userData = userDoc.docs[0].data();
+        const userType = userData.userType.toLowerCase();
+        const registeredByType = userData.registeredByType;
+        const projectPermissions = userData.projectPermissions || [];
+
+        // Array para armazenar os emails dos projetos a serem buscados
+        let emailsToSearch = [];
+
+        // Se for colab, busca apenas os projetos do próprio usuário e dos usuários que ele tem permissão
+        if (userType === "colab") {
+          emailsToSearch = [currentUser.email, ...projectPermissions];
+        } else {
+          // Para b2b/b2c, busca projetos do usuário e dos vinculados
+          const userRegisteredBy = userData.registeredBy;
+          const colaboradores = userData.colaboradores || [];
+
+          const usersWithSameRegisteredBy = query(
+            collection(firestore, "users"),
+            where("registeredBy", "==", userRegisteredBy || currentUser.email)
           );
-        });
+          const usersSnapshot = await getDocs(usersWithSameRegisteredBy);
+          emailsToSearch = usersSnapshot.docs
+            .map((doc) => doc.data().email)
+            .filter((email) => email);
+
+          if (
+            currentUser.email &&
+            !emailsToSearch.includes(currentUser.email)
+          ) {
+            emailsToSearch.push(currentUser.email);
+          }
+
+          colaboradores.forEach((colab) => {
+            if (colab.email && !emailsToSearch.includes(colab.email)) {
+              emailsToSearch.push(colab.email);
+            }
+          });
+        }
+
+        // Determinar as coleções baseadas no tipo de usuário
+        let collections = [];
+        if (userType === "colab") {
+          if (registeredByType === "b2b") {
+            collections = ["b2bprojectspaid", "b2bapproved"];
+          } else if (registeredByType === "b2c") {
+            collections = ["b2cprojectspaid"];
+          }
+        } else {
+          if (userType === "b2b") {
+            collections = ["b2bprojectspaid", "b2bapproved"];
+          } else if (userType === "b2c") {
+            collections = ["b2cprojectspaid"];
+          }
+        }
+
+        const queries = collections.flatMap((collectionName) =>
+          emailsToSearch.map((email) => {
+            const projectsRef = collection(firestore, collectionName);
+            return query(
+              projectsRef,
+              where("userEmail", "==", email),
+              where("translation_status", "==", "Em Andamento"),
+              orderBy("createdAt", "desc")
+            );
+          })
+        );
 
         const unsubscribes = queries.map((q) =>
           onSnapshot(

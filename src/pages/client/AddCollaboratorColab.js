@@ -19,6 +19,10 @@ const AddCollaboratorColab = () => {
   const [successMessage, setSuccessMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [currentUserEmail, setCurrentUserEmail] = useState("");
+  const [showPermissionsModal, setShowPermissionsModal] = useState(false);
+  const [selectedCollaborator, setSelectedCollaborator] = useState(null);
+  const [availableEmails, setAvailableEmails] = useState([]);
+  const [selectedPermissions, setSelectedPermissions] = useState([]);
 
   const fetchEmails = useCallback(async () => {
     try {
@@ -165,7 +169,8 @@ const AddCollaboratorColab = () => {
         email: sanitizedEmail,
         registeredBy,
         createdAt: new Date(),
-        canTest: userData.canTest || false, // Adiciona o canTest do usuário que está convidando
+        canTest: userData.canTest || false,
+        projectPermissions: [], // Adiciona array vazio de permissões
       });
 
       // Adicionar log de convite de colaborador
@@ -175,7 +180,7 @@ const AddCollaboratorColab = () => {
         action: "convite de colaborador",
         details: {
           colaborador: {
-            nome: sanitizedEmail.split("@")[0], // Usando o nome do email como nome inicial
+            nome: sanitizedEmail.split("@")[0],
             email: sanitizedEmail,
             tipo: "colab",
             status: "pendente",
@@ -195,6 +200,172 @@ const AddCollaboratorColab = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleOpenPermissionsModal = async (collaborator) => {
+    try {
+      const firestore = getFirestore();
+      const auth = getAuth();
+      const currentUser = auth.currentUser;
+
+      if (!currentUser) {
+        setErrorMessage("Usuário não autenticado.");
+        return;
+      }
+
+      // Busca todos os emails disponíveis (usuário principal e colaboradores)
+      const userQuery = query(
+        collection(firestore, "users"),
+        where("email", "==", currentUser.email)
+      );
+      const userSnapshot = await getDocs(userQuery);
+      const userData = userSnapshot.docs[0].data();
+      const colaboradores = userData.colaboradores || [];
+
+      // Busca as permissões atuais do colaborador
+      const collaboratorQuery = query(
+        collection(firestore, "users"),
+        where("email", "==", collaborator.email)
+      );
+      const collaboratorSnapshot = await getDocs(collaboratorQuery);
+      const collaboratorData = collaboratorSnapshot.docs[0].data();
+      const currentPermissions = collaboratorData.projectPermissions || [];
+
+      // Filtra a lista de emails disponíveis, removendo o email do próprio colaborador
+      const filteredEmails = [currentUser.email, ...colaboradores].filter(
+        (email) => email !== collaborator.email
+      );
+
+      setAvailableEmails(filteredEmails);
+      setSelectedPermissions(currentPermissions);
+      setSelectedCollaborator(collaborator);
+      setShowPermissionsModal(true);
+    } catch (error) {
+      console.error("Erro ao abrir modal de permissões:", error);
+      setErrorMessage("Erro ao carregar permissões: " + error.message);
+    }
+  };
+
+  const handleSavePermissions = async () => {
+    try {
+      if (!selectedCollaborator) return;
+
+      const firestore = getFirestore();
+      const collaboratorQuery = query(
+        collection(firestore, "users"),
+        where("email", "==", selectedCollaborator.email)
+      );
+      const collaboratorSnapshot = await getDocs(collaboratorQuery);
+
+      if (!collaboratorSnapshot.empty) {
+        const collaboratorDoc = collaboratorSnapshot.docs[0];
+        // Garante que o email do próprio colaborador sempre esteja nas permissões
+        const finalPermissions = [
+          ...new Set([...selectedPermissions, selectedCollaborator.email]),
+        ];
+
+        await updateDoc(collaboratorDoc.ref, {
+          projectPermissions: finalPermissions,
+          updatedAt: new Date(),
+        });
+
+        // Adicionar log de atualização de permissões
+        const logData = {
+          timestamp: new Date(),
+          userEmail: currentUserEmail,
+          action: "atualização de permissões",
+          details: {
+            colaborador: selectedCollaborator.email,
+            permissões: finalPermissions,
+          },
+        };
+        await addDoc(collection(firestore, "activity_logs"), logData);
+
+        setSuccessMessage("Permissões atualizadas com sucesso!");
+        setShowPermissionsModal(false);
+        fetchEmails();
+      }
+    } catch (error) {
+      console.error("Erro ao salvar permissões:", error);
+      setErrorMessage("Erro ao salvar permissões: " + error.message);
+    }
+  };
+
+  const renderPermissionsModal = () => {
+    if (!showPermissionsModal || !selectedCollaborator) return null;
+
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+        <div className="w-96 bg-white rounded-lg shadow-xl p-6">
+          <div className="mb-4">
+            <h3 className="text-lg font-semibold text-gray-900 text-center">
+              Permissões de Visualização
+            </h3>
+            <p className="text-sm text-gray-600 text-center mt-2">
+              Selecione os usuários cujos projetos este colaborador poderá
+              visualizar
+            </p>
+          </div>
+
+          <div className="space-y-3 max-h-96 overflow-y-auto">
+            {/* Mostra o email do próprio colaborador como fixo */}
+            <div className="flex items-center bg-gray-50 p-2 rounded-lg">
+              <input
+                type="checkbox"
+                checked={true}
+                disabled
+                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+              />
+              <label className="ml-2 text-sm text-gray-700 font-medium">
+                {selectedCollaborator.email} (Próprio usuário)
+              </label>
+            </div>
+
+            {/* Lista os outros emails disponíveis */}
+            {availableEmails.map((email) => (
+              <div key={email} className="flex items-center">
+                <input
+                  type="checkbox"
+                  id={`permission-${email}`}
+                  checked={selectedPermissions.includes(email)}
+                  onChange={(e) => {
+                    if (e.target.checked) {
+                      setSelectedPermissions([...selectedPermissions, email]);
+                    } else {
+                      setSelectedPermissions(
+                        selectedPermissions.filter((e) => e !== email)
+                      );
+                    }
+                  }}
+                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                />
+                <label
+                  htmlFor={`permission-${email}`}
+                  className="ml-2 text-sm text-gray-700"
+                >
+                  {email}
+                </label>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-6 flex justify-center gap-4">
+            <button
+              onClick={() => setShowPermissionsModal(false)}
+              className="px-4 py-2 text-sm text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={handleSavePermissions}
+              className="px-4 py-2 text-sm text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
+            >
+              Salvar
+            </button>
+          </div>
+        </div>
+      </div>
+    );
   };
 
   const updateAllCollections = async (
@@ -543,7 +714,9 @@ const AddCollaboratorColab = () => {
                     <th className="px-4 py-2 text-xs font-medium text-gray-500 uppercase tracking-wider text-center whitespace-nowrap">
                       Data de Cadastro
                     </th>
-                    <th className="w-10" aria-label="Ações"></th>
+                    <th className="px-4 py-2 text-xs font-medium text-gray-500 uppercase tracking-wider text-center whitespace-nowrap">
+                      Ações
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
@@ -562,13 +735,22 @@ const AddCollaboratorColab = () => {
                         {item.createdAt}
                       </td>
                       <td className="px-2 py-1.5 whitespace-nowrap text-center">
-                        <button
-                          onClick={() => handleDeleteEmail(item.email)}
-                          className="text-red-500 hover:text-red-700 transition-colors bg-transparent border-none cursor-pointer p-0"
-                          aria-label="Excluir"
-                        >
-                          🗑️
-                        </button>
+                        <div className="flex justify-center gap-2">
+                          <button
+                            onClick={() => handleOpenPermissionsModal(item)}
+                            className="text-blue-500 hover:text-blue-700 transition-colors bg-transparent border-none cursor-pointer p-0"
+                            aria-label="Permissões"
+                          >
+                            🔑
+                          </button>
+                          <button
+                            onClick={() => handleDeleteEmail(item.email)}
+                            className="text-red-500 hover:text-red-700 transition-colors bg-transparent border-none cursor-pointer p-0"
+                            aria-label="Excluir"
+                          >
+                            🗑️
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -578,6 +760,7 @@ const AddCollaboratorColab = () => {
           </div>
         </div>
       </div>
+      {renderPermissionsModal()}
     </div>
   );
 };

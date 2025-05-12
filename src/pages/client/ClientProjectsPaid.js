@@ -57,12 +57,11 @@ const ClientProjectsPaid = () => {
   useEffect(() => {
     const fetchProjects = async () => {
       try {
+        setLoading(true);
         const currentUser = auth.currentUser;
         if (!currentUser) return;
 
         const firestore = getFirestore();
-
-        // Buscar informações do usuário atual
         const userDoc = await getDocs(
           query(
             collection(firestore, "users"),
@@ -78,60 +77,58 @@ const ClientProjectsPaid = () => {
 
         const userData = userDoc.docs[0].data();
         const userType = userData.userType.toLowerCase();
-        const registeredByType = userData.registeredByType?.toLowerCase();
-
-        console.log("Dados do usuário:", {
-          userType,
-          registeredByType,
-          email: currentUser.email,
-        });
+        const registeredByType = userData.registeredByType;
+        const projectPermissions = userData.projectPermissions || [];
 
         // Array para armazenar os emails dos projetos a serem buscados
         let emailsToSearch = [];
 
-        // Determinar os emails a serem buscados baseado no tipo de usuário
+        // Se for colab, busca apenas os projetos do próprio usuário e dos usuários que ele tem permissão
         if (userType === "colab") {
-          // Colaborador vê apenas seus próprios projetos
-          emailsToSearch = [currentUser.email];
+          emailsToSearch = [currentUser.email, ...projectPermissions];
         } else {
-          // B2B ou B2C veem seus projetos e de seus colaboradores
-          emailsToSearch.push(currentUser.email);
+          // Para b2b/b2c, busca projetos do usuário e dos vinculados
+          const userRegisteredBy = userData.registeredBy;
+          const colaboradores = userData.colaboradores || [];
 
-          // Busca todos os usuários que foram registrados por este usuário
-          const registeredUsersQuery = query(
+          const usersWithSameRegisteredBy = query(
             collection(firestore, "users"),
-            where("registeredBy", "==", currentUser.email)
+            where("registeredBy", "==", userRegisteredBy || currentUser.email)
           );
-          const registeredUsersSnapshot = await getDocs(registeredUsersQuery);
-          registeredUsersSnapshot.forEach((doc) => {
-            emailsToSearch.push(doc.data().email);
+          const usersSnapshot = await getDocs(usersWithSameRegisteredBy);
+          emailsToSearch = usersSnapshot.docs
+            .map((doc) => doc.data().email)
+            .filter((email) => email);
+
+          if (
+            currentUser.email &&
+            !emailsToSearch.includes(currentUser.email)
+          ) {
+            emailsToSearch.push(currentUser.email);
+          }
+
+          colaboradores.forEach((colab) => {
+            if (colab.email && !emailsToSearch.includes(colab.email)) {
+              emailsToSearch.push(colab.email);
+            }
           });
         }
 
-        // Determinar as coleções baseadas no registeredByType
+        // Determinar as coleções baseadas no tipo de usuário
         let collections = [];
         if (userType === "colab") {
-          // Se for colaborador, usa o registeredByType
           if (registeredByType === "b2b") {
             collections = ["b2bprojectspaid"];
           } else if (registeredByType === "b2c") {
             collections = ["b2cprojectspaid"];
           }
         } else {
-          // Se for usuário normal (b2b ou b2c), usa o userType
           if (userType === "b2b") {
             collections = ["b2bprojectspaid"];
           } else if (userType === "b2c") {
             collections = ["b2cprojectspaid"];
           }
         }
-
-        console.log("Configuração de busca:", {
-          userType,
-          registeredByType,
-          emailsToSearch,
-          collections,
-        });
 
         // Array para armazenar os unsubscribe functions
         const unsubscribeFunctions = [];
@@ -145,10 +142,6 @@ const ClientProjectsPaid = () => {
 
           // Para cada email relacionado
           emailsToSearch.forEach((email) => {
-            console.log(
-              `Buscando projetos para ${email} na coleção ${collectionName}`
-            );
-
             // Buscar projetos onde o email é o userEmail
             const q = query(
               collectionRef,
@@ -159,16 +152,6 @@ const ClientProjectsPaid = () => {
 
             // Adicionar listener para atualização em tempo real
             const unsubscribe = onSnapshot(q, (snapshot) => {
-              console.log(
-                `Projetos encontrados em ${collectionName} para ${email}:`,
-                snapshot.docs.length,
-                snapshot.docs.map((doc) => ({
-                  id: doc.id,
-                  userEmail: doc.data().userEmail,
-                  registeredBy: doc.data().registeredBy,
-                }))
-              );
-
               // Primeiro, processar as mudanças
               snapshot.docChanges().forEach((change) => {
                 if (change.type === "removed") {
@@ -209,16 +192,6 @@ const ClientProjectsPaid = () => {
             );
 
             const unsubscribe = onSnapshot(registeredByQuery, (snapshot) => {
-              console.log(
-                `Projetos encontrados em ${collectionName} onde ${currentUser.email} é registeredBy:`,
-                snapshot.docs.length,
-                snapshot.docs.map((doc) => ({
-                  id: doc.id,
-                  userEmail: doc.data().userEmail,
-                  registeredBy: doc.data().registeredBy,
-                }))
-              );
-
               const newProjects = snapshot.docs.map((doc) => ({
                 ...doc.data(),
                 id: doc.id,

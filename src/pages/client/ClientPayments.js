@@ -72,10 +72,41 @@ const ClientPayments = () => {
         const userData = userDoc.docs[0].data();
         const userType = userData.userType.toLowerCase();
         const registeredByType = userData.registeredByType;
-        const userEmail = currentUser.email;
+        const projectPermissions = userData.projectPermissions || [];
 
         // Array para armazenar os emails dos projetos a serem buscados
-        let emailsToSearch = [userEmail];
+        let emailsToSearch = [];
+
+        // Se for colab, busca apenas os projetos do próprio usuário e dos usuários que ele tem permissão
+        if (userType === "colab") {
+          emailsToSearch = [currentUser.email, ...projectPermissions];
+        } else {
+          // Para b2b/b2c, busca projetos do usuário e dos vinculados
+          const userRegisteredBy = userData.registeredBy;
+          const colaboradores = userData.colaboradores || [];
+
+          const usersWithSameRegisteredBy = query(
+            collection(firestore, "users"),
+            where("registeredBy", "==", userRegisteredBy || currentUser.email)
+          );
+          const usersSnapshot = await getDocs(usersWithSameRegisteredBy);
+          emailsToSearch = usersSnapshot.docs
+            .map((doc) => doc.data().email)
+            .filter((email) => email);
+
+          if (
+            currentUser.email &&
+            !emailsToSearch.includes(currentUser.email)
+          ) {
+            emailsToSearch.push(currentUser.email);
+          }
+
+          colaboradores.forEach((colab) => {
+            if (colab.email && !emailsToSearch.includes(colab.email)) {
+              emailsToSearch.push(colab.email);
+            }
+          });
+        }
 
         // Determinar as coleções baseadas no tipo de usuário
         let collections = [];

@@ -112,6 +112,10 @@ const Header = () => {
             </Link>
           </div>
 
+          <div className="absolute left-1/2 transform -translate-x-1/2 text-center">
+            <p className="text-gray-700 text-sm">Olá, {user?.email}</p>
+          </div>
+
           <div className="flex items-end space-x-4">
             <Link
               to="/company/master/dashboard"
@@ -187,6 +191,10 @@ const Header = () => {
                 className="h-[60px] w-auto object-contain"
               />
             </Link>
+          </div>
+
+          <div className="absolute left-1/2 transform -translate-x-1/2 text-center">
+            <p className="text-gray-700 text-sm">Olá, {user?.email}</p>
           </div>
 
           <div className="flex items-end space-x-4">
@@ -266,6 +274,10 @@ const Header = () => {
                 className="h-[60px] w-auto object-contain"
               />
             </Link>
+          </div>
+
+          <div className="absolute left-1/2 transform -translate-x-1/2 text-center">
+            <p className="text-gray-700 text-sm">Olá, {user?.email}</p>
           </div>
 
           <div className="flex items-end space-x-4">

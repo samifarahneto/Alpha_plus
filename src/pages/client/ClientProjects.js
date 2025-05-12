@@ -201,15 +201,14 @@ const ClientProjects = () => {
         const userType = userData.userType.toLowerCase();
         const registeredByType = userData.registeredByType;
         const colaboradores = userData.colaboradores || [];
+        const projectPermissions = userData.projectPermissions || [];
 
         // Array para armazenar os emails dos projetos a serem buscados
         let emailsToSearch = [];
 
-        // Se for colab, busca apenas os projetos do próprio usuário
+        // Se for colab, busca apenas os projetos do próprio usuário e dos usuários que ele tem permissão
         if (userType === "colab") {
-          if (currentUser.email) {
-            emailsToSearch = [currentUser.email];
-          }
+          emailsToSearch = [currentUser.email, ...projectPermissions];
         } else {
           // Para b2b/b2c, busca projetos do usuário e dos vinculados
           const usersWithSameRegisteredBy = query(
