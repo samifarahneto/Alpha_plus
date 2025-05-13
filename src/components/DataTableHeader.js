@@ -83,7 +83,7 @@ const DataTableHeader = ({
   fixedColumns = [],
 }) => {
   return (
-    <thead className="table-header sticky top-0 z-10 bg-white">
+    <thead className="table-header sticky top-0 z-[1] bg-white">
       <tr>
         <SortableContext
           items={columnOrder}
@@ -115,7 +115,7 @@ const DataTableHeader = ({
             return (
               <th key={columnId} className="table-header-cell !py-0">
                 {column.filter ? (
-                  <span className="px-2 py-0">
+                  <span className="px-2 py-0 relative">
                     {column.filter.type === "text" && (
                       <input
                         type="text"
@@ -134,6 +134,7 @@ const DataTableHeader = ({
                           onFilterChange(columnId, e.target.value)
                         }
                         className="w-full p-0.5 text-xs firstMobile:text-[10px] border rounded h-6"
+                        style={{ zIndex: 2 }}
                       >
                         <option value="">Todos</option>
                         {column.filter.options.map((option) => (

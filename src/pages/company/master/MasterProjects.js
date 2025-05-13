@@ -1108,7 +1108,7 @@ const MasterProjects = ({ style, isMobile }) => {
                     value={sourceLanguageFilter}
                     onChange={handleSourceLanguageFilterChange}
                     options={sourceLanguageOptions}
-                    placeholder="Selecione as línguas..."
+                    placeholder="Selecione"
                     className="text-sm w-full"
                     labelClassName="text-center lg:text-center"
                     containerClassName="flex flex-col items-center gap-1"
@@ -1150,7 +1150,7 @@ const MasterProjects = ({ style, isMobile }) => {
                     value={projectStatusFilter}
                     onChange={handleProjectStatusFilterChange}
                     options={projectStatusOptions}
-                    placeholder="Selecione os status..."
+                    placeholder="Selecione"
                     className="text-sm w-full"
                     labelClassName="text-center lg:text-center"
                     containerClassName="flex flex-col items-center gap-1"
@@ -1164,7 +1164,7 @@ const MasterProjects = ({ style, isMobile }) => {
                     value={translationStatusFilter}
                     onChange={handleTranslationStatusFilterChange}
                     options={translationStatusOptions}
-                    placeholder="Selecione os status..."
+                    placeholder="Selecione"
                     className="text-sm w-full"
                     labelClassName="text-center lg:text-center"
                     containerClassName="flex flex-col items-center gap-1"
@@ -1249,7 +1249,7 @@ const MasterProjects = ({ style, isMobile }) => {
                   value={sourceLanguageFilter}
                   onChange={handleSourceLanguageFilterChange}
                   options={sourceLanguageOptions}
-                  placeholder="Selecione as línguas..."
+                  placeholder="Selecione"
                   className="text-sm w-full"
                   labelClassName="text-center"
                 />
@@ -1288,7 +1288,7 @@ const MasterProjects = ({ style, isMobile }) => {
                   value={projectStatusFilter}
                   onChange={handleProjectStatusFilterChange}
                   options={projectStatusOptions}
-                  placeholder="Selecione os status..."
+                  placeholder="Selecione"
                   className="text-sm w-full"
                   labelClassName="text-center"
                 />
@@ -1301,7 +1301,7 @@ const MasterProjects = ({ style, isMobile }) => {
                   value={translationStatusFilter}
                   onChange={handleTranslationStatusFilterChange}
                   options={translationStatusOptions}
-                  placeholder="Selecione os status..."
+                  placeholder="Selecione"
                   className="text-sm w-full"
                   labelClassName="text-center"
                 />
