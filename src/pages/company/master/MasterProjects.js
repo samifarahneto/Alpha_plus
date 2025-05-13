@@ -119,9 +119,9 @@ const MasterProjects = ({ style, isMobile }) => {
   ];
 
   const projectStatusOptions = [
-    { value: "Ag. Orçamento", label: "Aguardando Orçamento" },
-    { value: "Ag. Aprovação", label: "Aguardando Aprovação" },
-    { value: "Ag. Pagamento", label: "Aguardando Pagamento" },
+    { value: "Ag. Orçamento", label: "Ag. Orçamento" },
+    { value: "Ag. Aprovação", label: "Ag. Aprovação" },
+    { value: "Ag. Pagamento", label: "Ag. Pagamento" },
     { value: "Em Análise", label: "Em Análise" },
     { value: "Em Andamento", label: "Em Andamento" },
     { value: "Cancelado", label: "Cancelado" },

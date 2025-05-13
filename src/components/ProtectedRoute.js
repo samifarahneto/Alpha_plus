@@ -10,7 +10,7 @@ const ProtectedRoute = ({ children, allowedUserTypes }) => {
   }
 
   if (!allowedUserTypes.includes(user.userType)) {
-    return <Navigate to="/client/dashboard" />;
+    return <Navigate to="/client/projects" />;
   }
 
   return children;

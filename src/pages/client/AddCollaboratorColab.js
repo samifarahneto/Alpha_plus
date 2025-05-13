@@ -607,181 +607,176 @@ const AddCollaboratorColab = () => {
   };
 
   return (
-    <div className="w-full max-w-full p-8 space-y-8">
-      <div className="glass-card">
-        <h1 className="text-3xl font-bold text-center mb-8 bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
-          Gerenciamento de Colaboradores
-        </h1>
+    <div className="w-full max-w-full p-4 sm:p-6 md:p-8 space-y-4 sm:space-y-6 md:space-y-8">
+      <h1 className="text-2xl sm:text-3xl font-bold text-center mb-4 sm:mb-8 bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
+        Gerenciamento de Colaboradores
+      </h1>
 
-        <div className="flex flex-col md:flex-row gap-8">
-          {/* Primeira Div - Adicionar e Aguardando Cadastro */}
-          <div className="bg-white rounded-xl shadow-md p-6 border border-gray-100 flex-1">
-            {/* Seção de Adicionar Colaborador */}
-            <div className="mb-8">
-              {successMessage && (
-                <div className="p-4 bg-emerald-50 text-emerald-700 rounded-lg mb-4">
-                  {successMessage}
-                </div>
-              )}
-              {errorMessage && (
-                <div className="p-4 bg-red-50 text-red-700 rounded-lg mb-4">
-                  {errorMessage}
-                </div>
-              )}
-
-              <h3 className="text-xl font-semibold text-gray-800 mb-4">
-                Adicionar Colaborador
-              </h3>
-
-              <div className="flex gap-4 items-center">
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Digite o email do colaborador"
-                  className="flex-1 px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
-                  disabled={isLoading}
-                />
-                <button
-                  onClick={handleAddCollaborator}
-                  disabled={isLoading}
-                  className={`w-[230px] px-6 py-2.5 rounded-lg text-white text-sm font-medium transition-colors ${
-                    isLoading
-                      ? "bg-gray-400 cursor-not-allowed"
-                      : "bg-blue-500 hover:bg-blue-600"
-                  }`}
-                >
-                  {isLoading ? "Adicionando..." : "Adicionar"}
-                </button>
+      <div className="flex flex-col lg:flex-row gap-4 sm:gap-6 lg:gap-8">
+        {/* Primeira Div - Adicionar e Aguardando Cadastro */}
+        <div className="bg-white rounded-xl shadow-md p-4 sm:p-6 border border-gray-100 flex-1">
+          {/* Seção de Adicionar Colaborador */}
+          <div className="mb-6 sm:mb-8">
+            {successMessage && (
+              <div className="p-3 sm:p-4 bg-emerald-50 text-emerald-700 rounded-lg mb-4">
+                {successMessage}
               </div>
-            </div>
-
-            {/* Seção de Colaboradores Aguardando Cadastro */}
-            <div>
-              <h3 className="text-xl font-semibold text-gray-800 mb-4">
-                Colaboradores Aguardando Cadastro
-              </h3>
-              <div className="overflow-hidden rounded-2xl shadow-lg border border-gray-100">
-                <table className="min-w-full bg-white divide-y divide-gray-200 shadow-sm rounded-lg">
-                  <thead className="bg-gradient-to-b from-gray-50 to-gray-100">
-                    <tr>
-                      <th className="px-4 py-2 text-xs font-medium text-gray-500 uppercase tracking-wider text-center whitespace-nowrap">
-                        Email
-                      </th>
-                      <th className="w-10" aria-label="Ações"></th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {pendingEmails.map((email, index) => (
-                      <tr
-                        key={index}
-                        className="hover:bg-blue-50/50 transition-all duration-200"
-                      >
-                        <td className="px-4 py-1.5 whitespace-nowrap text-sm text-gray-700 text-center">
-                          {email}
-                        </td>
-                        <td className="px-2 py-1.5 whitespace-nowrap text-center">
-                          <button
-                            onClick={() => handleDeleteEmail(email)}
-                            className="text-red-500 hover:text-red-700 transition-colors bg-transparent border-none cursor-pointer p-0"
-                            aria-label="Excluir"
-                          >
-                            🗑️
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+            )}
+            {errorMessage && (
+              <div className="p-3 sm:p-4 bg-red-50 text-red-700 rounded-lg mb-4">
+                {errorMessage}
               </div>
+            )}
+
+            <h3 className="text-lg sm:text-xl font-semibold text-gray-800 mb-3 sm:mb-4">
+              Adicionar Colaborador
+            </h3>
+
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 items-stretch sm:items-center">
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Digite o email do colaborador"
+                className="flex-1 px-3 sm:px-4 py-2 sm:py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                disabled={isLoading}
+              />
+              <button
+                onClick={handleAddCollaborator}
+                disabled={isLoading}
+                className={`w-full sm:w-[230px] px-4 sm:px-6 py-2 sm:py-2.5 rounded-lg text-white text-sm font-medium transition-colors ${
+                  isLoading
+                    ? "bg-gray-400 cursor-not-allowed"
+                    : "bg-blue-500 hover:bg-blue-600"
+                }`}
+              >
+                {isLoading ? "Adicionando..." : "Adicionar"}
+              </button>
             </div>
           </div>
 
-          {/* Segunda Div - Colaboradores Cadastrados */}
-          <div className="bg-white rounded-xl shadow-md p-6 border border-gray-100 flex-1">
-            <h3 className="text-xl font-semibold text-gray-800 mb-4">
-              Colaboradores Cadastrados
+          {/* Seção de Colaboradores Aguardando Cadastro */}
+          <div>
+            <h3 className="text-lg sm:text-xl font-semibold text-gray-800 mb-3 sm:mb-4">
+              Colaboradores Aguardando Cadastro
             </h3>
-            <div className="overflow-hidden rounded-2xl shadow-lg border border-gray-100">
+            <div className="overflow-x-auto rounded-2xl shadow-lg border border-gray-100">
               <table className="min-w-full bg-white divide-y divide-gray-200 shadow-sm rounded-lg">
                 <thead className="bg-gradient-to-b from-gray-50 to-gray-100">
                   <tr>
-                    <th className="px-4 py-2 text-xs font-medium text-gray-500 uppercase tracking-wider text-center whitespace-nowrap">
-                      Nome
-                    </th>
-                    <th className="px-4 py-2 text-xs font-medium text-gray-500 uppercase tracking-wider text-center whitespace-nowrap">
+                    <th className="px-3 sm:px-4 py-2 text-xs font-medium text-gray-500 uppercase tracking-wider text-center whitespace-nowrap">
                       Email
                     </th>
-                    <th className="px-4 py-2 text-xs font-medium text-gray-500 uppercase tracking-wider text-center whitespace-nowrap">
-                      Data de Cadastro
-                    </th>
-                    <th className="px-4 py-2 text-xs font-medium text-gray-500 uppercase tracking-wider text-center whitespace-nowrap">
-                      Permissões
-                    </th>
-                    <th className="px-4 py-2 text-xs font-medium text-gray-500 uppercase tracking-wider text-center whitespace-nowrap">
-                      Ações
-                    </th>
+                    <th className="w-10" aria-label="Ações"></th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {registeredEmails.map((item, index) => (
+                  {pendingEmails.map((email, index) => (
                     <tr
                       key={index}
                       className="hover:bg-blue-50/50 transition-all duration-200"
                     >
-                      <td className="px-4 py-1.5 whitespace-nowrap text-sm text-gray-700 text-center">
-                        {item.nomeCompleto}
-                      </td>
-                      <td className="px-4 py-1.5 whitespace-nowrap text-sm text-gray-700 text-center">
-                        {item.email}
-                      </td>
-                      <td className="px-4 py-1.5 whitespace-nowrap text-sm text-gray-700 text-center">
-                        {item.createdAt}
-                      </td>
-                      <td className="px-4 py-1.5 text-sm text-gray-700">
-                        <div className="flex items-center justify-center gap-1">
-                          <span className="text-xs font-medium text-gray-500">
-                            Pode ver:
-                          </span>
-                          <span
-                            className="text-xs font-medium text-green-600 cursor-help"
-                            title={
-                              item.projectPermissions &&
-                              item.projectPermissions.length > 0
-                                ? item.projectPermissions.join("\n")
-                                : "Sem permissões"
-                            }
-                          >
-                            {item.projectPermissions
-                              ? item.projectPermissions.length
-                              : 0}{" "}
-                            usuários
-                          </span>
-                        </div>
+                      <td className="px-3 sm:px-4 py-1.5 whitespace-nowrap text-sm text-gray-700 text-center">
+                        {email}
                       </td>
                       <td className="px-2 py-1.5 whitespace-nowrap text-center">
-                        <div className="flex justify-center gap-2">
-                          <button
-                            onClick={() => handleOpenPermissionsModal(item)}
-                            className="text-blue-500 hover:text-blue-700 transition-colors bg-transparent border-none cursor-pointer p-0"
-                            aria-label="Permissões"
-                          >
-                            🔑
-                          </button>
-                          <button
-                            onClick={() => handleDeleteEmail(item.email)}
-                            className="text-red-500 hover:text-red-700 transition-colors bg-transparent border-none cursor-pointer p-0"
-                            aria-label="Excluir"
-                          >
-                            🗑️
-                          </button>
-                        </div>
+                        <button
+                          onClick={() => handleDeleteEmail(email)}
+                          className="text-red-500 hover:text-red-700 transition-colors bg-transparent border-none cursor-pointer p-0"
+                          aria-label="Excluir"
+                        >
+                          🗑️
+                        </button>
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
+          </div>
+        </div>
+
+        {/* Segunda Div - Colaboradores Cadastrados */}
+        <div className="bg-white rounded-xl shadow-md p-4 sm:p-6 border border-gray-100 flex-1">
+          <h3 className="text-lg sm:text-xl font-semibold text-gray-800 mb-3 sm:mb-4">
+            Colaboradores Cadastrados
+          </h3>
+          <div className="overflow-x-auto rounded-2xl shadow-lg border border-gray-100">
+            <table className="min-w-full bg-white divide-y divide-gray-200 shadow-sm rounded-lg">
+              <thead className="bg-gradient-to-b from-gray-50 to-gray-100">
+                <tr>
+                  <th className="px-3 sm:px-4 py-2 text-xs font-medium text-gray-500 uppercase tracking-wider text-center whitespace-nowrap">
+                    Nome
+                  </th>
+                  <th className="px-3 sm:px-4 py-2 text-xs font-medium text-gray-500 uppercase tracking-wider text-center whitespace-nowrap">
+                    Email
+                  </th>
+                  <th className="hidden sm:table-cell px-3 sm:px-4 py-2 text-xs font-medium text-gray-500 uppercase tracking-wider text-center whitespace-nowrap">
+                    Data de Cadastro
+                  </th>
+                  <th className="px-3 sm:px-4 py-2 text-xs font-medium text-gray-500 uppercase tracking-wider text-center whitespace-nowrap">
+                    Permissões
+                  </th>
+                  <th className="px-3 sm:px-4 py-2 text-xs font-medium text-gray-500 uppercase tracking-wider text-center whitespace-nowrap">
+                    Ações
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {registeredEmails.map((item, index) => (
+                  <tr
+                    key={index}
+                    className="hover:bg-blue-50/50 transition-all duration-200"
+                  >
+                    <td className="px-3 sm:px-4 py-1.5 whitespace-nowrap text-sm text-gray-700 text-center">
+                      {item.nomeCompleto}
+                    </td>
+                    <td className="px-3 sm:px-4 py-1.5 whitespace-nowrap text-sm text-gray-700 text-center">
+                      {item.email}
+                    </td>
+                    <td className="hidden sm:table-cell px-3 sm:px-4 py-1.5 whitespace-nowrap text-sm text-gray-700 text-center">
+                      {item.createdAt}
+                    </td>
+                    <td className="px-3 sm:px-4 py-1.5 text-sm text-gray-700">
+                      <div className="flex items-center justify-center gap-1">
+                        <span
+                          className="text-xs font-medium text-green-600 cursor-help"
+                          title={
+                            item.projectPermissions &&
+                            item.projectPermissions.length > 0
+                              ? item.projectPermissions.join("\n")
+                              : "Sem permissões"
+                          }
+                        >
+                          {item.projectPermissions
+                            ? item.projectPermissions.length
+                            : 0}{" "}
+                          usuários
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-2 py-1.5 whitespace-nowrap text-center">
+                      <div className="flex justify-center gap-2">
+                        <button
+                          onClick={() => handleOpenPermissionsModal(item)}
+                          className="text-blue-500 hover:text-blue-700 transition-colors bg-transparent border-none cursor-pointer p-0"
+                          aria-label="Permissões"
+                        >
+                          🔑
+                        </button>
+                        <button
+                          onClick={() => handleDeleteEmail(item.email)}
+                          className="text-red-500 hover:text-red-700 transition-colors bg-transparent border-none cursor-pointer p-0"
+                          aria-label="Excluir"
+                        >
+                          🗑️
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
       </div>

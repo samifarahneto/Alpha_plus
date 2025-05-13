@@ -87,9 +87,10 @@ const AppContent = () => {
           <Route path="/login" element={<Login />} />
 
           {/* Rotas do Cliente */}
+          <Route path="/client" element={<ClientProjects />} />
+          <Route path="/client/projects" element={<ClientProjects />} />
           <Route path="/client/dashboard" element={<ClientDashboard />} />
           <Route path="/client/profile" element={<ClientProfile />} />
-          <Route path="/client/projects" element={<ClientProjects />} />
           <Route path="/client/projects-budget" element={<ClientBudget />} />
           <Route
             path="/client/projects-done"

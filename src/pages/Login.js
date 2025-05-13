@@ -44,7 +44,7 @@ const Login = () => {
           case "b2b":
           case "b2c":
           case "colab":
-            navigate("/client/dashboard");
+            navigate("/client/projects");
             break;
           case "manager":
             navigate("/company/manager/dashboard");
