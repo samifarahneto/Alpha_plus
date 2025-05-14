@@ -800,6 +800,38 @@ const ProjectDetails = () => {
       return;
     }
     updatePaymentStatus("Divergência", divergenceData);
+    updateProjectStatus("Em Divergência");
+  };
+
+  const updateProjectStatus = async (newStatus) => {
+    try {
+      if (!projectId || !project?.collection) {
+        console.error("ID do projeto ou coleção não disponível:", {
+          projectId,
+          collection: project?.collection,
+        });
+        alert("Erro: ID do projeto ou coleção não disponível");
+        return;
+      }
+
+      const firestore = getFirestore();
+      const projectRef = doc(firestore, project.collection, projectId);
+
+      const updateData = {
+        project_status: newStatus,
+      };
+
+      await updateDoc(projectRef, updateData);
+
+      // Atualizar o estado local
+      setProject((prevProject) => ({
+        ...prevProject,
+        ...updateData,
+      }));
+    } catch (error) {
+      console.error("Erro ao atualizar status do projeto:", error);
+      alert("Erro ao atualizar status do projeto. Tente novamente.");
+    }
   };
 
   const handleRefundOptionChange = (e) => {
@@ -948,6 +980,11 @@ const ProjectDetails = () => {
 
   const handleProjectStatusChange = async (newStatus) => {
     try {
+      if (newStatus === "Em Divergência") {
+        setShowDivergenceModal(true);
+        return;
+      }
+
       if (!projectId || !project?.collection) {
         console.error("ID do projeto ou coleção não disponível:", {
           projectId,
