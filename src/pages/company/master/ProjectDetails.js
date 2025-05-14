@@ -34,7 +34,6 @@ import {
   FaClock,
   FaCalendar,
   FaLanguage,
-  FaProjectDiagram,
 } from "react-icons/fa";
 import { getStorage, ref, getDownloadURL } from "firebase/storage";
 import debounce from "lodash/debounce";
@@ -696,15 +695,6 @@ const ProjectDetails = () => {
 
   const updatePaymentStatus = async (newStatus, divergenceInfo = null) => {
     try {
-      if (!projectId || !project?.collection) {
-        console.error("ID do projeto ou coleção não disponível:", {
-          projectId,
-          collection: project?.collection,
-        });
-        alert("Erro: ID do projeto ou coleção não disponível");
-        return;
-      }
-
       const firestore = getFirestore();
       const projectRef = doc(firestore, project.collection, projectId);
 
@@ -744,6 +734,16 @@ const ProjectDetails = () => {
         targetCollection = "b2cprojectspaid";
       }
 
+      // Manter os valores do pagamento inicial quando for divergência
+      const currentPaymentStatus =
+        typeof project.payment_status === "object"
+          ? project.payment_status
+          : {};
+      const initialPayment =
+        currentPaymentStatus.initialPayment || project.totalProjectValue || 0;
+      const divergencePayment = currentPaymentStatus.divergencePayment || 0;
+      const totalPayment = currentPaymentStatus.totalPayment || initialPayment;
+
       const updateData = {
         isPaid: isPaid,
         paidAt: isPaid ? new Date().toISOString() : null,
@@ -752,6 +752,10 @@ const ProjectDetails = () => {
               status: newStatus,
               pages: divergenceInfo.pages,
               reason: divergenceInfo.reason,
+              initialPayment: initialPayment,
+              divergencePayment: divergencePayment,
+              totalPayment: totalPayment,
+              paymentDate: currentPaymentStatus.paymentDate || null,
             }
           : newStatus,
         collection: targetCollection,
@@ -779,11 +783,10 @@ const ProjectDetails = () => {
       // Adicionar log
       await addDoc(collection(firestore, "activity_logs"), logData);
 
-      // Atualizar o estado local
-      setProject((prevProject) => ({
-        ...prevProject,
+      setProject({
+        ...project,
         ...updateData,
-      }));
+      });
 
       setShowDivergenceModal(false);
       setDivergenceData({ pages: "", reason: "" });
@@ -1479,6 +1482,14 @@ const ProjectDetails = () => {
     }
   };
 
+  const calculateTotalPages = (files) => {
+    if (!files || !Array.isArray(files)) return 0;
+    return files.reduce(
+      (total, file) => total + (Number(file.pageCount) || 0),
+      0
+    );
+  };
+
   const calculateTotalValue = (files) => {
     if (!files || !Array.isArray(files)) return "0.00";
 
@@ -1665,8 +1676,11 @@ const ProjectDetails = () => {
       <Card title="Informações Financeiras" color="green" className="mb-4">
         <div className="space-y-3">
           {/* Status de Pagamento */}
-          <div className="flex items-center justify-between">
-            <span className="text-gray-600 text-sm">Status Pagto:</span>
+          <div className="bg-white p-3 rounded-lg shadow-sm min-h-[85px]">
+            <h3 className="text-xs md:text-sm font-semibold text-gray-700 mb-1 border-b pb-1 flex items-center gap-2">
+              <FaCreditCard className="text-green-600" />
+              Status de Pagamento
+            </h3>
             <select
               value={
                 typeof project.payment_status === "object"
@@ -1674,16 +1688,7 @@ const ProjectDetails = () => {
                   : project.payment_status || "Pendente"
               }
               onChange={(e) => handlePaymentStatusChange(e.target.value)}
-              className={`px-3 py-1 rounded border text-sm font-medium whitespace-nowrap ${
-                project.payment_status === "Pago"
-                  ? "bg-green-50 text-green-700 border-green-200"
-                  : project.payment_status === "Divergência"
-                  ? "bg-red-50 text-red-700 border-red-200"
-                  : project.payment_status === "Reembolsado" ||
-                    project.payment_status === "Em Reembolso"
-                  ? "bg-yellow-50 text-yellow-700 border-yellow-200"
-                  : "bg-gray-50 text-gray-700 border-gray-200"
-              }`}
+              className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-white text-gray-700 text-sm font-medium cursor-pointer transition-colors"
             >
               <option value="Pendente">Pendente</option>
               <option value="Pago">Pago</option>
@@ -1691,74 +1696,120 @@ const ProjectDetails = () => {
               <option value="Reembolsado">Reembolsado</option>
               <option value="Em Reembolso">Em Reembolso</option>
             </select>
+            {typeof project.payment_status === "object" && (
+              <div className="mt-2 space-y-1">
+                <div className="flex justify-between text-xs">
+                  <span className="text-gray-600">Pagamento Inicial:</span>
+                  <span className="text-gray-800">
+                    U${" "}
+                    {Number(project.payment_status.initialPayment || 0).toFixed(
+                      2
+                    )}
+                  </span>
+                </div>
+                <div className="flex justify-between text-xs">
+                  <span className="text-gray-600">Pagamento Divergência:</span>
+                  <span className="text-gray-800">
+                    U${" "}
+                    {Number(
+                      project.payment_status.divergencePayment || 0
+                    ).toFixed(2)}
+                  </span>
+                </div>
+                <div className="flex justify-between text-xs font-bold">
+                  <span className="text-gray-600">Total Pago:</span>
+                  <span className="text-gray-800">
+                    U${" "}
+                    {Number(project.payment_status.totalPayment || 0).toFixed(
+                      2
+                    )}
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Nome do Aprovador */}
-          <div className="flex items-center justify-between">
-            <span className="text-gray-600 text-sm">Aprovador:</span>
-            <span className="text-gray-800 text-sm truncate">
+          <div className="bg-white p-3 rounded-lg shadow-sm h-[85px]">
+            <h3 className="text-sm font-semibold text-gray-700 mb-2 border-b pb-1 flex items-center gap-2">
+              <FaUserCheck className="text-green-600" />
+              Nome do Aprovador
+            </h3>
+            <span className="text-gray-800">
               {project.approvedByName || "N/A"}
             </span>
           </div>
 
           {/* Data de Pagamento */}
-          <div className="flex items-center justify-between">
-            <span className="text-gray-600 text-sm">Data Pagto:</span>
-            <span className="text-gray-800 text-sm truncate">
-              {project.paidAt
-                ? new Date(project.paidAt).toLocaleDateString("pt-BR")
-                : "N/A"}
-            </span>
-          </div>
-
-          {/* Valor Total */}
-          <div className="flex items-center justify-between">
-            <span className="text-gray-600 text-sm">Valor Total:</span>
-            <span className="text-gray-800 text-sm font-semibold whitespace-nowrap">
-              U$ {totalValue}
-            </span>
+          <div className="bg-white p-3 rounded-lg shadow-sm h-[85px]">
+            <h3 className="text-sm font-semibold text-gray-700 mb-2 border-b pb-1 flex items-center gap-2">
+              <FaCalendarAlt className="text-green-600" />
+              Informações de Pagamento
+            </h3>
+            <div className="grid grid-cols-[80px_auto] gap-2 text-sm">
+              <span className="text-gray-600 font-medium">Data Pgto:</span>
+              <span className="text-gray-800 text-right">
+                {typeof project.payment_status === "object" &&
+                project.payment_status.paymentDate
+                  ? new Date(
+                      project.payment_status.paymentDate
+                    ).toLocaleDateString("pt-BR")
+                  : project.paidAt
+                  ? new Date(project.paidAt).toLocaleDateString("pt-BR")
+                  : "N/A"}
+              </span>
+              {typeof project.payment_status === "object" &&
+                project.payment_status.status === "Pago" &&
+                project.payment_status.divergencePayment > 0 && (
+                  <>
+                    <span className="text-gray-600 font-medium">
+                      Divergência:
+                    </span>
+                    <span className="text-gray-800 text-right">
+                      {project.payment_status.paymentDate
+                        ? new Date(
+                            project.payment_status.paymentDate
+                          ).toLocaleDateString("pt-BR")
+                        : "N/A"}
+                    </span>
+                  </>
+                )}
+            </div>
           </div>
 
           {/* Detalhes do Reembolso */}
           {project.payment_status &&
             project.payment_status.status === "Reembolsado" && (
-              <div className="mt-4 p-3 bg-gray-50 rounded-lg space-y-3">
-                <h4 className="font-medium text-gray-700 mb-2 text-sm">
+              <div className="bg-white p-3 rounded-lg shadow-sm">
+                <h3 className="text-sm font-semibold text-gray-700 mb-2 border-b pb-1 flex items-center gap-2">
+                  <FaUndo className="text-green-600" />
                   Detalhes do Reembolso
-                </h4>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-600 text-sm">Valor Orig.:</span>
-                    <span className="text-gray-800 text-sm truncate">
-                      U${" "}
-                      {project.payment_status.originalAmount?.toFixed(2) ||
-                        "0.00"}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-600 text-sm">Valor Reemb.:</span>
-                    <span className="text-gray-800 text-sm truncate">
-                      U${" "}
-                      {project.payment_status.refundAmount?.toFixed(2) ||
-                        "0.00"}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-600 text-sm">Motivo:</span>
-                    <span className="text-gray-800 text-sm truncate">
-                      {project.payment_status.reason || "N/A"}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-600 text-sm">Data:</span>
-                    <span className="text-gray-800 text-sm truncate">
-                      {project.payment_status.refundedAt
-                        ? new Date(
-                            project.payment_status.refundedAt
-                          ).toLocaleDateString("pt-BR")
-                        : "N/A"}
-                    </span>
-                  </div>
+                </h3>
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <span className="text-gray-600">Valor Original:</span>
+                  <span className="text-gray-800">
+                    U${" "}
+                    {project.payment_status.originalAmount?.toFixed(2) ||
+                      "0.00"}
+                  </span>
+                  <span className="text-gray-600">Valor Reembolsado:</span>
+                  <span className="text-gray-800">
+                    U${" "}
+                    {project.payment_status.refundAmount?.toFixed(2) || "0.00"}
+                  </span>
+                  <div className="col-span-2 border-t border-gray-200 my-2"></div>
+                  <span className="text-gray-600">Motivo:</span>
+                  <span className="text-gray-800">
+                    {project.payment_status.reason || "N/A"}
+                  </span>
+                  <span className="text-gray-600">Data:</span>
+                  <span className="text-gray-800">
+                    {project.payment_status.refundedAt
+                      ? new Date(
+                          project.payment_status.refundedAt
+                        ).toLocaleDateString("pt-BR")
+                      : "N/A"}
+                  </span>
                 </div>
               </div>
             )}
@@ -2209,9 +2260,9 @@ const ProjectDetails = () => {
                 </div>
 
                 {/* Status do Projeto */}
-                <div className="bg-white p-3 rounded-lg shadow-sm h-[85px]">
-                  <h3 className="text-sm font-semibold text-gray-700 mb-1 border-b pb-1 flex items-center gap-2">
-                    <FaProjectDiagram className="text-blue-600" />
+                <div className="bg-white p-3 rounded-lg shadow-sm min-h-[85px]">
+                  <h3 className="text-xs md:text-sm font-semibold text-gray-700 mb-2 border-b pb-1 flex items-center gap-2">
+                    <FaInfoCircle className="text-blue-600" />
                     Status do Projeto
                   </h3>
                   <select
@@ -2222,10 +2273,10 @@ const ProjectDetails = () => {
                     }
                     onChange={(e) => handleProjectStatusChange(e.target.value)}
                     disabled={project.project_status === "Em Divergência"}
-                    className={`w-full px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm font-medium transition-colors ${
+                    className={`w-full px-3 py-2 rounded-lg border border-gray-200 bg-white text-gray-700 text-sm font-medium cursor-pointer transition-colors ${
                       project.project_status === "Em Divergência"
                         ? "bg-red-50 text-red-700 border-red-200 cursor-not-allowed"
-                        : "text-gray-700 cursor-pointer"
+                        : ""
                     }`}
                   >
                     <option value="Rascunho">Rascunho</option>
@@ -2250,8 +2301,8 @@ const ProjectDetails = () => {
               </h3>
               <div className="grid grid-cols-1 gap-4">
                 {/* Status de Pagamento */}
-                <div className="bg-white p-3 rounded-lg shadow-sm h-[85px]">
-                  <h3 className="text-sm font-semibold text-gray-700 mb-1 border-b pb-1 flex items-center gap-2">
+                <div className="bg-white p-3 rounded-lg shadow-sm min-h-[85px]">
+                  <h3 className="text-xs md:text-sm font-semibold text-gray-700 mb-1 border-b pb-1 flex items-center gap-2">
                     <FaCreditCard className="text-green-600" />
                     Status de Pagamento
                   </h3>
@@ -2262,16 +2313,7 @@ const ProjectDetails = () => {
                         : project.payment_status || "Pendente"
                     }
                     onChange={(e) => handlePaymentStatusChange(e.target.value)}
-                    className={`w-full px-3 py-2 rounded-lg border ${
-                      project.payment_status === "Pago"
-                        ? "bg-green-50 text-green-700 border-green-200"
-                        : project.payment_status === "Divergência"
-                        ? "bg-red-50 text-red-700 border-red-200"
-                        : project.payment_status === "Reembolsado" ||
-                          project.payment_status === "Em Reembolso"
-                        ? "bg-yellow-50 text-yellow-700 border-yellow-200"
-                        : "bg-gray-50 text-gray-700 border-gray-200"
-                    } text-sm font-medium cursor-pointer transition-colors`}
+                    className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-white text-gray-700 text-sm font-medium cursor-pointer transition-colors"
                   >
                     <option value="Pendente">Pendente</option>
                     <option value="Pago">Pago</option>
@@ -2279,6 +2321,41 @@ const ProjectDetails = () => {
                     <option value="Reembolsado">Reembolsado</option>
                     <option value="Em Reembolso">Em Reembolso</option>
                   </select>
+                  {typeof project.payment_status === "object" && (
+                    <div className="mt-2 space-y-1">
+                      <div className="flex justify-between text-xs">
+                        <span className="text-gray-600">
+                          Pagamento Inicial:
+                        </span>
+                        <span className="text-gray-800">
+                          U${" "}
+                          {Number(
+                            project.payment_status.initialPayment || 0
+                          ).toFixed(2)}
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-xs">
+                        <span className="text-gray-600">
+                          Pagamento Divergência:
+                        </span>
+                        <span className="text-gray-800">
+                          U${" "}
+                          {Number(
+                            project.payment_status.divergencePayment || 0
+                          ).toFixed(2)}
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-xs font-bold">
+                        <span className="text-gray-600">Total Pago:</span>
+                        <span className="text-gray-800">
+                          U${" "}
+                          {Number(
+                            project.payment_status.totalPayment || 0
+                          ).toFixed(2)}
+                        </span>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Nome do Aprovador */}
@@ -2297,18 +2374,41 @@ const ProjectDetails = () => {
                 </div>
 
                 {/* Informações de Pagamento */}
-                <div className="bg-white p-3 rounded-lg shadow-sm h-[85px]">
-                  <h3 className="text-sm font-semibold text-gray-700 mb-2 border-b pb-1 flex items-center gap-2">
+                <div className="bg-white p-3 rounded-lg shadow-sm min-h-[85px]">
+                  <h3 className="text-xs md:text-sm font-semibold text-gray-700 mb-2 border-b pb-1 flex items-center gap-2">
                     <FaCalendarAlt className="text-green-600" />
                     Informações de Pagamento
                   </h3>
                   <div className="grid grid-cols-[80px_auto] gap-2 text-sm">
-                    <span className="text-gray-600 font-medium">Data:</span>
-                    <span className="text-gray-800">
-                      {project.paidAt
+                    <span className="text-gray-600 font-medium">
+                      Data Pgto:
+                    </span>
+                    <span className="text-gray-800 text-right">
+                      {typeof project.payment_status === "object" &&
+                      project.payment_status.paymentDate
+                        ? new Date(
+                            project.payment_status.paymentDate
+                          ).toLocaleDateString("pt-BR")
+                        : project.paidAt
                         ? new Date(project.paidAt).toLocaleDateString("pt-BR")
                         : "N/A"}
                     </span>
+                    {typeof project.payment_status === "object" &&
+                      project.payment_status.status === "Pago" &&
+                      project.payment_status.divergencePayment > 0 && (
+                        <>
+                          <span className="text-gray-600 font-medium">
+                            Divergência:
+                          </span>
+                          <span className="text-gray-800 text-right">
+                            {project.payment_status.paymentDate
+                              ? new Date(
+                                  project.payment_status.paymentDate
+                                ).toLocaleDateString("pt-BR")
+                              : "N/A"}
+                          </span>
+                        </>
+                      )}
                   </div>
                 </div>
 
@@ -2485,13 +2585,56 @@ const ProjectDetails = () => {
             </div>
 
             {/* Totais */}
-            <div className="flex justify-between items-center px-6 py-4 bg-white rounded-xl border border-gray-200">
-              <p className="text-gray-700 font-medium">
-                <strong>Total de Páginas:</strong> {totalPages}
-              </p>
-              <p className="text-gray-700 font-medium">
-                <strong>Valor Total:</strong> U$ {totalValue}
-              </p>
+            <div className="flex flex-col md:flex-row justify-between items-center p-4 bg-gray-50 rounded-lg gap-2 md:gap-0">
+              <div className="flex flex-col gap-2 w-full">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm md:text-base text-gray-700 font-semibold">
+                    Total de Páginas:
+                  </span>
+                  <span className="text-sm md:text-base text-gray-800">
+                    {calculateTotalPages(project.files)}
+                  </span>
+                </div>
+                {typeof project.payment_status === "object" &&
+                  project.payment_status.divergencePayment > 0 && (
+                    <>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm md:text-base text-gray-700 font-semibold">
+                          Páginas Divergentes:
+                        </span>
+                        <span className="text-sm md:text-base text-gray-800">
+                          {project.payment_status.pages}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm md:text-base text-gray-700 font-semibold">
+                          Valor Divergência:
+                        </span>
+                        <span className="text-sm md:text-base text-gray-800">
+                          U${" "}
+                          {Number(
+                            project.payment_status.divergencePayment
+                          ).toFixed(2)}
+                        </span>
+                      </div>
+                    </>
+                  )}
+                <div className="flex items-center justify-between">
+                  <span className="text-sm md:text-base text-gray-700 font-semibold">
+                    Valor Total:
+                  </span>
+                  <span className="text-sm md:text-base text-gray-800">
+                    U${" "}
+                    {Number(
+                      typeof project.payment_status === "object"
+                        ? project.payment_status.totalPayment
+                        : project.totalProjectValue ||
+                            project.totalValue ||
+                            calculateTotalValue(project.files)
+                    ).toFixed(2)}
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -2907,14 +3050,12 @@ const ProjectDetails = () => {
               <select
                 value={newSourceLanguage}
                 onChange={(e) => setNewSourceLanguage(e.target.value)}
-                className="w-full px-3 py-2 border rounded-lg"
+                className="w-full p-2 rounded border border-gray-300 text-sm md:text-base"
               >
-                <option value="">Selecione uma língua</option>
                 <option value="Português (Brasil)">Português (Brasil)</option>
                 <option value="Espanhol (América Latina)">
                   Espanhol (América Latina)
                 </option>
-                <option value="Inglês">Inglês</option>
               </select>
             </div>
             <div className="flex justify-end gap-2 mt-4">

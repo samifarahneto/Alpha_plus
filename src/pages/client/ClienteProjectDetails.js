@@ -787,20 +787,20 @@ const ClienteProjectDetails = () => {
                   </h3>
                   <div className="flex justify-start">
                     <span
-                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                      className={`w-full px-2 py-1 rounded-full border text-center text-xs font-medium ${
                         project.payment_status === "Pago" || project.isPaid
-                          ? "bg-green-100 text-green-800"
+                          ? "bg-green-50 text-green-700 border-green-200"
                           : project.payment_status === "Em Reembolso"
-                          ? "bg-red-100 text-red-800"
+                          ? "bg-red-50 text-red-700 border-red-200"
                           : typeof project.payment_status === "object" &&
                             project.payment_status.status === "Reembolsado"
-                          ? "bg-yellow-100 text-yellow-800"
+                          ? "bg-yellow-50 text-yellow-700 border-yellow-200"
                           : typeof project.payment_status === "object" &&
                             project.payment_status.status === "Divergência"
-                          ? "bg-orange-100 text-orange-800"
+                          ? "bg-red-50 text-red-700 border-red-200"
                           : project.payment_status === "Pendente"
-                          ? "bg-yellow-100 text-yellow-800"
-                          : "bg-gray-100 text-gray-800"
+                          ? "bg-yellow-50 text-yellow-700 border-yellow-200"
+                          : "bg-gray-50 text-gray-700 border-gray-200"
                       }`}
                     >
                       {typeof project.payment_status === "object"
@@ -808,6 +808,41 @@ const ClienteProjectDetails = () => {
                         : project.payment_status || "N/A"}
                     </span>
                   </div>
+                  {typeof project.payment_status === "object" && (
+                    <div className="mt-2 space-y-1">
+                      <div className="flex justify-between text-xs">
+                        <span className="text-gray-600">
+                          Pagamento Inicial:
+                        </span>
+                        <span className="text-gray-800">
+                          U${" "}
+                          {Number(
+                            project.payment_status.initialPayment || 0
+                          ).toFixed(2)}
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-xs">
+                        <span className="text-gray-600">
+                          Pagamento Divergência:
+                        </span>
+                        <span className="text-gray-800">
+                          U${" "}
+                          {Number(
+                            project.payment_status.divergencePayment || 0
+                          ).toFixed(2)}
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-xs font-bold">
+                        <span className="text-gray-600">Total Pago:</span>
+                        <span className="text-gray-800">
+                          U${" "}
+                          {Number(
+                            project.payment_status.totalPayment || 0
+                          ).toFixed(2)}
+                        </span>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Informações de Pagamento */}
@@ -817,12 +852,35 @@ const ClienteProjectDetails = () => {
                     Informações de Pagamento
                   </h3>
                   <div className="grid grid-cols-[80px_auto] gap-2 text-xs md:text-sm">
-                    <span className="text-gray-600 font-medium">Data:</span>
-                    <span className="text-gray-800">
-                      {project.paidAt
+                    <span className="text-gray-600 font-medium">
+                      Data Pgto:
+                    </span>
+                    <span className="text-gray-800 text-right">
+                      {typeof project.payment_status === "object" &&
+                      project.payment_status.paymentDate
+                        ? new Date(
+                            project.payment_status.paymentDate
+                          ).toLocaleDateString("pt-BR")
+                        : project.paidAt
                         ? new Date(project.paidAt).toLocaleDateString("pt-BR")
                         : "N/A"}
                     </span>
+                    {typeof project.payment_status === "object" &&
+                      project.payment_status.status === "Pago" &&
+                      project.payment_status.divergencePayment > 0 && (
+                        <>
+                          <span className="text-gray-600 font-medium">
+                            Divergência:
+                          </span>
+                          <span className="text-gray-800 text-right">
+                            {project.payment_status.paymentDate
+                              ? new Date(
+                                  project.payment_status.paymentDate
+                                ).toLocaleDateString("pt-BR")
+                              : "N/A"}
+                          </span>
+                        </>
+                      )}
                   </div>
                 </div>
 
@@ -970,26 +1028,54 @@ const ClienteProjectDetails = () => {
           </div>
           {/* Resumo Financeiro */}
           <div className="flex flex-col md:flex-row justify-between items-center p-4 bg-gray-50 rounded-lg gap-2 md:gap-0">
-            <div className="flex items-center gap-2">
-              <span className="text-sm md:text-base text-gray-700 font-semibold">
-                Total de Páginas:
-              </span>
-              <span className="text-sm md:text-base text-gray-800">
-                {calculateTotalPages(project.files)}
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-sm md:text-base text-gray-700 font-semibold">
-                Valor Total:
-              </span>
-              <span className="text-sm md:text-base text-gray-800">
-                U${" "}
-                {Number(
-                  project.totalProjectValue ||
-                    project.totalValue ||
-                    calculateTotalValue(project.files)
-                ).toFixed(2)}
-              </span>
+            <div className="flex flex-col gap-2 w-full">
+              <div className="flex items-center justify-between">
+                <span className="text-sm md:text-base text-gray-700 font-semibold">
+                  Total de Páginas:
+                </span>
+                <span className="text-sm md:text-base text-gray-800">
+                  {calculateTotalPages(project.files)}
+                </span>
+              </div>
+              {typeof project.payment_status === "object" &&
+                project.payment_status.divergencePayment > 0 && (
+                  <>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm md:text-base text-gray-700 font-semibold">
+                        Páginas Divergentes:
+                      </span>
+                      <span className="text-sm md:text-base text-gray-800">
+                        {project.payment_status.pages}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm md:text-base text-gray-700 font-semibold">
+                        Valor Divergência:
+                      </span>
+                      <span className="text-sm md:text-base text-gray-800">
+                        U${" "}
+                        {Number(
+                          project.payment_status.divergencePayment
+                        ).toFixed(2)}
+                      </span>
+                    </div>
+                  </>
+                )}
+              <div className="flex items-center justify-between">
+                <span className="text-sm md:text-base text-gray-700 font-semibold">
+                  Valor Total:
+                </span>
+                <span className="text-sm md:text-base text-gray-800">
+                  U${" "}
+                  {Number(
+                    typeof project.payment_status === "object"
+                      ? project.payment_status.totalPayment
+                      : project.totalProjectValue ||
+                          project.totalValue ||
+                          calculateTotalValue(project.files)
+                  ).toFixed(2)}
+                </span>
+              </div>
             </div>
           </div>
 
@@ -1095,109 +1181,115 @@ const ClienteProjectDetails = () => {
             )}
           {/* Seção de Ações */}
           <div className="flex justify-center">
-            {project.payment_status !== "Pago" ? (
-              project.project_status === "Ag. Aprovação" ? (
-                <button
-                  onClick={() => setShowApprovalModal(true)}
-                  className="w-full md:w-[350px] px-4 md:px-6 py-2 md:py-3 bg-green-500 text-white text-sm md:text-base rounded-lg border-none cursor-pointer transition-colors duration-200 hover:bg-green-600 flex items-center justify-center gap-2"
-                >
-                  <FaUserCheck />
-                  Aprovar
-                </button>
-              ) : project.collection === "b2bdocprojects" ||
-                project.collection === "b2cdocprojects" ? (
-                <button
-                  disabled
-                  className="w-full md:w-[350px] px-4 md:px-6 py-2 md:py-3 bg-gray-500 text-white text-sm md:text-base rounded-lg border-none cursor-not-allowed flex items-center justify-center gap-2"
-                >
-                  <FaClock />
-                  Aguardando Orçamento
-                </button>
-              ) : (
-                <button
-                  onClick={() => {
-                    if (
-                      project.collection === "b2bdocsaved" ||
-                      project.collection === "b2cdocsaved"
-                    ) {
-                      handleRequestQuote();
-                    } else {
-                      navigate("/client/checkout", {
-                        state: {
-                          selectedProjects: [projectId],
-                          collection: project.collection,
-                        },
-                      });
-                    }
-                  }}
-                  disabled={
-                    project.collection === "b2bdocsaved" ||
-                    project.collection === "b2cdocsaved"
-                      ? false
-                      : project.collection === "b2bdocprojects" ||
-                        project.collection === "b2cdocprojects" ||
-                        hasZeroPages(project.files) ||
-                        (typeof project.payment_status === "object" &&
-                          project.payment_status.status === "Divergência") ||
-                        project.payment_status === "Pago"
-                  }
-                  className={`w-full md:w-[350px] px-4 md:px-6 py-2 md:py-3 text-white text-sm md:text-base rounded-lg border-none transition-colors duration-200 flex items-center justify-center gap-2 ${
-                    project.collection === "b2bdocsaved" ||
-                    project.collection === "b2cdocsaved"
-                      ? "bg-blue-500 hover:bg-blue-600 cursor-pointer"
-                      : project.collection === "b2bdocprojects" ||
-                        project.collection === "b2cdocprojects" ||
-                        hasZeroPages(project.files) ||
-                        (typeof project.payment_status === "object" &&
-                          project.payment_status.status === "Divergência") ||
-                        project.payment_status === "Pago"
-                      ? "bg-gray-500 cursor-not-allowed"
-                      : "bg-blue-500 hover:bg-blue-600 cursor-pointer"
-                  }`}
-                >
-                  {project.collection === "b2bdocsaved" ||
-                  project.collection === "b2cdocsaved" ? (
-                    <>
-                      <FaFileAlt />
-                      Solicitar Orçamento
-                    </>
-                  ) : project.collection === "b2bdocprojects" ||
-                    project.collection === "b2cdocprojects" ? (
-                    <>
-                      <FaClock />
-                      Aguardando Orçamento
-                    </>
-                  ) : hasZeroPages(project.files) ? (
-                    <>
-                      <FaClock />
-                      Aguardando orçamento
-                    </>
-                  ) : typeof project.payment_status === "object" &&
-                    project.payment_status.status === "Divergência" ? (
-                    <>
-                      <FaCreditCard />
-                      Ag. Pagamento da divergência
-                    </>
-                  ) : project.payment_status === "Pago" ? (
-                    <>
-                      <FaCreditCard />
-                      Pago
-                    </>
-                  ) : (
-                    <>
-                      <FaCreditCard />
-                      Ir para pagamento
-                    </>
-                  )}
-                </button>
-              )
-            ) : (
+            {(typeof project.payment_status === "object" &&
+              project.payment_status.status === "Pago") ||
+            project.payment_status === "Pago" ? (
               <button
                 disabled
                 className="w-full md:w-[350px] px-4 md:px-6 py-2 md:py-3 bg-gray-500 text-white text-sm md:text-base rounded-lg border-none cursor-not-allowed flex items-center justify-center gap-2"
               >
                 <FaCreditCard />
                 Pago
+              </button>
+            ) : project.project_status === "Ag. Aprovação" ? (
+              <button
+                onClick={() => setShowApprovalModal(true)}
+                className="w-full md:w-[350px] px-4 md:px-6 py-2 md:py-3 bg-green-500 text-white text-sm md:text-base rounded-lg border-none cursor-pointer transition-colors duration-200 hover:bg-green-600 flex items-center justify-center gap-2"
+              >
+                <FaUserCheck />
+                Aprovar
+              </button>
+            ) : project.collection === "b2bdocprojects" ||
+              project.collection === "b2cdocprojects" ? (
+              <button
+                disabled
+                className="w-full md:w-[350px] px-4 md:px-6 py-2 md:py-3 bg-gray-500 text-white text-sm md:text-base rounded-lg border-none cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                <FaClock />
+                Aguardando Orçamento
+              </button>
+            ) : (
+              <button
+                onClick={() => {
+                  if (
+                    project.collection === "b2bdocsaved" ||
+                    project.collection === "b2cdocsaved"
+                  ) {
+                    handleRequestQuote();
+                  } else {
+                    navigate("/client/checkout", {
+                      state: {
+                        selectedProjects: [projectId],
+                        collection: project.collection,
+                      },
+                    });
+                  }
+                }}
+                disabled={
+                  project.collection === "b2bdocsaved" ||
+                  project.collection === "b2cdocsaved"
+                    ? false
+                    : project.collection === "b2bdocprojects" ||
+                      project.collection === "b2cdocprojects" ||
+                      hasZeroPages(project.files) ||
+                      (typeof project.payment_status === "object" &&
+                        project.payment_status.status === "Divergência") ||
+                      (typeof project.payment_status === "object" &&
+                        project.payment_status.status === "Pago") ||
+                      project.payment_status === "Pago"
+                }
+                className={`w-full md:w-[350px] px-4 md:px-6 py-2 md:py-3 text-white text-sm md:text-base rounded-lg border-none transition-colors duration-200 flex items-center justify-center gap-2 ${
+                  project.collection === "b2bdocsaved" ||
+                  project.collection === "b2cdocsaved"
+                    ? "bg-blue-500 hover:bg-blue-600 cursor-pointer"
+                    : project.collection === "b2bdocprojects" ||
+                      project.collection === "b2cdocprojects" ||
+                      hasZeroPages(project.files) ||
+                      (typeof project.payment_status === "object" &&
+                        project.payment_status.status === "Divergência") ||
+                      (typeof project.payment_status === "object" &&
+                        project.payment_status.status === "Pago") ||
+                      project.payment_status === "Pago"
+                    ? "bg-gray-500 cursor-not-allowed"
+                    : "bg-blue-500 hover:bg-blue-600 cursor-pointer"
+                }`}
+              >
+                {project.collection === "b2bdocsaved" ||
+                project.collection === "b2cdocsaved" ? (
+                  <>
+                    <FaFileAlt />
+                    Solicitar Orçamento
+                  </>
+                ) : project.collection === "b2bdocprojects" ||
+                  project.collection === "b2cdocprojects" ? (
+                  <>
+                    <FaClock />
+                    Aguardando Orçamento
+                  </>
+                ) : hasZeroPages(project.files) ? (
+                  <>
+                    <FaClock />
+                    Aguardando orçamento
+                  </>
+                ) : typeof project.payment_status === "object" &&
+                  project.payment_status.status === "Divergência" ? (
+                  <>
+                    <FaCreditCard />
+                    Ag. Pagamento da divergência
+                  </>
+                ) : (typeof project.payment_status === "object" &&
+                    project.payment_status.status === "Pago") ||
+                  project.payment_status === "Pago" ? (
+                  <>
+                    <FaCreditCard />
+                    Pago
+                  </>
+                ) : (
+                  <>
+                    <FaCreditCard />
+                    Ir para pagamento
+                  </>
+                )}
               </button>
             )}
           </div>

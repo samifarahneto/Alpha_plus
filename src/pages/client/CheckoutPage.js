@@ -361,7 +361,7 @@ const CheckoutPage = () => {
           },
         };
 
-        console.log("Dados do log de erro:", errorLogData); // Debug
+        console.log("Dados do log de erro:", errorLogData);
         await addDoc(collection(getFirestore(), "activity_logs"), errorLogData);
 
         navigate("/client/payment-error", {
@@ -370,7 +370,7 @@ const CheckoutPage = () => {
             selectedProjects: projects.map((project) => project.id),
           },
         });
-      } else if (paymentResult.paymentIntent.status === "succeeded") {
+      } else {
         const batch = writeBatch(getFirestore());
 
         // Debug logs
@@ -394,13 +394,13 @@ const CheckoutPage = () => {
           },
         };
 
-        console.log("Dados do log de sucesso:", logData); // Debug
+        console.log("Dados do log de sucesso:", logData);
         await addDoc(collection(getFirestore(), "activity_logs"), logData);
 
         // Para cada projeto no pagamento
         for (const project of projects) {
           if (isDivergencePayment) {
-            // Se for pagamento de divergência, apenas atualizar o status
+            // Se for pagamento de divergência, atualizar o status e adicionar ao histórico
             const projectRef = doc(
               getFirestore(),
               project.collection,
@@ -432,9 +432,29 @@ const CheckoutPage = () => {
             const year = newDeadline.getFullYear();
             const formattedDeadlineDate = `${day}/${month}/${year}`;
 
+            // Manter os valores existentes e atualizar apenas o necessário
+            const currentPaymentStatus = project.payment_status || {};
+            const currentInitialPayment =
+              typeof currentPaymentStatus === "object"
+                ? currentPaymentStatus.initialPayment ||
+                  project.totalProjectValue ||
+                  0
+                : currentPaymentStatus === "Pago"
+                ? project.totalProjectValue || 0
+                : 0;
+
             // Atualizar o documento com o novo histórico e prazo ajustado
             batch.update(projectRef, {
-              payment_status: "Pago",
+              payment_status: {
+                status: "Pago",
+                initialPayment: currentInitialPayment,
+                divergencePayment: Number(divergenceValue),
+                totalPayment: currentInitialPayment + Number(divergenceValue),
+                pages: project.payment_status.pages,
+                reason: project.payment_status.reason,
+                paymentDate: new Date().toISOString(),
+              },
+              project_status: "Em Análise",
               updatedAt: serverTimestamp(),
               paymentHistory: arrayUnion(paymentHistory),
               deadlineDate: formattedDeadlineDate,
@@ -484,9 +504,22 @@ const CheckoutPage = () => {
               project.id
             );
 
+            // Calcular o valor total do projeto
+            const totalValue = project.files.reduce((sum, file) => {
+              const fileTotal =
+                Number(file.total) || Number(file.totalValue) || 0;
+              return sum + fileTotal;
+            }, 0);
+
             batch.set(projectRef, {
               ...project,
-              payment_status: "Pago",
+              payment_status: {
+                status: "Pago",
+                initialPayment: totalValue,
+                divergencePayment: 0,
+                totalPayment: totalValue,
+                paymentDate: new Date().toISOString(),
+              },
               project_status: "Em Análise",
               translation_status: "N/A",
               collection: targetCollection,
