@@ -119,9 +119,9 @@ const MasterProjects = ({ style, isMobile }) => {
   ];
 
   const projectStatusOptions = [
-    { value: "Ag. Orçamento", label: "Ag. Orçamento" },
-    { value: "Ag. Aprovação", label: "Ag. Aprovação" },
-    { value: "Ag. Pagamento", label: "Ag. Pagamento" },
+    { value: "Ag. Orçamento", label: "Aguardando Orçamento" },
+    { value: "Ag. Aprovação", label: "Aguardando Aprovação" },
+    { value: "Ag. Pagamento", label: "Aguardando Pagamento" },
     { value: "Em Análise", label: "Em Análise" },
     { value: "Em Andamento", label: "Em Andamento" },
     { value: "Cancelado", label: "Cancelado" },
@@ -185,12 +185,6 @@ const MasterProjects = ({ style, isMobile }) => {
               files: change.doc.data().files || [],
               collection: collectionName,
             };
-
-            console.log("Processando projeto:", {
-              id: projectData.id,
-              collection: collectionName,
-              hasFiles: !!projectData.files,
-            });
 
             const index = newUploads.findIndex((p) => p.id === change.doc.id);
 
@@ -450,27 +444,80 @@ const MasterProjects = ({ style, isMobile }) => {
     }
   };
 
-  const handleRowClick = (row) => {
-    console.log("Projeto clicado:", row);
-    const uploadId = row.id;
-    const upload = allUploads.find((upload) => {
+  const handleRowClick = async (project) => {
+    console.log("Projeto clicado:", project);
+    console.log("Total de projetos disponíveis:", allUploads.length);
+
+    const firestore = getFirestore();
+
+    // Extrair o ID do projeto
+    const uploadId = project.id;
+
+    // Encontrar o projeto em todas as listas
+    const selectedUpload = allUploads.find((upload) => {
       console.log("Verificando projeto:", upload.id);
       return upload.id === uploadId;
     });
 
-    if (upload) {
-      console.log("Projeto encontrado:", upload);
-      const collection = upload.collection;
-      console.log("Coleção do projeto:", collection);
-      navigate(`/company/master/project/${uploadId}?collection=${collection}`, {
-        state: { project: upload, collection: collection },
-      });
-    } else {
-      console.error("Projeto não encontrado:", uploadId);
-      console.log(
+    if (!selectedUpload) {
+      console.error("Projeto não encontrado. ID:", uploadId);
+      console.error(
         "Projetos disponíveis:",
-        allUploads.map((u) => ({ id: u.id, collection: u.collection }))
+        allUploads.map((u) => u.id)
       );
+      return;
+    }
+
+    console.log("Projeto encontrado:", selectedUpload);
+
+    // Determinar a coleção correta
+    const collectionName = selectedUpload.collection;
+    console.log("Coleção do projeto:", collectionName);
+
+    if (!collectionName) {
+      console.error("Coleção não encontrada no projeto:", selectedUpload);
+      return;
+    }
+
+    const uploadDoc = doc(firestore, collectionName, uploadId);
+
+    try {
+      // Atualiza os arquivos como lidos
+      const updatedFiles = selectedUpload.files.map((file) => ({
+        ...file,
+        isRead: true,
+      }));
+
+      // Atualizar o documento no Firestore com os arquivos lidos e o isRead do documento principal
+      await updateDoc(uploadDoc, {
+        files: updatedFiles,
+        isRead: true,
+      });
+
+      // Navegar para a página de detalhes com a coleção correta
+      const url = `/company/master/project/${uploadId}?collection=${collectionName}`;
+      console.log("Navegando para:", url);
+      console.log("Estado sendo passado:", {
+        project: selectedUpload,
+        collection: collectionName,
+      });
+
+      // Garantir que o projeto tenha todos os dados necessários
+      const projectToPass = {
+        ...selectedUpload,
+        id: uploadId,
+        collection: collectionName,
+        files: updatedFiles,
+      };
+
+      navigate(url, {
+        state: {
+          project: projectToPass,
+          collection: collectionName,
+        },
+      });
+    } catch (error) {
+      console.error("Erro ao atualizar o projeto:", error);
     }
   };
 
@@ -542,52 +589,49 @@ const MasterProjects = ({ style, isMobile }) => {
   };
 
   const formatDeadline = (deadline, deadlineDate) => {
-    // Se deadlineDate for "A Definir" ou null, retorna "A Definir"
-    if (deadlineDate === "A Definir" || deadlineDate === null) {
-      return "A Definir";
-    }
+    if (!deadline && !deadlineDate) return "A definir";
 
-    // Se deadlineDate for uma data ISO (contém "T")
+    // Se for uma data ISO, converter para dd/mm/yyyy
     if (deadlineDate && deadlineDate.includes("T")) {
       const date = new Date(deadlineDate);
       // Ajustar para GMT-3
-      date.setHours(date.getHours() + 3);
-      return date.toLocaleDateString("pt-BR", {
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-      });
+      date.setHours(date.getHours() - 3);
+      const day = date.getDate().toString().padStart(2, "0");
+      const month = (date.getMonth() + 1).toString().padStart(2, "0");
+      const year = date.getFullYear();
+      return `${day}/${month}/${year}`;
     }
 
-    // Se deadlineDate já estiver no formato dd/mm/yyyy
+    // Se já estiver no formato dd/mm/yyyy, retornar como está
     if (deadlineDate && deadlineDate.includes("/")) {
       return deadlineDate;
     }
 
-    // Se não houver deadlineDate, usa o deadline para calcular
-    if (deadline) {
+    // Se for dias úteis, calcular a data de entrega
+    if (deadline && deadline.includes("dias úteis")) {
       const days = parseInt(deadline);
       if (!isNaN(days)) {
-        const today = new Date();
-        let businessDays = 0;
-        let currentDate = new Date(today);
+        const currentDate = new Date();
+        // Ajustar para GMT-3
+        currentDate.setHours(currentDate.getHours() - 3);
+        let businessDays = days;
+        let currentDay = new Date(currentDate);
 
-        while (businessDays < days) {
-          currentDate.setDate(currentDate.getDate() + 1);
-          if (currentDate.getDay() !== 0 && currentDate.getDay() !== 6) {
-            businessDays++;
+        while (businessDays > 0) {
+          currentDay.setDate(currentDay.getDate() + 1);
+          if (currentDay.getDay() !== 0 && currentDay.getDay() !== 6) {
+            businessDays -= 1;
           }
         }
 
-        return currentDate.toLocaleDateString("pt-BR", {
-          day: "2-digit",
-          month: "2-digit",
-          year: "numeric",
-        });
+        const day = currentDay.getDate().toString().padStart(2, "0");
+        const month = (currentDay.getMonth() + 1).toString().padStart(2, "0");
+        const year = currentDay.getFullYear();
+        return `${day}/${month}/${year}`;
       }
     }
 
-    return "A Definir";
+    return deadline || "A definir";
   };
 
   const renderFilesModal = () => {
@@ -1108,7 +1152,7 @@ const MasterProjects = ({ style, isMobile }) => {
                     value={sourceLanguageFilter}
                     onChange={handleSourceLanguageFilterChange}
                     options={sourceLanguageOptions}
-                    placeholder="Selecione"
+                    placeholder="Selecione as línguas..."
                     className="text-sm w-full"
                     labelClassName="text-center lg:text-center"
                     containerClassName="flex flex-col items-center gap-1"
@@ -1150,7 +1194,7 @@ const MasterProjects = ({ style, isMobile }) => {
                     value={projectStatusFilter}
                     onChange={handleProjectStatusFilterChange}
                     options={projectStatusOptions}
-                    placeholder="Selecione"
+                    placeholder="Selecione os status..."
                     className="text-sm w-full"
                     labelClassName="text-center lg:text-center"
                     containerClassName="flex flex-col items-center gap-1"
@@ -1164,7 +1208,7 @@ const MasterProjects = ({ style, isMobile }) => {
                     value={translationStatusFilter}
                     onChange={handleTranslationStatusFilterChange}
                     options={translationStatusOptions}
-                    placeholder="Selecione"
+                    placeholder="Selecione os status..."
                     className="text-sm w-full"
                     labelClassName="text-center lg:text-center"
                     containerClassName="flex flex-col items-center gap-1"
@@ -1249,7 +1293,7 @@ const MasterProjects = ({ style, isMobile }) => {
                   value={sourceLanguageFilter}
                   onChange={handleSourceLanguageFilterChange}
                   options={sourceLanguageOptions}
-                  placeholder="Selecione"
+                  placeholder="Selecione as línguas..."
                   className="text-sm w-full"
                   labelClassName="text-center"
                 />
@@ -1288,7 +1332,7 @@ const MasterProjects = ({ style, isMobile }) => {
                   value={projectStatusFilter}
                   onChange={handleProjectStatusFilterChange}
                   options={projectStatusOptions}
-                  placeholder="Selecione"
+                  placeholder="Selecione os status..."
                   className="text-sm w-full"
                   labelClassName="text-center"
                 />
@@ -1301,7 +1345,7 @@ const MasterProjects = ({ style, isMobile }) => {
                   value={translationStatusFilter}
                   onChange={handleTranslationStatusFilterChange}
                   options={translationStatusOptions}
-                  placeholder="Selecione"
+                  placeholder="Selecione os status..."
                   className="text-sm w-full"
                   labelClassName="text-center"
                 />

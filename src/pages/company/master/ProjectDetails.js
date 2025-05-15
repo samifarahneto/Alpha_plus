@@ -1134,10 +1134,7 @@ const ProjectDetails = () => {
         approvedAt: serverTimestamp(),
         approvedBy: project.userEmail,
         approvedByName: userData.nomeCompleto || "N/A",
-        project_status:
-          project.collection === "b2cdocprojects"
-            ? "Ag. Pagamento"
-            : "Ag. Aprovação",
+        project_status: "Ag. Pagamento",
         payment_status: "Pendente",
         translation_status: "N/A",
         totalValue: newTotalProjectValue,

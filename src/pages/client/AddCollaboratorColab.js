@@ -15,7 +15,8 @@ const AddCollaboratorColab = () => {
   const [email, setEmail] = useState("");
   const [registeredEmails, setRegisteredEmails] = useState([]);
   const [pendingEmails, setPendingEmails] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isAddingLoading, setIsAddingLoading] = useState(false);
+  const [isDeletingLoading, setIsDeletingLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [currentUserEmail, setCurrentUserEmail] = useState("");
@@ -23,6 +24,18 @@ const AddCollaboratorColab = () => {
   const [selectedCollaborator, setSelectedCollaborator] = useState(null);
   const [availableEmails, setAvailableEmails] = useState([]);
   const [selectedPermissions, setSelectedPermissions] = useState([]);
+
+  // Adicionar useEffect para limpar mensagens após 5 segundos
+  useEffect(() => {
+    let timeout;
+    if (successMessage || errorMessage) {
+      timeout = setTimeout(() => {
+        setSuccessMessage("");
+        setErrorMessage("");
+      }, 5000);
+    }
+    return () => clearTimeout(timeout);
+  }, [successMessage, errorMessage]);
 
   const fetchEmails = useCallback(async () => {
     try {
@@ -92,14 +105,14 @@ const AddCollaboratorColab = () => {
     }
 
     try {
-      setIsLoading(true);
+      setIsAddingLoading(true);
       const firestore = getFirestore();
       const auth = getAuth();
       const currentUser = auth.currentUser;
 
       if (!currentUser) {
         setErrorMessage("Usuário não autenticado.");
-        setIsLoading(false);
+        setIsAddingLoading(false);
         return;
       }
 
@@ -116,7 +129,7 @@ const AddCollaboratorColab = () => {
         setErrorMessage(
           "Este email já está cadastrado como usuário no sistema."
         );
-        setIsLoading(false);
+        setIsAddingLoading(false);
         return;
       }
 
@@ -129,7 +142,7 @@ const AddCollaboratorColab = () => {
       );
       if (!querySnapshot.empty) {
         setErrorMessage("Este email já foi adicionado como colaborador.");
-        setIsLoading(false);
+        setIsAddingLoading(false);
         return;
       }
 
@@ -138,7 +151,7 @@ const AddCollaboratorColab = () => {
           `Tem certeza de que deseja adicionar o email: ${sanitizedEmail}?`
         )
       ) {
-        setIsLoading(false);
+        setIsAddingLoading(false);
         return;
       }
 
@@ -151,7 +164,7 @@ const AddCollaboratorColab = () => {
 
       if (userSnapshot.empty) {
         setErrorMessage("Usuário não encontrado no banco de dados.");
-        setIsLoading(false);
+        setIsAddingLoading(false);
         return;
       }
 
@@ -199,7 +212,7 @@ const AddCollaboratorColab = () => {
     } catch (error) {
       setErrorMessage("Erro ao adicionar colaborador: " + error.message);
     } finally {
-      setIsLoading(false);
+      setIsAddingLoading(false);
     }
   };
 
@@ -492,14 +505,14 @@ const AddCollaboratorColab = () => {
     }
 
     try {
-      setIsLoading(true);
+      setIsDeletingLoading(true);
       const firestore = getFirestore();
       const auth = getAuth();
       const currentUser = auth.currentUser;
 
       if (!currentUser) {
         setErrorMessage("Usuário não autenticado.");
-        setIsLoading(false);
+        setIsDeletingLoading(false);
         return;
       }
 
@@ -602,7 +615,7 @@ const AddCollaboratorColab = () => {
       console.error("Erro detalhado:", error);
       setErrorMessage("Erro ao excluir colaborador: " + error.message);
     } finally {
-      setIsLoading(false);
+      setIsDeletingLoading(false);
     }
   };
 
@@ -639,18 +652,18 @@ const AddCollaboratorColab = () => {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="Digite o email do colaborador"
                 className="flex-1 px-3 sm:px-4 py-2 sm:py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
-                disabled={isLoading}
+                disabled={isAddingLoading}
               />
               <button
                 onClick={handleAddCollaborator}
-                disabled={isLoading}
+                disabled={isAddingLoading}
                 className={`w-full sm:w-[230px] px-4 sm:px-6 py-2 sm:py-2.5 rounded-lg text-white text-sm font-medium transition-colors ${
-                  isLoading
+                  isAddingLoading
                     ? "bg-gray-400 cursor-not-allowed"
                     : "bg-blue-500 hover:bg-blue-600"
                 }`}
               >
-                {isLoading ? "Adicionando..." : "Adicionar"}
+                {isAddingLoading ? "Adicionando..." : "Adicionar"}
               </button>
             </div>
           </div>
@@ -682,6 +695,7 @@ const AddCollaboratorColab = () => {
                       <td className="px-2 py-1.5 whitespace-nowrap text-center">
                         <button
                           onClick={() => handleDeleteEmail(email)}
+                          disabled={isDeletingLoading}
                           className="text-red-500 hover:text-red-700 transition-colors bg-transparent border-none cursor-pointer p-0"
                           aria-label="Excluir"
                         >
@@ -766,6 +780,7 @@ const AddCollaboratorColab = () => {
                         </button>
                         <button
                           onClick={() => handleDeleteEmail(item.email)}
+                          disabled={isDeletingLoading}
                           className="text-red-500 hover:text-red-700 transition-colors bg-transparent border-none cursor-pointer p-0"
                           aria-label="Excluir"
                         >

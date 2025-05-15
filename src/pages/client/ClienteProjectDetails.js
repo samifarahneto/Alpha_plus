@@ -29,7 +29,6 @@ import {
   FaCalendar,
   FaMoneyBillWave,
   FaCreditCard,
-  FaUserCheck,
   FaCalendarAlt,
   FaUndo,
 } from "react-icons/fa";
@@ -1193,11 +1192,18 @@ const ClienteProjectDetails = () => {
               </button>
             ) : project.project_status === "Ag. Aprovação" ? (
               <button
-                onClick={() => setShowApprovalModal(true)}
-                className="w-full md:w-[350px] px-4 md:px-6 py-2 md:py-3 bg-green-500 text-white text-sm md:text-base rounded-lg border-none cursor-pointer transition-colors duration-200 hover:bg-green-600 flex items-center justify-center gap-2"
+                onClick={() => {
+                  navigate("/client/checkout", {
+                    state: {
+                      selectedProjects: [projectId],
+                      collection: project.collection,
+                    },
+                  });
+                }}
+                className="w-full md:w-[350px] px-4 md:px-6 py-2 md:py-3 bg-blue-500 text-white text-sm md:text-base rounded-lg border-none cursor-pointer transition-colors duration-200 hover:bg-blue-600 flex items-center justify-center gap-2"
               >
-                <FaUserCheck />
-                Aprovar
+                <FaCreditCard />
+                Ir para Pagamento
               </button>
             ) : project.collection === "b2bdocprojects" ||
               project.collection === "b2cdocprojects" ? (
