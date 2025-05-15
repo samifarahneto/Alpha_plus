@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { createUserWithEmailAndPassword } from "firebase/auth";
+import { createUserWithEmailAndPassword, signOut } from "firebase/auth"; // Adicionado signOut
 import { setDoc, doc, deleteDoc, getDoc } from "firebase/firestore";
 import { auth, db } from "../firebaseConfig";
 import { collection, query, where, getDocs, addDoc } from "firebase/firestore";
@@ -33,30 +33,24 @@ const Register = () => {
       setErro("Por favor, insira um email.");
       return;
     }
-
-    // Validação do formato do e-mail
     if (!/^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/.test(email)) {
       setErro("Email inválido. Verifique o formato.");
       return;
     }
-
     try {
       const q = query(
         collection(db, "emailcheck"),
         where("email", "==", email)
       );
       const querySnapshot = await getDocs(q);
-
       if (!querySnapshot.empty) {
         const docData = querySnapshot.docs[0].data();
         const registeredBy = docData.registeredBy || null;
-
         if (!registeredBy) {
           throw new Error(
             "O campo 'registeredBy' está ausente ou vazio na coleção 'emailcheck'."
           );
         }
-
         const result = { userType: "colab", registeredBy };
         setEmailCheckResult(result);
       } else {
@@ -65,9 +59,8 @@ const Register = () => {
           "Email não encontrado na base de colaboradores. Será registrado como cliente."
         );
       }
-
-      setErro(""); // Limpa erros anteriores
-      setStep(2); // Avança para a próxima etapa
+      setErro("");
+      setStep(2);
     } catch (error) {
       console.error("Erro na consulta à coleção emailcheck:", error);
       setErro("Erro ao verificar o email: " + error.message);
@@ -79,12 +72,10 @@ const Register = () => {
       setErro("As senhas não coincidem.");
       return;
     }
-
     if (!nomeCompleto.trim() || !email.trim() || !senha) {
       setErro("Por favor, preencha todos os campos.");
       return;
     }
-
     if (!emailCheckResult) {
       setErro(
         "Erro ao validar o email. Certifique-se de que seguiu o fluxo correto."
@@ -93,6 +84,7 @@ const Register = () => {
     }
 
     try {
+      // Firebase autentica automaticamente após createUserWithEmailAndPassword
       const userCredential = await createUserWithEmailAndPassword(
         auth,
         email,
@@ -100,7 +92,6 @@ const Register = () => {
       );
       const user = userCredential.user;
 
-      // Determinar o userType e valores de tradução
       let userType = "b2c";
       let pttoen = 0;
       let esptoen = 0;
@@ -108,13 +99,11 @@ const Register = () => {
       let canTest = false;
 
       if (emailCheckResult.userType === "colab") {
-        // Buscar informações do usuário que registrou o colaborador
         const q = query(
           collection(db, "users"),
           where("email", "==", emailCheckResult.registeredBy)
         );
         const querySnapshot = await getDocs(q);
-
         if (!querySnapshot.empty) {
           const registeredByDoc = querySnapshot.docs[0].data();
           userType = "colab";
@@ -123,18 +112,14 @@ const Register = () => {
           registeredByType = registeredByDoc.userType;
           canTest = registeredByDoc.canTest || false;
 
-          // Atualizar o log de atividade para o convite de colaborador
           const emailCheckQuery = query(
             collection(db, "emailcheck"),
             where("email", "==", email)
           );
           const emailCheckSnapshot = await getDocs(emailCheckQuery);
-
           if (!emailCheckSnapshot.empty) {
             const emailCheckDoc = emailCheckSnapshot.docs[0];
             const emailCheckData = emailCheckDoc.data();
-
-            // Criar o log de atividade com a mesma estrutura do AddCollaboratorColab.js
             const logData = {
               timestamp: new Date(),
               userEmail: emailCheckResult.registeredBy,
@@ -154,21 +139,15 @@ const Register = () => {
                   new Date().toLocaleString("pt-BR"),
               },
             };
-
-            // Adicionar o log de atividade
             await addDoc(collection(db, "activity_logs"), logData);
-
-            // Remover o documento do emailcheck após o registro
             await deleteDoc(emailCheckDoc.ref);
           }
         } else {
           throw new Error("Usuário registrador não encontrado");
         }
       } else {
-        // Para clientes normais, buscar valores globais
         const priceDocRef = doc(db, "priceperpage", "price");
         const priceDocSnap = await getDoc(priceDocRef);
-
         if (priceDocSnap.exists()) {
           const priceData = priceDocSnap.data();
           pttoen = priceData.pttoen ?? 0;
@@ -176,7 +155,6 @@ const Register = () => {
         }
       }
 
-      // Criar usuário no Firestore
       await setDoc(doc(db, "users", user.uid), {
         nomeCompleto,
         email,
@@ -189,20 +167,23 @@ const Register = () => {
         canTest: emailCheckResult.userType === "colab" ? canTest : false,
       });
 
-      // Remover entrada da coleção emailcheck, se for colaborador
       if (emailCheckResult.userType === "colab") {
         const emailCheckQuery = query(
           collection(db, "emailcheck"),
           where("email", "==", email)
         );
         const emailCheckSnapshot = await getDocs(emailCheckQuery);
-
         if (!emailCheckSnapshot.empty) {
           await deleteDoc(emailCheckSnapshot.docs[0].ref);
         }
       }
 
       alert("Usuário registrado com sucesso!");
+
+      // Adicionado: Fazer logout antes de navegar para o login
+      await signOut(auth);
+      console.log("Usuário deslogado após registro.");
+
       setStep(1);
       setNomeCompleto("");
       setEmail("");
@@ -212,13 +193,24 @@ const Register = () => {
       navigate("/login");
     } catch (error) {
       console.error("Erro ao registrar usuário:", error);
+      // Se o erro for na criação do usuário, ele não estará logado.
+      // Se o erro for após a criação (ex: no setDoc ou signOut), o usuário pode ter sido criado.
+      // O signOut aqui é uma tentativa de garantir o estado deslogado em caso de erro parcial.
+      try {
+        await signOut(auth);
+        console.log("Tentativa de logout após erro no registro.");
+      } catch (signOutError) {
+        console.error(
+          "Erro ao tentar deslogar após erro no registro:",
+          signOutError
+        );
+      }
       setErro("Erro ao registrar usuário: " + error.message);
     }
   };
 
   return (
     <>
-      {/* Hero Section - Fora do PageLayout */}
       <div className="w-screen overflow-hidden">
         <Hero
           backgroundImage={fundoImage}
@@ -227,15 +219,11 @@ const Register = () => {
           overlay="bg-black/40"
         />
       </div>
-
-      {/* Conteúdo Principal */}
       <div className="relative -mt-[60px] z-10 overflow-hidden">
         <PageLayout>
           <div className="font-poppins text-gray-800 min-h-screen flex flex-col">
             <main className="flex-grow">
-              {/* Espaço para o Hero */}
               <div className="h-[300px]"></div>
-
               <FormContainer
                 title="Faça seu cadastro"
                 error={erro}
@@ -283,7 +271,6 @@ const Register = () => {
                     </form>
                   </div>
                 )}
-
                 {step === 2 && (
                   <div className="h-[350px]">
                     <h3 className="text-xl font-semibold text-center mb-6">
@@ -344,8 +331,6 @@ const Register = () => {
           </div>
         </PageLayout>
       </div>
-
-      {/* Rodapé */}
       <Footer />
     </>
   );

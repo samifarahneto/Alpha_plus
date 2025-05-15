@@ -1,14 +1,13 @@
 import React, { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { useAuth } from "../contexts/AuthContext";
-import logo from "../assets/logo.png";
+import { useAuth } from "../contexts/AuthContext"; // Verifique se o caminho está correto
+import logo from "../assets/logo.png"; // Verifique se o caminho está correto
 import { FaBars, FaTimes } from "react-icons/fa";
 
 const Header = () => {
-  const { logout } = useAuth();
+  const { user, logout, isLoading } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
-  const { user } = useAuth();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const toggleSidebar = () => {
@@ -19,34 +18,12 @@ const Header = () => {
     setIsSidebarOpen(false);
   };
 
-  const isPublicRoute = () => {
-    const publicRoutes = ["/", "/login", "/register"];
-    return publicRoutes.includes(location.pathname);
-  };
-
-  const isMasterRoute = () => {
-    const isMaster = user?.userType === "master";
-    const isMasterPath = location.pathname.startsWith("/company/master");
-    return isMaster && isMasterPath;
-  };
-
-  const isB2BRoute = () => {
-    const isB2B = user?.userType === "b2b";
-    const isClientRoute = location.pathname.startsWith("/client");
-    return isB2B && isClientRoute;
-  };
-
-  const isB2CRoute = () => {
-    const isB2C = user?.userType === "b2c";
-    const isClientRoute = location.pathname.startsWith("/client");
-    return isB2C && isClientRoute;
-  };
-
-  const isColabRoute = () => {
-    const isColab = user?.userType === "colab";
-    const isClientRoute = location.pathname.startsWith("/client");
-    return isColab && isClientRoute;
-  };
+  // As funções isMasterRoute, isB2BRoute, etc., agora só precisam checar o user.userType,
+  // pois a lógica de rota pública e loading já foi tratada.
+  const isMasterUser = () => user?.userType === "master";
+  const isB2BUser = () => user?.userType === "b2b";
+  const isB2CUser = () => user?.userType === "b2c";
+  const isColabUser = () => user?.userType === "colab";
 
   const canAccessCollaborators = () => {
     return user?.userType === "b2b" || user?.userType === "b2c";
@@ -54,6 +31,7 @@ const Header = () => {
 
   const handleLogout = async () => {
     try {
+      closeSidebar(); // Fechar sidebar primeiro
       await logout();
       navigate("/login");
     } catch (error) {
@@ -77,7 +55,9 @@ const Header = () => {
         </button>
       </div>
       <div className="p-4">
-        <p className="text-gray-700 text-sm mb-4">Olá, {user?.email}</p>
+        {user && (
+          <p className="text-gray-700 text-sm mb-4">Olá, {user.email}</p>
+        )}
         <nav className="flex flex-col space-y-2">
           {links.map((link) => (
             <Link
@@ -85,7 +65,7 @@ const Header = () => {
               to={link.to}
               onClick={closeSidebar}
               className={`text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium ${
-                location.pathname.includes(link.activePath)
+                location.pathname.startsWith(link.to) // Usar startsWith para melhor correspondência de activePath
                   ? "text-primary font-bold bg-blue-50"
                   : ""
               }`}
@@ -94,10 +74,7 @@ const Header = () => {
             </Link>
           ))}
           <button
-            onClick={() => {
-              closeSidebar();
-              handleLogout();
-            }}
+            onClick={handleLogout}
             className="text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium text-left"
           >
             Sair
@@ -120,7 +97,6 @@ const Header = () => {
               />
             </Link>
           </div>
-
           <div className="hidden md:flex items-end space-x-4">
             <Link
               to="/"
@@ -156,33 +132,12 @@ const Header = () => {
 
   const renderMasterHeader = () => {
     const masterLinks = [
-      {
-        to: "/company/master/dashboard",
-        label: "Dashboard",
-        activePath: "/dashboard",
-      },
-      {
-        to: "/company/master/clients",
-        label: "Clientes",
-        activePath: "/clients",
-      },
-      {
-        to: "/company/master/employees",
-        label: "Funcionários",
-        activePath: "/employees",
-      },
-      {
-        to: "/company/master/projects",
-        label: "Projetos",
-        activePath: "/projects",
-      },
-      {
-        to: "/company/master/activity-logs",
-        label: "Log de Atividades",
-        activePath: "/activity-logs",
-      },
+      { to: "/company/master/dashboard", label: "Dashboard" },
+      { to: "/company/master/clients", label: "Clientes" },
+      { to: "/company/master/employees", label: "Funcionários" },
+      { to: "/company/master/projects", label: "Projetos" },
+      { to: "/company/master/activity-logs", label: "Log de Atividades" },
     ];
-
     return (
       <>
         <nav className="bg-white shadow-md fixed w-full top-0 z-40">
@@ -206,11 +161,11 @@ const Header = () => {
                   />
                 </Link>
               </div>
-
-              <div className="hidden md:block absolute left-1/2 transform -translate-x-1/2 text-center">
-                <p className="text-gray-700 text-sm">Olá, {user?.email}</p>
-              </div>
-
+              {user && (
+                <div className="hidden md:block absolute left-1/2 transform -translate-x-1/2 text-center">
+                  <p className="text-gray-700 text-sm">Olá, {user.email}</p>
+                </div>
+              )}
               <div className="flex items-end">
                 <Link
                   to="/company/master/dashboard"
@@ -228,7 +183,7 @@ const Header = () => {
                       key={link.to}
                       to={link.to}
                       className={`text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium ${
-                        location.pathname.includes(link.activePath)
+                        location.pathname.startsWith(link.to)
                           ? "text-primary font-bold"
                           : ""
                       }`}
@@ -253,25 +208,19 @@ const Header = () => {
   };
 
   const renderB2BOrB2CHeader = () => {
-    const clientLinks = [
-      { to: "/client/dashboard", label: "Dashboard", activePath: "/dashboard" },
-      {
-        to: "/client/projects/clientaddproject",
-        label: "Criar Projetos",
-        activePath: "/clientaddproject",
-      },
-      { to: "/client/projects", label: "Projetos", activePath: "/projects" },
-      { to: "/client/profile", label: "Meu Perfil", activePath: "/profile" },
+    const clientLinksBase = [
+      { to: "/client/dashboard", label: "Dashboard" },
+      { to: "/client/projects/clientaddproject", label: "Criar Projetos" },
+      { to: "/client/projects", label: "Projetos" },
+      { to: "/client/profile", label: "Meu Perfil" },
     ];
-
+    let clientLinks = [...clientLinksBase];
     if (canAccessCollaborators()) {
       clientLinks.splice(3, 0, {
         to: "/client/add-collaborator",
         label: "Colaboradores",
-        activePath: "/add-collaborator",
       });
     }
-
     return (
       <>
         <nav className="bg-white shadow-md fixed w-full top-0 z-40">
@@ -292,11 +241,11 @@ const Header = () => {
                   />
                 </Link>
               </div>
-
-              <div className="hidden md:block absolute left-1/2 transform -translate-x-1/2 text-center">
-                <p className="text-gray-700 text-sm">Olá, {user?.email}</p>
-              </div>
-
+              {user && (
+                <div className="hidden md:block absolute left-1/2 transform -translate-x-1/2 text-center">
+                  <p className="text-gray-700 text-sm">Olá, {user.email}</p>
+                </div>
+              )}
               <div className="flex items-end">
                 <Link
                   to="/client/dashboard"
@@ -314,7 +263,7 @@ const Header = () => {
                       key={link.to}
                       to={link.to}
                       className={`text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium ${
-                        location.pathname.includes(link.activePath)
+                        location.pathname.startsWith(link.to)
                           ? "text-primary font-bold"
                           : ""
                       }`}
@@ -340,16 +289,11 @@ const Header = () => {
 
   const renderColabHeader = () => {
     const colabLinks = [
-      { to: "/client/dashboard", label: "Dashboard", activePath: "/dashboard" },
-      {
-        to: "/client/projects/clientaddproject",
-        label: "Criar Projetos",
-        activePath: "/clientaddproject",
-      },
-      { to: "/client/projects", label: "Projetos", activePath: "/projects" },
-      { to: "/client/profile", label: "Meu Perfil", activePath: "/profile" },
+      { to: "/client/dashboard", label: "Dashboard" },
+      { to: "/client/projects/clientaddproject", label: "Criar Projetos" },
+      { to: "/client/projects", label: "Projetos" },
+      { to: "/client/profile", label: "Meu Perfil" },
     ];
-
     return (
       <>
         <nav className="bg-white shadow-md fixed w-full top-0 z-40">
@@ -370,11 +314,11 @@ const Header = () => {
                   />
                 </Link>
               </div>
-
-              <div className="hidden md:block absolute left-1/2 transform -translate-x-1/2 text-center">
-                <p className="text-gray-700 text-sm">Olá, {user?.email}</p>
-              </div>
-
+              {user && (
+                <div className="hidden md:block absolute left-1/2 transform -translate-x-1/2 text-center">
+                  <p className="text-gray-700 text-sm">Olá, {user.email}</p>
+                </div>
+              )}
               <div className="flex items-end">
                 <Link
                   to="/client/dashboard"
@@ -392,7 +336,7 @@ const Header = () => {
                       key={link.to}
                       to={link.to}
                       className={`text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium ${
-                        location.pathname.includes(link.activePath)
+                        location.pathname.startsWith(link.to)
                           ? "text-primary font-bold"
                           : ""
                       }`}
@@ -416,22 +360,38 @@ const Header = () => {
     );
   };
 
-  if (isPublicRoute()) {
+  if (isLoading) {
+    return null; // Ou um componente de carregamento, se preferir
+  }
+
+  // Prioridade: Se estiver nas páginas de login ou registro, sempre mostrar o header público.
+  if (location.pathname === "/login" || location.pathname === "/register") {
     return renderPublicHeader();
   }
 
-  if (isMasterRoute()) {
+  // Lógica de decisão principal para qual header renderizar:
+  // Se não houver usuário (e não estivermos em /login ou /register, já tratados),
+  // ou se a rota for a raiz "/", renderiza o header público.
+  if (!user || location.pathname === "/") {
+    return renderPublicHeader();
+  }
+
+  // A partir daqui, o usuário está logado e não estamos em /login, /register ou /.
+  if (isMasterUser()) {
     return renderMasterHeader();
   }
-
-  if (isB2BRoute() || isB2CRoute()) {
+  if (isB2BUser() || isB2CUser()) {
     return renderB2BOrB2CHeader();
   }
-
-  if (isColabRoute()) {
+  if (isColabUser()) {
     return renderColabHeader();
   }
 
+  // Fallback: Usuário logado, mas tipo não reconhecido ou estado inesperado.
+  console.warn(
+    "Header: Tipo de usuário não reconhecido ou estado inesperado, renderizando header público como fallback.",
+    user
+  );
   return renderPublicHeader();
 };
 
