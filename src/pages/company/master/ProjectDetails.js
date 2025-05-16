@@ -2230,7 +2230,7 @@ const ProjectDetails = () => {
                     className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-white text-gray-700 text-sm font-medium cursor-pointer transition-colors"
                   >
                     <option value="N/A">N/A</option>
-                    <option value="Em Andamento">Em Andamento</option>
+                    <option value="Em Tradução">Em Tradução</option>
                     <option value="Em Revisão">Em Revisão</option>
                     <option value="Em Certificação">Em Certificação</option>
                     <option value="Finalizado">Finalizado</option>
@@ -2849,7 +2849,7 @@ const ProjectDetails = () => {
                     })
                   }
                   className="w-full px-3 py-2 border rounded-lg"
-                  placeholder="Número de páginas"
+                  placeholder="Total de páginas NÃO pagas"
                 />
               </div>
               <div>

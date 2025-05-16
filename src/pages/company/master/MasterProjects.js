@@ -84,7 +84,7 @@ const MasterProjects = ({ style, isMobile }) => {
   const [translationStatusFilter, setTranslationStatusFilter] = useState([]);
 
   const columns = [
-    { id: "projectNumber", label: "Nº do Projeto", fixed: true },
+    { id: "projectNumber", label: "#", fixed: true },
     { id: "client", label: "Cliente", fixed: true },
     { id: "projectName", label: "Nome do Projeto", fixed: true },
     { id: "createdAt", label: "Data" },
