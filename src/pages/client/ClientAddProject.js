@@ -32,6 +32,7 @@ import {
   getDocs,
   writeBatch,
 } from "firebase/firestore";
+import { getFunctions, httpsCallable } from "firebase/functions";
 import { useNavigate } from "react-router-dom";
 
 const ClientAddProject = () => {
@@ -590,6 +591,12 @@ const ClientAddProject = () => {
         throw new Error("Dados do usuário não encontrados");
       }
 
+      // Obter o próximo ID de projeto usando a Cloud Function
+      const functions = getFunctions();
+      const getNextProjectId = httpsCallable(functions, "getNextProjectId");
+      const result = await getNextProjectId();
+      const projectNumber = result.data.projectId;
+
       const batch = writeBatch(firestore);
 
       // Processa os arquivos mantendo a contagem de páginas dos PDFs
@@ -656,6 +663,7 @@ const ClientAddProject = () => {
         approvedByName: userData.nomeCompleto || "Usuário Aprovador",
         collection: collectionName,
         convertCurrency: convertCurrency,
+        projectNumber, // Adicionando o número do projeto
       };
 
       // Criar referência para o novo documento
@@ -680,6 +688,7 @@ const ClientAddProject = () => {
           valorTotal: projectData.totalValue || 0,
           idiomaOrigem: sourceLanguage,
           idiomaDestino: targetLanguage,
+          projectNumber, // Adicionando o número do projeto ao log
         },
       };
       await addDoc(collection(firestore, "activity_logs"), logData);
@@ -834,6 +843,12 @@ const ClientAddProject = () => {
         }
       }
 
+      // Obter o próximo ID de projeto usando a Cloud Function
+      const functions = getFunctions();
+      const getNextProjectId = httpsCallable(functions, "getNextProjectId");
+      const result = await getNextProjectId();
+      const projectNumber = result.data.projectId;
+
       // Processa os arquivos mantendo a contagem de páginas dos PDFs
       const processedFiles = convertedFiles.map((file) => ({
         fileUrl: file.url,
@@ -898,6 +913,7 @@ const ClientAddProject = () => {
         approvedByName: userData.nomeCompleto || "Usuário Aprovador",
         collection: collectionName,
         convertCurrency: convertCurrency,
+        projectNumber, // Adicionando o número do projeto
       };
 
       console.log("Dados do projeto a serem salvos:", {
@@ -915,6 +931,7 @@ const ClientAddProject = () => {
               canTest: registeredByData.canTest,
             }
           : null,
+        projectNumber, // Adicionando o número do projeto ao log
       });
 
       await addDoc(collection(db, collectionName), projectDataToSave);
@@ -989,6 +1006,12 @@ const ClientAddProject = () => {
 
       const userData = userSnapshot.docs[0].data();
 
+      // Obter o próximo ID de projeto usando a Cloud Function
+      const functions = getFunctions();
+      const getNextProjectId = httpsCallable(functions, "getNextProjectId");
+      const result = await getNextProjectId();
+      const projectNumber = result.data.projectId;
+
       // Processa os arquivos mantendo a contagem de páginas dos PDFs
       const processedFiles = convertedFiles.map((file) => ({
         fileUrl: file.url,
@@ -1059,6 +1082,7 @@ const ClientAddProject = () => {
         approvedByName: userData.nomeCompleto || "Usuário Aprovador",
         collection: collectionName,
         convertCurrency: convertCurrency,
+        projectNumber, // Adicionando o número do projeto
       };
 
       const projectRef = await addDoc(

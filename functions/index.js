@@ -28,14 +28,6 @@ const corsHandler = cors({origin: true});
  */
 exports.getNextProjectId = functions.https.onCall(async (data, context) => {
     try {
-    // Verificar autenticação (opcional, dependendo dos requisitos de segurança)
-        if (!context.auth) {
-            throw new functions.https.HttpsError(
-                "unauthenticated",
-                "Usuário deve estar autenticado para obter um ID de projeto.",
-            );
-        }
-
         const db = admin.firestore();
 
         // Referência para o documento contador
