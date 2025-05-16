@@ -122,13 +122,6 @@ const Header = () => {
                 />
               </Link>
 
-              {/* User Info - Desktop */}
-              <div className="hidden md:block absolute left-1/2 transform -translate-x-1/2 text-center self-end">
-                <p className="text-gray-700 text-sm px-3 py-2">
-                  Olá, {user?.email}
-                </p>
-              </div>
-
               {/* Navigation Links - Desktop */}
               <div className="hidden md:flex items-end space-x-4 ml-auto self-end">
                 {publicLinks.map((link) => (

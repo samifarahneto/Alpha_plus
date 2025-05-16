@@ -2030,24 +2030,6 @@ const ProjectDetails = () => {
           ))}
         </div>
       </Card>
-
-      {/* Botão de Enviar para Aprovação */}
-      {(project.collection === "b2bdocprojects" ||
-        project.collection === "b2cdocprojects") && (
-        <div className="fixed bottom-4 left-4 right-4">
-          <button
-            onClick={handleSendToApproval}
-            disabled={isSendingApproval}
-            className={`w-full px-6 py-3 rounded-lg text-white font-medium text-sm ${
-              isSendingApproval
-                ? "bg-gray-400 cursor-not-allowed"
-                : "bg-blue-600 hover:bg-blue-700"
-            }`}
-          >
-            {isSendingApproval ? "Enviando..." : "Enviar para Aprovação"}
-          </button>
-        </div>
-      )}
     </div>
   );
 
@@ -3070,24 +3052,6 @@ const ProjectDetails = () => {
               </button>
             </div>
           </div>
-        </div>
-      )}
-
-      {/* Botão de Enviar para Aprovação */}
-      {(project.collection === "b2bdocprojects" ||
-        project.collection === "b2cdocprojects") && (
-        <div className="flex justify-end mt-4">
-          <button
-            onClick={handleSendToApproval}
-            disabled={isSendingApproval}
-            className={`px-6 py-2 rounded-lg text-white font-medium ${
-              isSendingApproval
-                ? "bg-gray-400 cursor-not-allowed"
-                : "bg-blue-600 hover:bg-blue-700"
-            }`}
-          >
-            {isSendingApproval ? "Enviando..." : "Enviar para Aprovação"}
-          </button>
         </div>
       )}
     </PageLayout>
