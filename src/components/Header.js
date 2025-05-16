@@ -9,17 +9,14 @@ const Header = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   useEffect(() => {
     if (!loading && user?.userType) {
       console.log("Usuário carregado:", user);
-      setIsInitialLoad(false);
     }
   }, [loading, user]);
 
-  if (loading || isInitialLoad) {
-    console.log("Carregando estado do usuário...");
+  if (loading) {
     return (
       <nav className="bg-white shadow-md fixed w-full top-0 z-40">
         <div className="w-full mx-auto">
@@ -48,16 +45,21 @@ const Header = () => {
     setIsSidebarOpen(false);
   };
 
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate("/login");
+    } catch (error) {
+      console.error("Erro ao fazer logout:", error);
+    }
+  };
+
   const isPublicRoute = () => {
-    console.log("isPublicRoute chamado. Usuário:", user, "Caminho:", location.pathname);
     if (!user || !user.userType) {
-      console.log("Retornando true porque o usuário não está autenticado ou o tipo de usuário não está definido.");
       return true;
     }
     const publicRoutes = ["/", "/login", "/register"];
-    const isPublic = publicRoutes.includes(location.pathname);
-    console.log("Retornando", isPublic, "para o caminho público.");
-    return isPublic;
+    return publicRoutes.includes(location.pathname);
   };
 
   const isMasterRoute = () => {
@@ -88,111 +90,102 @@ const Header = () => {
     return user?.userType === "b2b" || user?.userType === "b2c";
   };
 
-  const handleLogout = async () => {
-    try {
-      await logout();
-      navigate("/login");
-    } catch (error) {
-      console.error("Erro ao fazer logout:", error);
-    }
-  };
+  const renderPublicHeader = () => {
+    const publicLinks = [
+      { to: "/", label: "Início", activePath: "/" },
+      { to: "/register", label: "Registrar-se", activePath: "/register" },
+      { to: "/login", label: "Login", activePath: "/login" },
+    ];
 
-  if (!isPublicRoute() && !user?.userType) {
-    return null;
-  }
+    return (
+      <>
+        <nav className="bg-white shadow-md fixed w-full top-0 z-40">
+          <div className="w-full mx-auto">
+            <div className="flex justify-between items-end h-[70px] px-4 md:px-[100px]">
+              {/* Menu Button - Mobile */}
+              <button
+                onClick={toggleSidebar}
+                className="md:hidden text-gray-700 hover:text-primary p-2"
+              >
+                <FaBars className="w-6 h-6" />
+              </button>
 
-  const renderMobileMenu = (links) => (
-    <div
-      className={`fixed inset-y-0 left-0 transform ${
-        isSidebarOpen ? "translate-x-0" : "-translate-x-full"
-      } w-64 bg-white shadow-lg transition-transform duration-300 ease-in-out z-50`}
-    >
-      <div className="flex justify-between items-center p-4 border-b">
-        <img src={logo} alt="Logo" className="h-8 w-auto" />
-        <button
-          onClick={closeSidebar}
-          className="text-gray-500 hover:text-gray-700"
-        >
-          <FaTimes className="w-5 h-5" />
-        </button>
-      </div>
-      <div className="p-4">
-        <p className="text-gray-700 text-sm mb-4">Olá, {user?.email}</p>
-        <nav className="flex flex-col space-y-2">
-          {links.map((link) => (
-            <Link
-              key={link.to}
-              to={link.to}
-              onClick={closeSidebar}
-              className={`text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium ${
-                location.pathname.includes(link.activePath)
-                  ? "text-primary font-bold bg-blue-50"
-                  : ""
-              }`}
-            >
-              {link.label}
-            </Link>
-          ))}
-          <button
-            onClick={() => {
-              closeSidebar();
-              handleLogout();
-            }}
-            className="text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium text-left"
-          >
-            Sair
-          </button>
-        </nav>
-      </div>
-    </div>
-  );
+              {/* Logo - Mobile & Desktop */}
+              <Link
+                to="/company/master/dashboard"
+                className="flex-1 md:flex-none flex justify-center md:justify-start"
+              >
+                <img
+                  src={logo}
+                  alt="Logo"
+                  className="h-[60px] w-auto object-contain"
+                />
+              </Link>
 
-  const renderPublicHeader = () => (
-    <nav className="bg-white shadow-md fixed w-full top-0 z-40">
-      <div className="w-full mx-auto">
-        <div className="flex justify-between items-end h-[70px] px-4 md:px-[100px]">
-          <div className="flex items-end">
-            <Link to="/">
-              <img
-                src={logo}
-                alt="Logo"
-                className="h-[60px] w-auto object-contain"
-              />
-            </Link>
+              <div className="hidden md:flex items-end space-x-4">
+                {publicLinks.map((link) => (
+                  <Link
+                    key={link.to}
+                    to={link.to}
+                    className={`text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium ${
+                      location.pathname === link.activePath
+                        ? "text-primary font-bold"
+                        : ""
+                    }`}
+                  >
+                    {link.label}
+                  </Link>
+                ))}
+              </div>
+            </div>
           </div>
+        </nav>
 
-          <div className="hidden md:flex items-end space-x-4">
-            <Link
-              to="/"
-              className={`text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium ${
-                location.pathname === "/" ? "text-primary font-bold" : ""
-              }`}
+        {/* Sidebar Mobile */}
+        <div
+          className={`fixed inset-y-0 left-0 transform ${
+            isSidebarOpen ? "translate-x-0" : "-translate-x-full"
+          } w-64 bg-white shadow-lg transition-transform duration-300 ease-in-out z-50`}
+        >
+          <div className="flex justify-between items-center p-4 border-b">
+            <img src={logo} alt="Logo" className="h-8 w-auto" />
+            <button
+              onClick={closeSidebar}
+              className="text-gray-500 hover:text-gray-700"
             >
-              Início
-            </Link>
-            <Link
-              to="/register"
-              className={`text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium ${
-                location.pathname === "/register"
-                  ? "text-primary font-bold"
-                  : ""
-              }`}
-            >
-              Registrar-se
-            </Link>
-            <Link
-              to="/login"
-              className={`text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium ${
-                location.pathname === "/login" ? "text-primary font-bold" : ""
-              }`}
-            >
-              Login
-            </Link>
+              <FaTimes className="w-5 h-5" />
+            </button>
+          </div>
+          <div className="p-4">
+            <nav className="flex flex-col space-y-2">
+              {publicLinks.map((link) => (
+                <Link
+                  key={link.to}
+                  to={link.to}
+                  onClick={closeSidebar}
+                  className={`text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium ${
+                    location.pathname === link.activePath
+                      ? "text-primary font-bold bg-blue-50"
+                      : ""
+                  }`}
+                >
+                  {link.label}
+                </Link>
+              ))}
+            </nav>
           </div>
         </div>
-      </div>
-    </nav>
-  );
+
+        {/* Overlay para fechar o menu ao clicar fora */}
+        {isSidebarOpen && (
+          <div
+            className="fixed inset-0 bg-black bg-opacity-50 z-40"
+            onClick={closeSidebar}
+          />
+        )}
+      </>
+    );
+  };
 
   const renderMasterHeader = () => {
     const masterLinks = [
@@ -227,67 +220,110 @@ const Header = () => {
       <>
         <nav className="bg-white shadow-md fixed w-full top-0 z-40">
           <div className="w-full mx-auto">
-            <div className="flex justify-between items-end h-[70px] px-4 md:px-[100px]">
-              <div className="flex items-end md:flex-none">
-                <button
-                  onClick={toggleSidebar}
-                  className="md:hidden text-gray-700 hover:text-primary p-2"
-                >
-                  <FaBars className="w-6 h-6" />
-                </button>
-                <Link
-                  to="/company/master/dashboard"
-                  className="hidden md:block"
-                >
-                  <img
-                    src={logo}
-                    alt="Logo"
-                    className="h-[60px] w-auto object-contain"
-                  />
-                </Link>
-              </div>
+            <div className="flex items-center h-[70px] px-4 md:px-[100px]">
+              {/* Menu Button - Mobile */}
+              <button
+                onClick={toggleSidebar}
+                className="md:hidden text-gray-700 hover:text-primary p-2"
+              >
+                <FaBars className="w-6 h-6" />
+              </button>
 
+              {/* Logo - Mobile & Desktop */}
+              <Link
+                to="/company/master/dashboard"
+                className="flex-1 md:flex-none flex justify-center md:justify-start"
+              >
+                <img
+                  src={logo}
+                  alt="Logo"
+                  className="h-[60px] w-auto object-contain"
+                />
+              </Link>
+
+              {/* User Info - Desktop */}
               <div className="hidden md:block absolute left-1/2 transform -translate-x-1/2 text-center">
                 <p className="text-gray-700 text-sm">Olá, {user?.email}</p>
               </div>
 
-              <div className="flex items-end">
-                <Link
-                  to="/company/master/dashboard"
-                  className="md:hidden flex-1 flex justify-center"
-                >
-                  <img
-                    src={logo}
-                    alt="Logo"
-                    className="h-[50px] w-auto object-contain"
-                  />
-                </Link>
-                <div className="hidden md:flex items-end space-x-4">
-                  {masterLinks.map((link) => (
-                    <Link
-                      key={link.to}
-                      to={link.to}
-                      className={`text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium ${
-                        location.pathname.includes(link.activePath)
-                          ? "text-primary font-bold"
-                          : ""
-                      }`}
-                    >
-                      {link.label}
-                    </Link>
-                  ))}
-                  <button
-                    onClick={handleLogout}
-                    className="text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium"
+              {/* Navigation Links - Desktop */}
+              <div className="hidden md:flex items-center space-x-4 ml-auto">
+                {masterLinks.map((link) => (
+                  <Link
+                    key={link.to}
+                    to={link.to}
+                    className={`text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium ${
+                      location.pathname.includes(link.activePath)
+                        ? "text-primary font-bold"
+                        : ""
+                    }`}
                   >
-                    Sair
-                  </button>
-                </div>
+                    {link.label}
+                  </Link>
+                ))}
+                <button
+                  onClick={handleLogout}
+                  className="text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium"
+                >
+                  Sair
+                </button>
               </div>
             </div>
           </div>
         </nav>
-        {renderMobileMenu(masterLinks)}
+
+        {/* Sidebar Mobile */}
+        <div
+          className={`fixed inset-y-0 left-0 transform ${
+            isSidebarOpen ? "translate-x-0" : "-translate-x-full"
+          } w-64 bg-white shadow-lg transition-transform duration-300 ease-in-out z-50`}
+        >
+          <div className="flex justify-between items-center p-4 border-b">
+            <img src={logo} alt="Logo" className="h-8 w-auto" />
+            <button
+              onClick={closeSidebar}
+              className="text-gray-500 hover:text-gray-700"
+            >
+              <FaTimes className="w-5 h-5" />
+            </button>
+          </div>
+          <div className="p-4">
+            <p className="text-gray-700 text-sm mb-4">Olá, {user?.email}</p>
+            <nav className="flex flex-col space-y-2">
+              {masterLinks.map((link) => (
+                <Link
+                  key={link.to}
+                  to={link.to}
+                  onClick={closeSidebar}
+                  className={`text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium ${
+                    location.pathname.includes(link.activePath)
+                      ? "text-primary font-bold bg-blue-50"
+                      : ""
+                  }`}
+                >
+                  {link.label}
+                </Link>
+              ))}
+              <button
+                onClick={() => {
+                  closeSidebar();
+                  handleLogout();
+                }}
+                className="text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium text-left"
+              >
+                Sair
+              </button>
+            </nav>
+          </div>
+        </div>
+
+        {/* Overlay para fechar o menu ao clicar fora */}
+        {isSidebarOpen && (
+          <div
+            className="fixed inset-0 bg-black bg-opacity-50 z-40"
+            onClick={closeSidebar}
+          />
+        )}
       </>
     );
   };
@@ -316,64 +352,110 @@ const Header = () => {
       <>
         <nav className="bg-white shadow-md fixed w-full top-0 z-40">
           <div className="w-full mx-auto">
-            <div className="flex justify-between items-end h-[70px] px-4 md:px-[100px]">
-              <div className="flex items-end md:flex-none">
-                <button
-                  onClick={toggleSidebar}
-                  className="md:hidden text-gray-700 hover:text-primary p-2"
-                >
-                  <FaBars className="w-6 h-6" />
-                </button>
-                <Link to="/client/dashboard" className="hidden md:block">
-                  <img
-                    src={logo}
-                    alt="Logo"
-                    className="h-[60px] w-auto object-contain"
-                  />
-                </Link>
-              </div>
+            <div className="flex items-center h-[70px] px-4 md:px-[100px]">
+              {/* Menu Button - Mobile */}
+              <button
+                onClick={toggleSidebar}
+                className="md:hidden text-gray-700 hover:text-primary p-2"
+              >
+                <FaBars className="w-6 h-6" />
+              </button>
 
+              {/* Logo - Mobile & Desktop */}
+              <Link
+                to="/client/dashboard"
+                className="flex-1 md:flex-none flex justify-center md:justify-start"
+              >
+                <img
+                  src={logo}
+                  alt="Logo"
+                  className="h-[60px] w-auto object-contain"
+                />
+              </Link>
+
+              {/* User Info - Desktop */}
               <div className="hidden md:block absolute left-1/2 transform -translate-x-1/2 text-center">
                 <p className="text-gray-700 text-sm">Olá, {user?.email}</p>
               </div>
 
-              <div className="flex items-end">
-                <Link
-                  to="/client/dashboard"
-                  className="md:hidden flex-1 flex justify-center"
-                >
-                  <img
-                    src={logo}
-                    alt="Logo"
-                    className="h-[50px] w-auto object-contain"
-                  />
-                </Link>
-                <div className="hidden md:flex items-end space-x-4">
-                  {clientLinks.map((link) => (
-                    <Link
-                      key={link.to}
-                      to={link.to}
-                      className={`text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium ${
-                        location.pathname.includes(link.activePath)
-                          ? "text-primary font-bold"
-                          : ""
-                      }`}
-                    >
-                      {link.label}
-                    </Link>
-                  ))}
-                  <button
-                    onClick={handleLogout}
-                    className="text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium"
+              {/* Navigation Links - Desktop */}
+              <div className="hidden md:flex items-center space-x-4 ml-auto">
+                {clientLinks.map((link) => (
+                  <Link
+                    key={link.to}
+                    to={link.to}
+                    className={`text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium ${
+                      location.pathname.includes(link.activePath)
+                        ? "text-primary font-bold"
+                        : ""
+                    }`}
                   >
-                    Sair
-                  </button>
-                </div>
+                    {link.label}
+                  </Link>
+                ))}
+                <button
+                  onClick={handleLogout}
+                  className="text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium"
+                >
+                  Sair
+                </button>
               </div>
             </div>
           </div>
         </nav>
-        {renderMobileMenu(clientLinks)}
+
+        {/* Sidebar Mobile */}
+        <div
+          className={`fixed inset-y-0 left-0 transform ${
+            isSidebarOpen ? "translate-x-0" : "-translate-x-full"
+          } w-64 bg-white shadow-lg transition-transform duration-300 ease-in-out z-50`}
+        >
+          <div className="flex justify-between items-center p-4 border-b">
+            <img src={logo} alt="Logo" className="h-8 w-auto" />
+            <button
+              onClick={closeSidebar}
+              className="text-gray-500 hover:text-gray-700"
+            >
+              <FaTimes className="w-5 h-5" />
+            </button>
+          </div>
+          <div className="p-4">
+            <p className="text-gray-700 text-sm mb-4">Olá, {user?.email}</p>
+            <nav className="flex flex-col space-y-2">
+              {clientLinks.map((link) => (
+                <Link
+                  key={link.to}
+                  to={link.to}
+                  onClick={closeSidebar}
+                  className={`text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium ${
+                    location.pathname.includes(link.activePath)
+                      ? "text-primary font-bold bg-blue-50"
+                      : ""
+                  }`}
+                >
+                  {link.label}
+                </Link>
+              ))}
+              <button
+                onClick={() => {
+                  closeSidebar();
+                  handleLogout();
+                }}
+                className="text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium text-left"
+              >
+                Sair
+              </button>
+            </nav>
+          </div>
+        </div>
+
+        {/* Overlay para fechar o menu ao clicar fora */}
+        {isSidebarOpen && (
+          <div
+            className="fixed inset-0 bg-black bg-opacity-50 z-40"
+            onClick={closeSidebar}
+          />
+        )}
       </>
     );
   };
@@ -394,64 +476,110 @@ const Header = () => {
       <>
         <nav className="bg-white shadow-md fixed w-full top-0 z-40">
           <div className="w-full mx-auto">
-            <div className="flex justify-between items-end h-[70px] px-4 md:px-[100px]">
-              <div className="flex items-end md:flex-none">
-                <button
-                  onClick={toggleSidebar}
-                  className="md:hidden text-gray-700 hover:text-primary p-2"
-                >
-                  <FaBars className="w-6 h-6" />
-                </button>
-                <Link to="/client/dashboard" className="hidden md:block">
-                  <img
-                    src={logo}
-                    alt="Logo"
-                    className="h-[60px] w-auto object-contain"
-                  />
-                </Link>
-              </div>
+            <div className="flex items-center h-[70px] px-4 md:px-[100px]">
+              {/* Menu Button - Mobile */}
+              <button
+                onClick={toggleSidebar}
+                className="md:hidden text-gray-700 hover:text-primary p-2"
+              >
+                <FaBars className="w-6 h-6" />
+              </button>
 
+              {/* Logo - Mobile & Desktop */}
+              <Link
+                to="/client/dashboard"
+                className="flex-1 md:flex-none flex justify-center md:justify-start"
+              >
+                <img
+                  src={logo}
+                  alt="Logo"
+                  className="h-[60px] w-auto object-contain"
+                />
+              </Link>
+
+              {/* User Info - Desktop */}
               <div className="hidden md:block absolute left-1/2 transform -translate-x-1/2 text-center">
                 <p className="text-gray-700 text-sm">Olá, {user?.email}</p>
               </div>
 
-              <div className="flex items-end">
-                <Link
-                  to="/client/dashboard"
-                  className="md:hidden flex-1 flex justify-center"
-                >
-                  <img
-                    src={logo}
-                    alt="Logo"
-                    className="h-[50px] w-auto object-contain"
-                  />
-                </Link>
-                <div className="hidden md:flex items-end space-x-4">
-                  {colabLinks.map((link) => (
-                    <Link
-                      key={link.to}
-                      to={link.to}
-                      className={`text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium ${
-                        location.pathname.includes(link.activePath)
-                          ? "text-primary font-bold"
-                          : ""
-                      }`}
-                    >
-                      {link.label}
-                    </Link>
-                  ))}
-                  <button
-                    onClick={handleLogout}
-                    className="text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium"
+              {/* Navigation Links - Desktop */}
+              <div className="hidden md:flex items-center space-x-4 ml-auto">
+                {colabLinks.map((link) => (
+                  <Link
+                    key={link.to}
+                    to={link.to}
+                    className={`text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium ${
+                      location.pathname.includes(link.activePath)
+                        ? "text-primary font-bold"
+                        : ""
+                    }`}
                   >
-                    Sair
-                  </button>
-                </div>
+                    {link.label}
+                  </Link>
+                ))}
+                <button
+                  onClick={handleLogout}
+                  className="text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium"
+                >
+                  Sair
+                </button>
               </div>
             </div>
           </div>
         </nav>
-        {renderMobileMenu(colabLinks)}
+
+        {/* Sidebar Mobile */}
+        <div
+          className={`fixed inset-y-0 left-0 transform ${
+            isSidebarOpen ? "translate-x-0" : "-translate-x-full"
+          } w-64 bg-white shadow-lg transition-transform duration-300 ease-in-out z-50`}
+        >
+          <div className="flex justify-between items-center p-4 border-b">
+            <img src={logo} alt="Logo" className="h-8 w-auto" />
+            <button
+              onClick={closeSidebar}
+              className="text-gray-500 hover:text-gray-700"
+            >
+              <FaTimes className="w-5 h-5" />
+            </button>
+          </div>
+          <div className="p-4">
+            <p className="text-gray-700 text-sm mb-4">Olá, {user?.email}</p>
+            <nav className="flex flex-col space-y-2">
+              {colabLinks.map((link) => (
+                <Link
+                  key={link.to}
+                  to={link.to}
+                  onClick={closeSidebar}
+                  className={`text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium ${
+                    location.pathname.includes(link.activePath)
+                      ? "text-primary font-bold bg-blue-50"
+                      : ""
+                  }`}
+                >
+                  {link.label}
+                </Link>
+              ))}
+              <button
+                onClick={() => {
+                  closeSidebar();
+                  handleLogout();
+                }}
+                className="text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium text-left"
+              >
+                Sair
+              </button>
+            </nav>
+          </div>
+        </div>
+
+        {/* Overlay para fechar o menu ao clicar fora */}
+        {isSidebarOpen && (
+          <div
+            className="fixed inset-0 bg-black bg-opacity-50 z-40"
+            onClick={closeSidebar}
+          />
+        )}
       </>
     );
   };
