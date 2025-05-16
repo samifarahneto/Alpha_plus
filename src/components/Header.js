@@ -101,18 +101,18 @@ const Header = () => {
       <>
         <nav className="bg-white shadow-md fixed w-full top-0 z-40">
           <div className="w-full mx-auto">
-            <div className="flex justify-between items-end h-[70px] px-4 md:px-[100px]">
+            <div className="flex items-end h-[70px] px-4 md:px-[100px]">
               {/* Menu Button - Mobile */}
               <button
                 onClick={toggleSidebar}
-                className="md:hidden text-gray-700 hover:text-primary p-2"
+                className="md:hidden text-gray-700 hover:text-primary p-2 self-end"
               >
                 <FaBars className="w-6 h-6" />
               </button>
 
               {/* Logo - Mobile & Desktop */}
               <Link
-                to="/company/master/dashboard"
+                to={user ? "/client/dashboard" : "/"}
                 className="flex-1 md:flex-none flex justify-center md:justify-start"
               >
                 <img
@@ -122,7 +122,15 @@ const Header = () => {
                 />
               </Link>
 
-              <div className="hidden md:flex items-end space-x-4">
+              {/* User Info - Desktop */}
+              <div className="hidden md:block absolute left-1/2 transform -translate-x-1/2 text-center self-end">
+                <p className="text-gray-700 text-sm px-3 py-2">
+                  Olá, {user?.email}
+                </p>
+              </div>
+
+              {/* Navigation Links - Desktop */}
+              <div className="hidden md:flex items-end space-x-4 ml-auto self-end">
                 {publicLinks.map((link) => (
                   <Link
                     key={link.to}
@@ -220,11 +228,11 @@ const Header = () => {
       <>
         <nav className="bg-white shadow-md fixed w-full top-0 z-40">
           <div className="w-full mx-auto">
-            <div className="flex items-center h-[70px] px-4 md:px-[100px]">
+            <div className="flex items-end h-[70px] px-4 md:px-[100px]">
               {/* Menu Button - Mobile */}
               <button
                 onClick={toggleSidebar}
-                className="md:hidden text-gray-700 hover:text-primary p-2"
+                className="md:hidden text-gray-700 hover:text-primary p-2 self-end"
               >
                 <FaBars className="w-6 h-6" />
               </button>
@@ -242,12 +250,14 @@ const Header = () => {
               </Link>
 
               {/* User Info - Desktop */}
-              <div className="hidden md:block absolute left-1/2 transform -translate-x-1/2 text-center">
-                <p className="text-gray-700 text-sm">Olá, {user?.email}</p>
+              <div className="hidden md:block absolute left-1/2 transform -translate-x-1/2 text-center self-end">
+                <p className="text-gray-700 text-sm px-3 py-2">
+                  Olá, {user?.email}
+                </p>
               </div>
 
               {/* Navigation Links - Desktop */}
-              <div className="hidden md:flex items-center space-x-4 ml-auto">
+              <div className="hidden md:flex items-end space-x-4 ml-auto self-end">
                 {masterLinks.map((link) => (
                   <Link
                     key={link.to}
@@ -352,11 +362,11 @@ const Header = () => {
       <>
         <nav className="bg-white shadow-md fixed w-full top-0 z-40">
           <div className="w-full mx-auto">
-            <div className="flex items-center h-[70px] px-4 md:px-[100px]">
+            <div className="flex items-end h-[70px] px-4 md:px-[100px]">
               {/* Menu Button - Mobile */}
               <button
                 onClick={toggleSidebar}
-                className="md:hidden text-gray-700 hover:text-primary p-2"
+                className="md:hidden text-gray-700 hover:text-primary p-2 self-end"
               >
                 <FaBars className="w-6 h-6" />
               </button>
@@ -374,12 +384,14 @@ const Header = () => {
               </Link>
 
               {/* User Info - Desktop */}
-              <div className="hidden md:block absolute left-1/2 transform -translate-x-1/2 text-center">
-                <p className="text-gray-700 text-sm">Olá, {user?.email}</p>
+              <div className="hidden md:block absolute left-1/2 transform -translate-x-1/2 text-center self-end">
+                <p className="text-gray-700 text-sm px-3 py-2">
+                  Olá, {user?.email}
+                </p>
               </div>
 
               {/* Navigation Links - Desktop */}
-              <div className="hidden md:flex items-center space-x-4 ml-auto">
+              <div className="hidden md:flex items-end space-x-4 ml-auto self-end">
                 {clientLinks.map((link) => (
                   <Link
                     key={link.to}
@@ -476,11 +488,11 @@ const Header = () => {
       <>
         <nav className="bg-white shadow-md fixed w-full top-0 z-40">
           <div className="w-full mx-auto">
-            <div className="flex items-center h-[70px] px-4 md:px-[100px]">
+            <div className="flex items-end h-[70px] px-4 md:px-[100px]">
               {/* Menu Button - Mobile */}
               <button
                 onClick={toggleSidebar}
-                className="md:hidden text-gray-700 hover:text-primary p-2"
+                className="md:hidden text-gray-700 hover:text-primary p-2 self-end"
               >
                 <FaBars className="w-6 h-6" />
               </button>
@@ -498,12 +510,14 @@ const Header = () => {
               </Link>
 
               {/* User Info - Desktop */}
-              <div className="hidden md:block absolute left-1/2 transform -translate-x-1/2 text-center">
-                <p className="text-gray-700 text-sm">Olá, {user?.email}</p>
+              <div className="hidden md:block absolute left-1/2 transform -translate-x-1/2 text-center self-end">
+                <p className="text-gray-700 text-sm px-3 py-2">
+                  Olá, {user?.email}
+                </p>
               </div>
 
               {/* Navigation Links - Desktop */}
-              <div className="hidden md:flex items-center space-x-4 ml-auto">
+              <div className="hidden md:flex items-end space-x-4 ml-auto self-end">
                 {colabLinks.map((link) => (
                   <Link
                     key={link.to}
