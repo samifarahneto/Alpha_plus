@@ -51,6 +51,7 @@ const MasterProjects = ({ style, isMobile }) => {
     return savedVisibleColumns
       ? JSON.parse(savedVisibleColumns)
       : [
+          "projectNumber", // Nº do Projeto (fixo)
           "client", // Cliente (fixo)
           "projectName", // Nome do Projeto (fixo)
           "createdAt", // Data
@@ -83,6 +84,7 @@ const MasterProjects = ({ style, isMobile }) => {
   const [translationStatusFilter, setTranslationStatusFilter] = useState([]);
 
   const columns = [
+    { id: "projectNumber", label: "Nº do Projeto", fixed: true },
     { id: "client", label: "Cliente", fixed: true },
     { id: "projectName", label: "Nome do Projeto", fixed: true },
     { id: "createdAt", label: "Data" },
@@ -1388,6 +1390,7 @@ const MasterProjects = ({ style, isMobile }) => {
                 columns={columns}
                 data={currentRows.map((row) => ({
                   ...row,
+                  projectNumber: row.projectNumber || "N/A",
                   client:
                     clientTypes[row.userEmail]?.registeredBy ||
                     row.userEmail ||
