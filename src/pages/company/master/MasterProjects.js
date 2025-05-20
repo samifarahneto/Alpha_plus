@@ -130,7 +130,7 @@ const MasterProjects = ({ style, isMobile }) => {
   ];
 
   const translationStatusOptions = [
-    { value: "Em Andamento", label: "Em Andamento" },
+    { value: "Em Tradução", label: "Em Tradução" },
     { value: "Finalizado", label: "Finalizado" },
     { value: "Em Revisão", label: "Em Revisão" },
     { value: "Cancelado", label: "Cancelado" },
@@ -546,13 +546,13 @@ const MasterProjects = ({ style, isMobile }) => {
       // Atualizar apenas o translation_status
       updateData.translation_status = newStatus;
 
-      // Se o status for Em Andamento, Cancelado ou Finalizado, atualizar também o project_status
-      if (
-        newStatus === "Em Andamento" ||
-        newStatus === "Cancelado" ||
-        newStatus === "Finalizado"
-      ) {
+      // Se o status for Cancelado ou Finalizado, atualizar também o project_status
+      if (newStatus === "Cancelado" || newStatus === "Finalizado") {
         updateData.project_status = newStatus;
+      }
+      // Se o status for Em Tradução, manter project_status como 'Em Andamento'
+      else if (newStatus === "Em Tradução") {
+        updateData.project_status = "Em Andamento";
       }
 
       await updateDoc(projectRef, updateData);
@@ -988,6 +988,11 @@ const MasterProjects = ({ style, isMobile }) => {
 
   const renderProjectStatusBadge = (status) => {
     const statusConfig = {
+      "Em Tradução": {
+        bg: "bg-blue-50",
+        text: "text-blue-700",
+        border: "border-blue-200",
+      },
       "Em Andamento": {
         bg: "bg-blue-50",
         text: "text-blue-700",
@@ -1007,11 +1012,6 @@ const MasterProjects = ({ style, isMobile }) => {
         bg: "bg-red-50",
         text: "text-red-700",
         border: "border-red-200",
-      },
-      "Em Análise": {
-        bg: "bg-yellow-50",
-        text: "text-yellow-700",
-        border: "border-yellow-200",
       },
       "Ag. Orçamento": {
         bg: "bg-orange-50",
@@ -1494,7 +1494,7 @@ const MasterProjects = ({ style, isMobile }) => {
                       className={`w-full !h-6 !py-0 !text-xs font-medium rounded-full text-center ${
                         row.translation_status === "Finalizado"
                           ? "bg-green-50 text-green-700 border border-green-200"
-                          : row.translation_status === "Em Andamento"
+                          : row.translation_status === "Em Tradução"
                           ? "bg-blue-50 text-blue-700 border border-blue-200"
                           : row.translation_status === "Em Revisão"
                           ? "bg-yellow-50 text-yellow-700 border border-yellow-200"
@@ -1512,7 +1512,7 @@ const MasterProjects = ({ style, isMobile }) => {
                       ) : (
                         <>
                           <option value="N/A">N/A</option>
-                          <option value="Em Andamento">Em Andamento</option>
+                          <option value="Em Tradução">Em Tradução</option>
                           <option value="Em Revisão">Em Revisão</option>
                           <option value="Em Certificação">
                             Em Certificação

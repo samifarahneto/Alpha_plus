@@ -937,7 +937,7 @@ const ProjectDetails = () => {
 
       // Se o status for Em Andamento, Cancelado ou Finalizado, atualizar também o project_status
       if (
-        newStatus === "Em Andamento" ||
+        newStatus === "Em Tradução" ||
         newStatus === "Cancelado" ||
         newStatus === "Finalizado"
       ) {
@@ -1004,7 +1004,7 @@ const ProjectDetails = () => {
       const updateData = {
         project_status: newStatus,
         ...(newStatus === "Em Andamento" && {
-          translation_status: "Em Andamento",
+          translation_status: "Em Tradução",
         }),
         ...(newStatus === "Finalizado" && { translation_status: "Finalizado" }),
         ...(newStatus === "Cancelado" && { translation_status: "Cancelado" }),
@@ -1829,7 +1829,7 @@ const ProjectDetails = () => {
               className="px-3 py-1 rounded border border-gray-200 bg-white text-gray-700 text-sm font-medium whitespace-nowrap"
             >
               <option value="N/A">N/A</option>
-              <option value="Em Andamento">Em Andamento</option>
+              <option value="Em Tradução<">Em Tradução</option>
               <option value="Em Revisão">Em Revisão</option>
               <option value="Em Certificação">Em Certificação</option>
               <option value="Finalizado">Finalizado</option>
