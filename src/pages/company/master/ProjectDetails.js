@@ -1479,14 +1479,6 @@ const ProjectDetails = () => {
     }
   };
 
-  const calculateTotalPages = (files) => {
-    if (!files || !Array.isArray(files)) return 0;
-    return files.reduce(
-      (total, file) => total + (Number(file.pageCount) || 0),
-      0
-    );
-  };
-
   const calculateTotalValue = (files) => {
     if (!files || !Array.isArray(files)) return "0.00";
 
@@ -2568,14 +2560,17 @@ const ProjectDetails = () => {
               <div className="flex flex-col gap-2 w-full">
                 <div className="flex items-center justify-between">
                   <span className="text-sm md:text-base text-gray-700 font-semibold">
-                    Total de Páginas:
+                    Total de Páginas Inicial:
                   </span>
                   <span className="text-sm md:text-base text-gray-800">
-                    {calculateTotalPages(project.files)}
+                    {project.files.reduce(
+                      (total, file) => total + (Number(file.pageCount) || 0),
+                      0
+                    )}
                   </span>
                 </div>
                 {typeof project.payment_status === "object" &&
-                  project.payment_status.divergencePayment > 0 && (
+                  project.payment_status.pages > 0 && (
                     <>
                       <div className="flex items-center justify-between">
                         <span className="text-sm md:text-base text-gray-700 font-semibold">
@@ -2587,6 +2582,18 @@ const ProjectDetails = () => {
                       </div>
                       <div className="flex items-center justify-between">
                         <span className="text-sm md:text-base text-gray-700 font-semibold">
+                          Total de Páginas Final:
+                        </span>
+                        <span className="text-sm md:text-base text-gray-800">
+                          {project.files.reduce(
+                            (total, file) =>
+                              total + (Number(file.pageCount) || 0),
+                            0
+                          ) + Number(project.payment_status.pages || 0)}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm md:text-base text-gray-700 font-semibold">
                           Valor Divergência:
                         </span>
                         <span className="text-sm md:text-base text-gray-800">
@@ -2594,6 +2601,14 @@ const ProjectDetails = () => {
                           {Number(
                             project.payment_status.divergencePayment
                           ).toFixed(2)}
+                        </span>
+                      </div>
+                      <div className="flex flex-col gap-1 border-t border-gray-200 pt-2 mt-1">
+                        <span className="text-sm md:text-base text-gray-700 font-semibold">
+                          Motivo da Divergência:
+                        </span>
+                        <span className="text-sm md:text-base text-gray-800 bg-white p-2 rounded border border-gray-200">
+                          {project.payment_status.reason || "N/A"}
                         </span>
                       </div>
                     </>

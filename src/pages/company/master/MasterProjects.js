@@ -396,23 +396,37 @@ const MasterProjects = ({ style, isMobile }) => {
     };
   }, []);
 
-  const calculateTotalValue = (files) => {
+  const calculateTotalValue = (files, project) => {
     if (!files || !Array.isArray(files)) return "0.00";
 
-    return files
-      .reduce((acc, file) => {
-        const fileTotal = Number(file.total) || 0;
-        return acc + fileTotal;
-      }, 0)
-      .toFixed(2);
+    const baseValue = files.reduce((acc, file) => {
+      const fileTotal = Number(file.total) || Number(file.totalValue) || 0;
+      return acc + fileTotal;
+    }, 0);
+
+    // Se houver divergência, adicionar o valor da divergência
+    if (project?.payment_status?.divergencePayment) {
+      return (
+        baseValue + Number(project.payment_status.divergencePayment)
+      ).toFixed(2);
+    }
+
+    return baseValue.toFixed(2);
   };
 
-  const calculateTotalPages = (files) => {
+  const calculateTotalPages = (files, project) => {
     if (!files || !Array.isArray(files)) return 0;
-    return files.reduce((total, file) => {
-      const pageCount = parseInt(file.pageCount) || 0;
-      return total + pageCount;
-    }, 0);
+    const basePages = files.reduce(
+      (total, file) => total + (Number(file.pageCount) || 0),
+      0
+    );
+
+    // Se houver divergência, adicionar as páginas divergentes ao total
+    if (project?.payment_status?.pages) {
+      return basePages + Number(project.payment_status.pages);
+    }
+
+    return basePages;
   };
 
   const handleFileDownload = async (fileUrl) => {
@@ -814,14 +828,14 @@ const MasterProjects = ({ style, isMobile }) => {
         bValue = b.deadlineDate || b.deadline;
       } else if (config.key === "totalValue") {
         aValue = Number(
-          a.totalProjectValue || a.totalValue || calculateTotalValue(a.files)
+          a.totalProjectValue || a.totalValue || calculateTotalValue(a.files, a)
         );
         bValue = Number(
-          b.totalProjectValue || b.totalValue || calculateTotalValue(b.files)
+          b.totalProjectValue || b.totalValue || calculateTotalValue(b.files, b)
         );
       } else if (config.key === "pages") {
-        aValue = calculateTotalPages(a.files);
-        bValue = calculateTotalPages(b.files);
+        aValue = calculateTotalPages(a.files, a);
+        bValue = calculateTotalPages(b.files, b);
       } else if (config.key === "files") {
         aValue = a.files?.length || 0;
         bValue = b.files?.length || 0;
@@ -1411,7 +1425,7 @@ const MasterProjects = ({ style, isMobile }) => {
                         }
                       )
                     : "Sem Data",
-                  pages: calculateTotalPages(row.files) || "0",
+                  pages: calculateTotalPages(row.files, row) || "0",
                   filesDisplay: (
                     <div className="flex items-center justify-center gap-1">
                       <span className="text-xs font-medium">
@@ -1430,11 +1444,7 @@ const MasterProjects = ({ style, isMobile }) => {
                   ),
                   totalValue: (
                     <span className="text-xs font-medium">
-                      {`U$ ${Number(
-                        row.totalProjectValue ||
-                          row.totalValue ||
-                          calculateTotalValue(row.files)
-                      ).toFixed(2)}`}
+                      {`U$ ${calculateTotalValue(row.files, row)}`}
                     </span>
                   ),
                   paymentStatus: renderPaymentStatusBadge(
