@@ -1138,27 +1138,30 @@ const ClienteProjectDetails = () => {
                 <div className="flex justify-center mt-6 gap-4">
                   <button
                     onClick={() => {
-                      console.log("Dados sendo passados para o checkout:", {
-                        projectId,
-                        isDivergencePayment: true,
+                      const totalProjectValue = Number(
+                        project.totalProjectValue || project.totalValue
+                      );
+                      const totalPages = calculateTotalPages(project.files);
+                      const divergencePages = project.payment_status.pages;
+
+                      console.log("Cálculo do valor de divergência:", {
+                        totalProjectValue,
+                        totalPages,
+                        divergencePages,
+                        valuePerPage: totalProjectValue / totalPages,
                         divergenceValue: (
-                          (Number(
-                            project.totalProjectValue || project.totalValue
-                          ) /
-                            calculateTotalPages(project.files)) *
-                          project.payment_status.pages
+                          (totalProjectValue / totalPages) *
+                          divergencePages
                         ).toFixed(2),
                       });
+
                       navigate("/client/checkout", {
                         state: {
                           selectedProjects: [projectId],
                           isDivergencePayment: true,
                           divergenceValue: (
-                            (Number(
-                              project.totalProjectValue || project.totalValue
-                            ) /
-                              calculateTotalPages(project.files)) *
-                            project.payment_status.pages
+                            (totalProjectValue / totalPages) *
+                            divergencePages
                           ).toFixed(2),
                         },
                       });

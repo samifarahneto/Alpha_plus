@@ -10,6 +10,7 @@ import {
   collection,
   onSnapshot,
 } from "firebase/firestore";
+import PageLayout from "../../components/PageLayout";
 
 const PaymentPage = () => {
   const [searchParams] = useSearchParams();
@@ -40,29 +41,102 @@ const PaymentPage = () => {
         const firestore = getFirestore();
         const fetchedProjects = await Promise.all(
           projectIds.map(async (id) => {
-            // Tentar buscar primeiro na coleção projects
-            let projectDoc = await getDoc(doc(firestore, "projects", id));
+            // Lista de todas as coleções possíveis onde o projeto pode estar
+            const collections = [
+              "b2bapproved",
+              "b2bprojectspaid",
+              "b2bprojectpaid",
+              "b2bsketch",
+              "b2csketch",
+              "b2bdocprojects",
+              "b2cdocprojects",
+              "b2bapproval",
+            ];
 
-            // Se não encontrar, buscar na coleção clientprojects
-            if (!projectDoc.exists()) {
-              projectDoc = await getDoc(doc(firestore, "clientprojects", id));
+            // Tentar buscar em todas as coleções
+            for (const collection of collections) {
+              const projectDoc = await getDoc(doc(firestore, collection, id));
+
+              if (projectDoc.exists()) {
+                const projectData = projectDoc.data();
+                console.log(
+                  `Projeto encontrado na coleção ${collection}:`,
+                  projectData
+                );
+
+                // Validar e processar os dados do projeto
+                if (!projectData.files || !Array.isArray(projectData.files)) {
+                  console.error("Arquivos do projeto inválidos:", projectData);
+                  continue;
+                }
+
+                // Garantir que os valores dos arquivos estejam corretos
+                const updatedFiles = projectData.files.map((file) => {
+                  const pageCount = Number(file.pageCount) || 0;
+                  const valuePerPage = Number(file.valuePerPage) || 0;
+                  const total =
+                    Number(file.total) ||
+                    Number(file.totalValue) ||
+                    pageCount * valuePerPage;
+
+                  return {
+                    ...file,
+                    pageCount,
+                    valuePerPage,
+                    total,
+                  };
+                });
+
+                // Calcular o valor total do projeto
+                const totalProjectValue = updatedFiles.reduce(
+                  (sum, file) => sum + file.total,
+                  0
+                );
+
+                // Verificar se o valor total corresponde ao valor esperado
+                const expectedValue =
+                  Number(searchParams.get("total_value")) || 0;
+                if (Math.abs(totalProjectValue - expectedValue) > 0.01) {
+                  console.warn(
+                    `Valor total do projeto (${totalProjectValue}) não corresponde ao valor esperado (${expectedValue})`
+                  );
+                }
+
+                return {
+                  id: projectDoc.id,
+                  ...projectData,
+                  files: updatedFiles,
+                  totalProjectValue,
+                  collection,
+                };
+              }
             }
 
-            if (projectDoc.exists()) {
-              return { id: projectDoc.id, ...projectDoc.data() };
-            }
+            console.error(`Projeto ${id} não encontrado em nenhuma coleção`);
             return null;
           })
         );
 
-        setProjects(fetchedProjects.filter((p) => p !== null));
+        const validProjects = fetchedProjects.filter((p) => p !== null);
+        console.log("Projetos carregados:", validProjects);
+        setProjects(validProjects);
+
+        // Se houver projetos carregados, preencher os dados do usuário
+        if (validProjects.length > 0) {
+          const firstProject = validProjects[0];
+          setUserData({
+            nomeCompleto: firstProject.userName || "",
+            email: firstProject.userEmail || "",
+          });
+        }
       } catch (error) {
         console.error("Erro ao buscar projetos:", error);
+        setPaymentStatus("Erro ao carregar informações dos projetos");
       }
     };
 
     fetchProjects();
-  }, [projectIds]);
+  }, [projectIds, searchParams]);
 
   // Adicionar useEffect para carregar os tipos de usuários
   useEffect(() => {
@@ -239,7 +313,7 @@ const PaymentPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <PageLayout hideHeader>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Cabeçalho */}
         <div className="mb-8">
@@ -533,7 +607,7 @@ const PaymentPage = () => {
           </div>
         </div>
       </div>
-    </div>
+    </PageLayout>
   );
 };
 

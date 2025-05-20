@@ -189,13 +189,34 @@ const CheckoutPage = () => {
 
   const generatePaymentLink = async () => {
     try {
-      const totalAmount = projects.reduce((total, project) => {
-        const projectTotal = project.files.reduce((sum, file) => {
-          const fileTotal = Number(file.total) || Number(file.totalValue) || 0;
-          return sum + fileTotal;
+      console.log(
+        "Iniciando geração de link de pagamento com projetos:",
+        projects
+      );
+
+      let totalAmount;
+      if (isDivergencePayment) {
+        totalAmount = Math.round(Number(divergenceValue) * 100);
+        console.log(
+          "Valor de divergência:",
+          divergenceValue,
+          "Total em centavos:",
+          totalAmount
+        );
+      } else {
+        totalAmount = projects.reduce((total, project) => {
+          console.log("Calculando valor para projeto:", project.projectName);
+          const projectTotal = project.files.reduce((sum, file) => {
+            const fileTotal =
+              Number(file.total) || Number(file.totalValue) || 0;
+            console.log("Arquivo:", file.name, "Valor:", fileTotal);
+            return sum + fileTotal;
+          }, 0);
+          console.log("Total do projeto:", projectTotal);
+          return total + projectTotal * 100;
         }, 0);
-        return total + projectTotal * 100;
-      }, 0);
+        console.log("Valor total em centavos:", totalAmount);
+      }
 
       const response = await fetch(
         "https://us-central1-alpha-translator.cloudfunctions.net/createPaymentIntent",
@@ -203,7 +224,7 @@ const CheckoutPage = () => {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            amount: Math.round(totalAmount),
+            amount: totalAmount,
             currency: "brl",
           }),
         }
@@ -214,10 +235,20 @@ const CheckoutPage = () => {
       }
 
       const { clientSecret } = await response.json();
+      console.log("Client secret gerado com sucesso");
 
-      // Modificado para incluir todos os IDs dos projetos
+      // Incluir mais informações no link de pagamento
       const projectIds = projects.map((project) => project.id).join(",");
-      const paymentUrl = `${window.location.origin}/payment?client_secret=${clientSecret}&project_ids=${projectIds}`;
+      const paymentType = isDivergencePayment ? "divergence" : "normal";
+      const totalValue = isDivergencePayment
+        ? divergenceValue
+        : calculateTotalValue(projects);
+      const clientEmail = projects[0]?.userEmail || "";
+      const clientType = projects[0]?.userType || "";
+
+      const paymentUrl = `${window.location.origin}/payment?client_secret=${clientSecret}&project_ids=${projectIds}&payment_type=${paymentType}&total_value=${totalValue}&client_email=${clientEmail}&client_type=${clientType}`;
+
+      console.log("Link de pagamento gerado:", paymentUrl);
       setPaymentLink(paymentUrl);
     } catch (error) {
       console.error("Erro ao gerar o link de pagamento:", error.message);
