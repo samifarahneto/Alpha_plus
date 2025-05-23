@@ -741,8 +741,21 @@ const ProjectDetails = () => {
           : {};
       const initialPayment =
         currentPaymentStatus.initialPayment || project.totalProjectValue || 0;
-      const divergencePayment = currentPaymentStatus.divergencePayment || 0;
-      const totalPayment = currentPaymentStatus.totalPayment || initialPayment;
+
+      // Calcular o valor da divergência baseado no valor por página
+      let divergencePayment = 0;
+      if (divergenceInfo) {
+        const totalPages = project.files.reduce(
+          (total, file) => total + (Number(file.pageCount) || 0),
+          0
+        );
+        const valuePerPage =
+          Number(project.totalProjectValue || project.totalValue || 0) /
+          totalPages;
+        divergencePayment = valuePerPage * Number(divergenceInfo.pages);
+      }
+
+      const totalPayment = initialPayment + divergencePayment;
 
       const updateData = {
         isPaid: isPaid,
@@ -859,17 +872,22 @@ const ProjectDetails = () => {
       const firestore = getFirestore();
       const projectRef = doc(firestore, project.collection, projectId);
 
-      const originalAmount = Number(
-        project.payment_status?.originalAmount ||
-          project.totalProjectValue ||
-          project.totalValue ||
-          calculateTotalValue(project.files)
-      );
+      // Calcular o valor original do projeto
+      const originalAmount = project.files.reduce((total, file) => {
+        const fileTotal = Number(file.total) || Number(file.totalValue) || 0;
+        return total + fileTotal;
+      }, 0);
+
+      // Calcular o valor do reembolso
+      const refundAmountValue =
+        selectedRefundOption === "total"
+          ? originalAmount
+          : Number(refundAmount) || 0;
 
       const refundData = {
         status: "Reembolsado",
         originalAmount: originalAmount,
-        refundAmount: Number(refundAmount) || originalAmount,
+        refundAmount: refundAmountValue,
         reason: refundReason || "N/A",
         refundedAt: new Date().toISOString(),
       };
@@ -886,7 +904,7 @@ const ProjectDetails = () => {
       const paymentHistory = project.paymentHistory || [];
       paymentHistory.push({
         type: "refund",
-        amount: Number(refundAmount) || originalAmount,
+        amount: refundAmountValue,
         date: new Date().toISOString(),
         reason: refundReason || "N/A",
       });
@@ -2619,13 +2637,18 @@ const ProjectDetails = () => {
                   </span>
                   <span className="text-sm md:text-base text-gray-800">
                     U${" "}
-                    {Number(
-                      typeof project.payment_status === "object"
-                        ? project.payment_status.totalPayment
-                        : project.totalProjectValue ||
-                            project.totalValue ||
-                            calculateTotalValue(project.files)
-                    ).toFixed(2)}
+                    {typeof project.payment_status === "object" &&
+                    project.payment_status.status === "Reembolsado"
+                      ? Number(
+                          project.payment_status.originalAmount || 0
+                        ).toFixed(2)
+                      : Number(
+                          typeof project.payment_status === "object"
+                            ? project.payment_status.totalPayment
+                            : project.totalProjectValue ||
+                                project.totalValue ||
+                                calculateTotalValue(project.files)
+                        ).toFixed(2)}
                   </span>
                 </div>
               </div>

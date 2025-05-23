@@ -1066,13 +1066,18 @@ const ClienteProjectDetails = () => {
                 </span>
                 <span className="text-sm md:text-base text-gray-800">
                   U${" "}
-                  {Number(
-                    typeof project.payment_status === "object"
-                      ? project.payment_status.totalPayment
-                      : project.totalProjectValue ||
-                          project.totalValue ||
-                          calculateTotalValue(project.files)
-                  ).toFixed(2)}
+                  {typeof project.payment_status === "object" &&
+                  project.payment_status.status === "Reembolsado"
+                    ? Number(
+                        project.payment_status.originalAmount || 0
+                      ).toFixed(2)
+                    : Number(
+                        typeof project.payment_status === "object"
+                          ? project.payment_status.totalPayment
+                          : project.totalProjectValue ||
+                              project.totalValue ||
+                              calculateTotalValue(project.files)
+                      ).toFixed(2)}
                 </span>
               </div>
             </div>
