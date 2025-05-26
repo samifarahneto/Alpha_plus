@@ -87,13 +87,10 @@ const Login = () => {
       </div>
 
       {/* Conteúdo Principal */}
-      <div className="relative -mt-[60px] z-10 overflow-hidden">
-        <PageLayout>
-          <div className="font-poppins text-gray-800 min-h-screen flex flex-col">
+      <div className="relative -mt-[225px] z-10 bg-transparent">
+        <PageLayout transparent>
+          <div className="font-poppins text-gray-800 min-h-screen flex flex-col bg-transparent">
             <main className="flex-grow">
-              {/* Espaço para o Hero */}
-              <div className="h-[300px]"></div>
-
               <FormContainer
                 title="Faça seu login"
                 error={erro}

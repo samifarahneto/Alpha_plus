@@ -211,6 +211,7 @@ const Register = () => {
 
   return (
     <>
+      {/* Hero Section - Fora do PageLayout */}
       <div className="w-screen overflow-hidden">
         <Hero
           backgroundImage={fundoImage}
@@ -219,16 +220,17 @@ const Register = () => {
           overlay="bg-black/40"
         />
       </div>
-      <div className="relative -mt-[60px] z-10 overflow-hidden">
-        <PageLayout>
-          <div className="font-poppins text-gray-800 min-h-screen flex flex-col">
+
+      {/* Conteúdo Principal */}
+      <div className="relative -mt-[225px] z-10 bg-transparent">
+        <PageLayout transparent>
+          <div className="font-poppins text-gray-800 min-h-screen flex flex-col bg-transparent">
             <main className="flex-grow">
-              <div className="h-[300px]"></div>
               <FormContainer
-                title="Faça seu cadastro"
+                title="Criar Conta"
                 error={erro}
-                footerText="Já possui cadastro?"
-                footerLinkText="Login"
+                footerText="Já possui uma conta?"
+                footerLinkText="Fazer login"
                 onFooterClick={() => navigate("/login")}
               >
                 {step === 1 && (

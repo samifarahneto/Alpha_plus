@@ -20,6 +20,11 @@ import Card from "../components/Card";
 const Home = () => {
   const [priceHome, setPriceHome] = useState("");
 
+  // Log para verificar a imagem
+  console.log("Imagem de fundo:", fundoImage);
+
+  // Imagem de teste
+
   useEffect(() => {
     const fetchPriceHome = async () => {
       try {
@@ -41,13 +46,8 @@ const Home = () => {
       }
     };
 
-    // Chama a função imediatamente
     fetchPriceHome();
-
-    // Configura um intervalo para atualizar o preço a cada 5 minutos
     const interval = setInterval(fetchPriceHome, 5 * 60 * 1000);
-
-    // Cleanup function
     return () => clearInterval(interval);
   }, []);
 
@@ -71,16 +71,12 @@ const Home = () => {
       </div>
 
       {/* Conteúdo Principal */}
-      <div className="relative -mt-[60px] z-10 overflow-hidden">
+      <div className="relative -mt-[60px] z-10">
         <PageLayout>
           <div className="font-poppins text-gray-800 min-h-screen flex flex-col">
             <main className="flex-grow">
-              {/* Espaço para o Hero */}
-              <div className="h-[400px]"></div>
-
               {/* Conteúdo Principal */}
               <div className="w-full relative z-10">
-                {/* Container centralizado com largura máxima */}
                 <div className="max-w-[1200px] mx-auto px-4 sm:px-6">
                   {/* Seção 1 - Cards de Serviços */}
                   <section className="w-full mx-auto flex flex-col md:flex-row gap-4 md:gap-8 mb-16">
@@ -96,7 +92,6 @@ const Home = () => {
                         certificados.
                       </p>
                     </Card>
-
                     <Card
                       icon={FaBookOpen}
                       title="Tradução Simples"
@@ -107,7 +102,6 @@ const Home = () => {
                         pessoal ou empresarial, entregues em formato editável.
                       </p>
                     </Card>
-
                     <Card
                       icon={FaFileSignature}
                       title="Tradução Juramentada"
@@ -122,7 +116,6 @@ const Home = () => {
 
                   {/* Seção 2 - Sobre a Empresa */}
                   <section className="w-full mx-auto flex flex-col md:flex-row gap-6 md:gap-10 justify-between items-stretch mb-16">
-                    {/* Div da Esquerda (Foto) */}
                     <div className="w-full md:flex-1 bg-gray-50 rounded-xl shadow-lg overflow-hidden h-[300px] md:h-auto">
                       <img
                         src={require("../assets/predio.webp")}
@@ -130,13 +123,10 @@ const Home = () => {
                         className="w-full h-full object-cover"
                       />
                     </div>
-
-                    {/* Div da Direita (Texto) */}
                     <div className="w-full md:flex-1 flex flex-col gap-4 bg-white rounded-xl shadow-lg p-2 md:p-8 leading-relaxed text-gray-800">
                       <h3 className="text-2xl font-bold text-center border-b border-gray-200 pb-2">
                         Nossa Empresa
                       </h3>
-
                       <p className="text-base md:text-lg font-medium text-gray-700 text-justify leading-relaxed">
                         A <b>Alpha Translations</b>, integrante do{" "}
                         <b>Alpha One World Group</b> e membro corporativo da{" "}
@@ -162,7 +152,6 @@ const Home = () => {
                         7.230+
                       </p>
                     </div>
-
                     <div className="w-full md:flex-1">
                       <div className="relative inline-block">
                         <FaStar className="w-[50px] h-[50px] md:w-[60px] md:h-[60px] text-orange-500" />
@@ -177,7 +166,6 @@ const Home = () => {
                         ⭐⭐⭐⭐⭐
                       </p>
                     </div>
-
                     <div className="w-full md:flex-1">
                       <FaUserTie className="w-[50px] h-[50px] md:w-[60px] md:h-[60px] text-green-500 mx-auto" />
                       <h4 className="text-xl my-3 text-gray-800">

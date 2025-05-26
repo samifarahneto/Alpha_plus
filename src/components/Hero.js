@@ -4,38 +4,50 @@ const Hero = ({
   backgroundImage,
   title,
   subtitle,
-  height = "h-[300px] md:h-[400px]",
+  height = "h-[300px] md:h-[400px]", // Use this prop for height control via Tailwind
   overlay = "bg-black/50",
-  titleSize = "text-[40px] md:text-[60px] lg:text-[80px]",
+  titleSize = "text-3xl md:text-6xl lg:text-7xl",
   subtitleSize = "text-lg md:text-xl lg:text-2xl",
 }) => {
+  // Combine Tailwind classes for layout, height, and background properties
+  // Removed position:absolute related styles from inline style
+  // Removed conflicting bg-black (overlay handles tint)
+  const heroClasses = `relative w-full ${height} flex flex-col justify-center items-center bg-cover bg-center bg-no-repeat overflow-hidden`;
+
+  // Inline styles only for the dynamic background image
+  const heroStyles = {
+    backgroundImage: backgroundImage ? `url(${backgroundImage})` : "none",
+    // Removed position: absolute, width, left, right, fixed height, zIndex
+    // Background properties like size, position, repeat are handled by Tailwind classes
+  };
+
   return (
     <div
-      className={`w-screen ${height} flex flex-col justify-center items-center bg-cover bg-center bg-no-repeat`}
-      style={{
-        backgroundImage: `url(${backgroundImage})`,
-        width: "100vw",
-        position: "absolute",
-        left: 0,
-        right: 0,
-        height: "300px",
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-        backgroundRepeat: "no-repeat",
-        paddingTop: "0",
-      }}
+      className={heroClasses}
+      style={heroStyles}
+      // Add role and aria-label for accessibility if it's purely decorative
+      role="img"
+      aria-label={title || "Hero background"}
     >
-      {/* Overlay para melhorar legibilidade do texto */}
-      <div className={`absolute inset-0 ${overlay}`}></div>
+      {/* Overlay for text readability - positioned absolutely within the relative parent */}
+      <div className={`absolute inset-0 ${overlay} z-10`}></div>
 
-      {/* Conteúdo */}
-      <div className="relative z-10 text-center px-4 w-full max-w-[90%] md:max-w-[80%] lg:max-w-[1200px]">
-        <div className="absolute inset-0 flex items-center justify-center">
-          <h1 className="text-3xl md:text-6xl lg:text-7xl font-bold text-white text-center whitespace-nowrap px-4">
+      {/* Content Section - positioned relatively on top of the overlay */}
+      <div className="relative z-20 text-center px-4 w-full max-w-[90%] md:max-w-[80%] lg:max-w-[1200px]">
+        {/* Container to center the title */}
+        {/* Removed absolute positioning for title container, let flexbox handle centering */}
+        <div className="flex items-center justify-center h-full">
+          <h1
+            className={`font-bold text-white text-center whitespace-nowrap px-4 ${titleSize}`}
+          >
             {title}
           </h1>
         </div>
-        {subtitle && <p className={`${subtitleSize} text-white`}>{subtitle}</p>}
+        {/* Subtitle (optional) */}
+        {/* Removed absolute positioning for subtitle, flows naturally */}
+        {subtitle && (
+          <p className={`text-white ${subtitleSize} mt-2`}>{subtitle}</p>
+        )}
       </div>
     </div>
   );
