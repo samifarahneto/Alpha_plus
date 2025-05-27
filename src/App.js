@@ -29,6 +29,7 @@ import ClientProjectsDone from "./pages/client/ClientProjectsDone";
 import ClientProjectsPaid from "./pages/client/ClientProjectsPaid";
 import ClientPayments from "./pages/client/ClientPayments";
 import ClientGoingOn from "./pages/client/ClientGoingOn";
+import ClientAnalysis from "./pages/client/ClientAnalysis";
 
 // Master
 import MasterClient from "./pages/company/master/MasterClient";
@@ -92,6 +93,10 @@ const AppContent = () => {
           <Route path="/client/dashboard" element={<ClientDashboard />} />
           <Route path="/client/profile" element={<ClientProfile />} />
           <Route path="/client/projects-budget" element={<ClientBudget />} />
+          <Route
+            path="/client/projects-analysis"
+            element={<ClientAnalysis />}
+          />
           <Route
             path="/client/projects-done"
             element={<ClientProjectsDone />}

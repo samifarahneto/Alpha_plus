@@ -102,6 +102,21 @@ const ClientNavigation = ({
         Em Andamento
       </span>
       <span
+        ref={activeLink === "projects-analysis" ? activeLinkRef : null}
+        onClick={handleNavigation(
+          "/client/projects-analysis",
+          "projects-analysis"
+        )}
+        className={`nav-link flex items-center justify-center gap-2 w-full h-[40px] md:w-auto md:min-w-[180px] ${
+          activeLink === "projects-analysis"
+            ? "nav-link-active"
+            : "nav-link-inactive"
+        }`}
+      >
+        <ClipboardDocumentCheckIcon className="w-5 h-5" />
+        Em Análise
+      </span>
+      <span
         ref={activeLink === "projects-done" ? activeLinkRef : null}
         onClick={handleNavigation("/client/projects-done", "projects-done")}
         className={`nav-link flex items-center justify-center gap-2 w-full h-[40px] md:w-auto md:min-w-[180px] ${
