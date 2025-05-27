@@ -729,14 +729,17 @@ const ClientProjects = () => {
       const newVisibleColumns = prev.includes(columnId)
         ? prev.filter((col) => col !== columnId)
         : [...prev, columnId];
-
-      // Salvar as colunas visíveis no localStorage
-      localStorage.setItem(
-        "clientProjectsVisibleColumns",
-        JSON.stringify(newVisibleColumns)
-      );
       return newVisibleColumns;
     });
+  };
+
+  const handleSaveColumns = () => {
+    // Salvar as colunas visíveis no localStorage
+    localStorage.setItem(
+      "clientProjectsVisibleColumns",
+      JSON.stringify(visibleColumns)
+    );
+    setShowColumnSelector(false);
   };
 
   const renderColumnSelector = () => {
@@ -777,10 +780,16 @@ const ClientProjects = () => {
             ))}
           </div>
 
-          <div className="mt-6 flex justify-center">
+          <div className="mt-6 flex justify-center gap-4">
+            <button
+              onClick={handleSaveColumns}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              Salvar
+            </button>
             <button
               onClick={() => setShowColumnSelector(false)}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
             >
               Fechar
             </button>
@@ -1130,6 +1139,11 @@ const ClientProjects = () => {
     },
   ];
 
+  // Filtrar as colunas com base nas colunas visíveis
+  const visibleColumnsData = columns.filter(
+    (column) => visibleColumns.includes(column.id) || column.fixed
+  );
+
   return (
     <ClientLayout>
       {!loading && (
@@ -1272,7 +1286,7 @@ const ClientProjects = () => {
               <div className="w-full overflow-x-auto">
                 <div className="w-full shadow-lg rounded-lg">
                   <DataTable
-                    columns={columns}
+                    columns={visibleColumnsData}
                     data={currentRows}
                     initialColumnOrder={columnOrder}
                     fixedColumns={fixedColumns}
