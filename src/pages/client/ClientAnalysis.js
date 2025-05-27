@@ -5,6 +5,8 @@ import {
   collection,
   query,
   where,
+  orderBy,
+  onSnapshot,
   getDocs,
 } from "firebase/firestore";
 import { useAuth } from "../../contexts/AuthContext";
@@ -65,74 +67,215 @@ const ClientAnalysis = () => {
         setLoading(true);
         const firestore = getFirestore();
 
-        console.log("Buscando projetos para o email:", user.email);
+        // Buscar dados do usuário
+        const userDoc = await getDocs(
+          query(
+            collection(firestore, "users"),
+            where("email", "==", user.email)
+          )
+        );
 
-        // Array de coleções para buscar
-        const collections = [
-          "b2bapproved",
-          "b2bprojectspaid",
-          "b2cprojectspaid",
-        ];
+        if (userDoc.empty) {
+          console.error("Documento do usuário não encontrado");
+          setLoading(false);
+          return;
+        }
 
-        // Array para armazenar todas as queries
-        const queries = collections.map((collectionName) => {
-          console.log(`Criando query para coleção: ${collectionName}`);
-          const projectsRef = collection(firestore, collectionName);
-          return query(
-            projectsRef,
-            where("userEmail", "==", user.email),
-            where("project_status", "==", "Em Análise")
+        const userData = userDoc.docs[0].data();
+        const userRegisteredBy = userData.registeredBy;
+        const userType = userData.userType.toLowerCase();
+        const registeredByType = userData.registeredByType;
+        const colaboradores = userData.colaboradores || [];
+        const projectPermissions = userData.projectPermissions || [];
+
+        // Array para armazenar os emails dos projetos a serem buscados
+        let emailsToSearch = [];
+
+        // Se for colab, busca apenas os projetos do próprio usuário e dos usuários que ele tem permissão
+        if (userType === "colab") {
+          emailsToSearch = [user.email, ...projectPermissions];
+        } else {
+          // Para b2b/b2c, busca projetos do usuário e dos vinculados
+          const usersWithSameRegisteredBy = query(
+            collection(firestore, "users"),
+            where("registeredBy", "==", userRegisteredBy || user.email)
           );
+          const usersSnapshot = await getDocs(usersWithSameRegisteredBy);
+          emailsToSearch = usersSnapshot.docs
+            .map((doc) => doc.data().email)
+            .filter((email) => email);
+
+          // Adicionar o email do usuário atual à lista se ele não estiver incluído
+          if (user.email && !emailsToSearch.includes(user.email)) {
+            emailsToSearch.push(user.email);
+          }
+
+          // Adicionar os emails dos colaboradores
+          colaboradores.forEach((colab) => {
+            if (colab.email && !emailsToSearch.includes(colab.email)) {
+              emailsToSearch.push(colab.email);
+            }
+          });
+        }
+
+        // Determinar as coleções baseadas no tipo de usuário
+        let collections = [];
+        if (userType === "colab") {
+          if (registeredByType === "b2b") {
+            collections = ["b2bapproved", "b2bprojectspaid"];
+          } else if (registeredByType === "b2c") {
+            collections = ["b2cprojectspaid"];
+          }
+        } else {
+          if (userType === "b2b") {
+            collections = ["b2bapproved", "b2bprojectspaid"];
+          } else if (userType === "b2c") {
+            collections = ["b2cprojectspaid"];
+          }
+        }
+
+        console.log("Configuração de busca:", {
+          userType,
+          registeredByType,
+          emailsToSearch,
+          collections,
         });
 
-        // Executar todas as queries
-        const querySnapshots = await Promise.all(
-          queries.map(async (q, index) => {
-            const snapshot = await getDocs(q);
-            console.log(
-              `Resultados da coleção ${collections[index]}:`,
-              snapshot.docs.length
-            );
-            snapshot.docs.forEach((doc) => {
-              console.log(`Projeto encontrado em ${collections[index]}:`, {
-                id: doc.id,
-                userEmail: doc.data().userEmail,
-                project_status: doc.data().project_status,
-                projectName: doc.data().projectName,
-              });
-            });
-            return snapshot;
-          })
-        );
+        // Array para armazenar os unsubscribe functions
+        const unsubscribeFunctions = [];
 
-        // Combinar os resultados
-        const projectsData = querySnapshots.flatMap((snapshot, index) =>
-          snapshot.docs.map((doc) => {
-            const data = doc.data();
-            console.log(
-              `Processando projeto ${doc.id} da coleção ${collections[index]}:`,
-              {
-                userEmail: data.userEmail,
-                project_status: data.project_status,
-                projectName: data.projectName,
+        // Para cada coleção
+        collections.forEach((collectionName) => {
+          const collectionRef = collection(firestore, collectionName);
+
+          // Para cada email relacionado
+          emailsToSearch.forEach((email) => {
+            // Buscar projetos onde o email é o projectOwner
+            const q1 = query(
+              collectionRef,
+              where("projectOwner", "==", email),
+              where("project_status", "==", "Em Análise"),
+              orderBy("createdAt", "desc")
+            );
+
+            // Buscar projetos onde o email é o userEmail
+            const q2 = query(
+              collectionRef,
+              where("userEmail", "==", email),
+              where("project_status", "==", "Em Análise"),
+              orderBy("createdAt", "desc")
+            );
+
+            // Adicionar listeners para atualização em tempo real
+            const unsubscribe1 = onSnapshot(q1, async (snapshot) => {
+              if (!snapshot.empty) {
+                const newProjects = await Promise.all(
+                  snapshot.docs.map(async (doc) => {
+                    const projectData = doc.data();
+                    const firestore = getFirestore();
+                    const usersCollection = collection(firestore, "users");
+
+                    let authorName = "Não informado";
+                    if (projectData.projectOwner) {
+                      try {
+                        const userQuery = query(
+                          usersCollection,
+                          where("email", "==", projectData.projectOwner)
+                        );
+                        const userSnapshot = await getDocs(userQuery);
+                        if (!userSnapshot.empty) {
+                          const userData = userSnapshot.docs[0].data();
+                          authorName = userData.nomeCompleto || "Não informado";
+                        }
+                      } catch (error) {
+                        console.error("Erro ao buscar nome do autor:", error);
+                      }
+                    }
+
+                    return {
+                      ...projectData,
+                      id: doc.id,
+                      collection: collectionName,
+                      authorName: authorName,
+                      projectOwner: projectData.projectOwner || "Não informado",
+                      userEmail: projectData.userEmail || "Não informado",
+                    };
+                  })
+                );
+
+                setProjects((prevProjects) => {
+                  const projectMap = new Map(
+                    prevProjects.map((p) => [p.id, p])
+                  );
+                  newProjects.forEach((project) => {
+                    projectMap.set(project.id, project);
+                  });
+                  return Array.from(projectMap.values());
+                });
               }
-            );
-            return {
-              id: doc.id,
-              collection: collections[index],
-              ...data,
-            };
-          })
-        );
+            });
 
-        console.log("Total de projetos encontrados:", projectsData.length);
-        console.log("Projetos:", projectsData);
+            const unsubscribe2 = onSnapshot(q2, async (snapshot) => {
+              if (!snapshot.empty) {
+                const newProjects = await Promise.all(
+                  snapshot.docs.map(async (doc) => {
+                    const projectData = doc.data();
+                    const firestore = getFirestore();
+                    const usersCollection = collection(firestore, "users");
 
-        setProjects(projectsData);
+                    let authorName = "Não informado";
+                    if (projectData.projectOwner) {
+                      try {
+                        const userQuery = query(
+                          usersCollection,
+                          where("email", "==", projectData.projectOwner)
+                        );
+                        const userSnapshot = await getDocs(userQuery);
+                        if (!userSnapshot.empty) {
+                          const userData = userSnapshot.docs[0].data();
+                          authorName = userData.nomeCompleto || "Não informado";
+                        }
+                      } catch (error) {
+                        console.error("Erro ao buscar nome do autor:", error);
+                      }
+                    }
+
+                    return {
+                      ...projectData,
+                      id: doc.id,
+                      collection: collectionName,
+                      authorName: authorName,
+                      projectOwner: projectData.projectOwner || "Não informado",
+                      userEmail: projectData.userEmail || "Não informado",
+                    };
+                  })
+                );
+
+                setProjects((prevProjects) => {
+                  const projectMap = new Map(
+                    prevProjects.map((p) => [p.id, p])
+                  );
+                  newProjects.forEach((project) => {
+                    projectMap.set(project.id, project);
+                  });
+                  return Array.from(projectMap.values());
+                });
+              }
+            });
+
+            unsubscribeFunctions.push(unsubscribe1, unsubscribe2);
+          });
+        });
+
+        setLoading(false);
+
+        // Cleanup function para remover todos os listeners quando o componente for desmontado
+        return () => {
+          unsubscribeFunctions.forEach((unsubscribe) => unsubscribe());
+        };
       } catch (error) {
         console.error("Erro ao buscar projetos:", error);
         setError("Erro ao carregar os projetos. Por favor, tente novamente.");
-      } finally {
         setLoading(false);
       }
     };
