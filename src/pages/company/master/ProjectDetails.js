@@ -953,14 +953,16 @@ const ProjectDetails = () => {
         translation_status: newStatus,
       };
 
-      // Se o status for Em Andamento, Cancelado ou Finalizado, atualizar também o project_status
-      if (
-        newStatus === "Em Tradução" ||
-        newStatus === "Cancelado" ||
-        newStatus === "Finalizado"
-      ) {
+      // Se o status for Em Tradução, atualizar o project_status para Em Andamento
+      if (newStatus === "Em Tradução") {
+        updateData.project_status = "Em Andamento";
+      }
+      // Se o status for Cancelado ou Finalizado, atualizar também o project_status
+      else if (newStatus === "Cancelado" || newStatus === "Finalizado") {
         updateData.project_status = newStatus;
       }
+
+      console.log("Atualizando status:", updateData);
 
       // Atualizar o documento primeiro
       await updateDoc(projectRef, updateData);
@@ -1839,7 +1841,7 @@ const ProjectDetails = () => {
               className="px-3 py-1 rounded border border-gray-200 bg-white text-gray-700 text-sm font-medium whitespace-nowrap"
             >
               <option value="N/A">N/A</option>
-              <option value="Em Tradução<">Em Tradução</option>
+              <option value="Em Tradução">Em Tradução</option>
               <option value="Em Revisão">Em Revisão</option>
               <option value="Em Certificação">Em Certificação</option>
               <option value="Finalizado">Finalizado</option>
