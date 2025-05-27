@@ -7,6 +7,7 @@ import {
   CurrencyDollarIcon,
   CreditCardIcon,
   ArrowPathIcon,
+  DocumentCheckIcon,
 } from "@heroicons/react/24/outline";
 
 const ClientNavigation = ({
@@ -87,6 +88,28 @@ const ClientNavigation = ({
           {unreadBudgetCount > 0 && (
             <span className="absolute -top-2 -right-3 bg-red-500 text-white text-[11px] w-[17px] h-[17px] flex items-center justify-center rounded-full">
               {unreadBudgetCount}
+            </span>
+          )}
+        </span>
+      </span>
+      <span
+        ref={activeLink === "projects-budget-received" ? activeLinkRef : null}
+        onClick={handleNavigation(
+          "/client/projects-budget-received",
+          "projects-budget-received"
+        )}
+        className={`nav-link flex items-center justify-center gap-2 w-full h-[40px] md:w-auto md:min-w-[180px] ${
+          activeLink === "projects-budget-received"
+            ? "nav-link-active"
+            : "nav-link-inactive"
+        }`}
+      >
+        <DocumentCheckIcon className="w-5 h-5" />
+        <span className="relative">
+          Orçamento Recebido
+          {unreadApprovalCount > 0 && (
+            <span className="absolute -top-2 -right-3 bg-red-500 text-white text-[11px] w-[17px] h-[17px] flex items-center justify-center rounded-full">
+              {unreadApprovalCount}
             </span>
           )}
         </span>
