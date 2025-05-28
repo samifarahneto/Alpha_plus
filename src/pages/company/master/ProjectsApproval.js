@@ -368,18 +368,7 @@ const ProjectsApproval = () => {
           ? row.payment_status.status || "N/A"
           : row.payment_status || "N/A"
       ),
-      deadline: row.deadlineDate
-        ? new Date(row.deadlineDate).toLocaleDateString("pt-BR", {
-            day: "2-digit",
-            month: "2-digit",
-            year: "numeric",
-          }) +
-          " " +
-          new Date(row.deadlineDate).toLocaleTimeString("pt-BR", {
-            hour: "2-digit",
-            minute: "2-digit",
-          })
-        : "Sem Prazo",
+      deadline: row.deadlineDate || "Sem Prazo",
       status: renderProjectStatusBadge("Ag. Aprovação"),
     }));
   }, [paginatedData, clientTypes]);

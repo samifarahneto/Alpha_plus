@@ -459,7 +459,7 @@ const ProjectsApproved = () => {
           ? row.payment_status.status || "N/A"
           : row.payment_status || "N/A"
       ),
-      projectStatus: renderProjectStatusBadge("Aprovado"),
+      projectStatus: renderProjectStatusBadge(row.project_status || "N/A"),
       translationStatus: renderTranslationStatusBadge(
         row.translation_status || "N/A"
       ),
