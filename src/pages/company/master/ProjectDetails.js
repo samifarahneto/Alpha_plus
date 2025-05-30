@@ -34,6 +34,7 @@ import {
   FaClock,
   FaCalendar,
   FaLanguage,
+  FaDownload,
 } from "react-icons/fa";
 import { getStorage, ref, getDownloadURL } from "firebase/storage";
 import debounce from "lodash/debounce";
@@ -79,6 +80,44 @@ const TableRow = memo(
             min="0"
           />
         </td>
+        <td className="px-6 py-4 text-center">
+          <FaDownload
+            className="text-blue-600 hover:text-blue-800 transition-colors cursor-pointer mx-auto"
+            onClick={async (e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              try {
+                const url = await getFileDownloadUrl(file.fileUrl);
+
+                // Criar link temporário para download
+                const link = document.createElement("a");
+                link.href = url;
+                link.download = file.name || "arquivo";
+                link.target = "_blank"; // Garantir que não abra na mesma aba
+                link.rel = "noopener noreferrer";
+                link.style.display = "none";
+
+                document.body.appendChild(link);
+
+                // Tentar forçar download
+                try {
+                  link.click();
+                } catch (clickError) {
+                  // Se falhar, abrir em nova aba como fallback
+                  window.open(url, "_blank", "noopener,noreferrer");
+                }
+
+                // Cleanup
+                setTimeout(() => {
+                  document.body.removeChild(link);
+                }, 100);
+              } catch (error) {
+                console.error("Erro ao baixar arquivo:", error);
+                alert("Erro ao baixar o arquivo. Por favor, tente novamente.");
+              }
+            }}
+          />
+        </td>
         <td className="px-6 py-4 text-center">{sourceLanguage || "N/A"}</td>
         <td className="px-6 py-4 text-center">{targetLanguage || "N/A"}</td>
         <td className="px-6 py-4 text-right">
@@ -108,6 +147,9 @@ const EditPagesTable = memo(
             </th>
             <th className="px-6 py-3 text-center text-sm font-semibold text-gray-600">
               Páginas
+            </th>
+            <th className="px-6 py-3 text-center text-sm font-semibold text-gray-600">
+              Download
             </th>
             <th className="px-6 py-3 text-center text-sm font-semibold text-gray-600">
               Língua de Origem
@@ -1890,22 +1932,62 @@ const ProjectDetails = () => {
             >
               <div className="flex items-center justify-between">
                 <span className="text-gray-600 text-sm">Arquivo:</span>
-                <span
-                  className="text-blue-600 cursor-pointer text-sm truncate"
-                  onClick={async () => {
-                    try {
-                      const url = await getFileDownloadUrl(file.fileUrl);
-                      window.open(url, "_blank");
-                    } catch (error) {
-                      console.error("Erro ao abrir arquivo:", error);
-                      alert(
-                        "Erro ao acessar o arquivo. Por favor, tente novamente."
-                      );
-                    }
-                  }}
-                >
-                  {file.name}
-                </span>
+                <div className="flex items-center gap-2">
+                  <span
+                    className="text-blue-600 cursor-pointer text-sm truncate"
+                    onClick={async () => {
+                      try {
+                        const url = await getFileDownloadUrl(file.fileUrl);
+                        window.open(url, "_blank");
+                      } catch (error) {
+                        console.error("Erro ao abrir arquivo:", error);
+                        alert(
+                          "Erro ao acessar o arquivo. Por favor, tente novamente."
+                        );
+                      }
+                    }}
+                  >
+                    {file.name}
+                  </span>
+                  <FaDownload
+                    className="text-blue-600 hover:text-blue-800 transition-colors cursor-pointer flex-shrink-0"
+                    onClick={async (e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      try {
+                        const url = await getFileDownloadUrl(file.fileUrl);
+
+                        // Criar link temporário para download
+                        const link = document.createElement("a");
+                        link.href = url;
+                        link.download = file.name || "arquivo";
+                        link.target = "_blank"; // Garantir que não abra na mesma aba
+                        link.rel = "noopener noreferrer";
+                        link.style.display = "none";
+
+                        document.body.appendChild(link);
+
+                        // Tentar forçar download
+                        try {
+                          link.click();
+                        } catch (clickError) {
+                          // Se falhar, abrir em nova aba como fallback
+                          window.open(url, "_blank", "noopener,noreferrer");
+                        }
+
+                        // Cleanup
+                        setTimeout(() => {
+                          document.body.removeChild(link);
+                        }, 100);
+                      } catch (error) {
+                        console.error("Erro ao baixar arquivo:", error);
+                        alert(
+                          "Erro ao baixar o arquivo. Por favor, tente novamente."
+                        );
+                      }
+                    }}
+                  />
+                </div>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-gray-600 text-sm">Páginas:</span>
@@ -2521,6 +2603,9 @@ const ProjectDetails = () => {
                       </div>
                     </th>
                     <th className="px-6 py-3 text-center text-sm font-semibold text-gray-600">
+                      Download
+                    </th>
+                    <th className="px-6 py-3 text-center text-sm font-semibold text-gray-600">
                       Língua de Origem
                     </th>
                     <th className="px-6 py-3 text-center text-sm font-semibold text-gray-600">
@@ -2559,6 +2644,52 @@ const ProjectDetails = () => {
                       </td>
                       <td className="px-6 py-4 text-center">
                         {file.pageCount}
+                      </td>
+                      <td className="px-6 py-4 text-center">
+                        <FaDownload
+                          className="text-blue-600 hover:text-blue-800 transition-colors cursor-pointer mx-auto"
+                          onClick={async (e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            try {
+                              const url = await getFileDownloadUrl(
+                                file.fileUrl
+                              );
+
+                              // Criar link temporário para download
+                              const link = document.createElement("a");
+                              link.href = url;
+                              link.download = file.name || "arquivo";
+                              link.target = "_blank"; // Garantir que não abra na mesma aba
+                              link.rel = "noopener noreferrer";
+                              link.style.display = "none";
+
+                              document.body.appendChild(link);
+
+                              // Tentar forçar download
+                              try {
+                                link.click();
+                              } catch (clickError) {
+                                // Se falhar, abrir em nova aba como fallback
+                                window.open(
+                                  url,
+                                  "_blank",
+                                  "noopener,noreferrer"
+                                );
+                              }
+
+                              // Cleanup
+                              setTimeout(() => {
+                                document.body.removeChild(link);
+                              }, 100);
+                            } catch (error) {
+                              console.error("Erro ao baixar arquivo:", error);
+                              alert(
+                                "Erro ao baixar o arquivo. Por favor, tente novamente."
+                              );
+                            }
+                          }}
+                        />
                       </td>
                       <td className="px-6 py-4 text-center">
                         {project.sourceLanguage || "N/A"}
