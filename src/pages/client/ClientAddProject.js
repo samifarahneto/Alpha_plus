@@ -31,6 +31,7 @@ import {
   where,
   getDocs,
   writeBatch,
+  runTransaction,
 } from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
 
@@ -594,6 +595,9 @@ const ClientAddProject = () => {
         throw new Error("Usuário não autenticado");
       }
 
+      // Gerar número do projeto
+      const projectNumber = await generateProjectNumber();
+
       // Buscar dados do usuário atual
       const usersRef = collection(firestore, "users");
       const q = query(usersRef, where("email", "==", user.email));
@@ -645,6 +649,7 @@ const ClientAddProject = () => {
 
       const projectDataToSave = {
         createdAt: serverTimestamp(),
+        projectNumber: projectNumber,
         projectName,
         projectOwner: userData.nomeCompleto || "Autor do Projeto",
         sourceLanguage,
@@ -694,6 +699,7 @@ const ClientAddProject = () => {
         action: "criação de projeto",
         details: {
           projeto: projectName,
+          numeroProject: projectNumber,
           tipoArquivo: projectData.hasManualQuoteFiles ? "DOCX" : "PDF/Imagens",
           quantidadePaginas: projectData.totalPages || "A ser definido",
           valorTotal: projectData.totalValue || 0,
@@ -826,6 +832,10 @@ const ClientAddProject = () => {
   const saveApprovedProject = async (isCheckout = false) => {
     try {
       const db = getFirestore();
+
+      // Gerar número do projeto
+      const projectNumber = await generateProjectNumber();
+
       const usersRef = collection(db, "users");
       const userQuery = query(
         usersRef,
@@ -888,6 +898,7 @@ const ClientAddProject = () => {
 
       const projectDataToSave = {
         createdAt: serverTimestamp(),
+        projectNumber: projectNumber,
         projectName,
         projectOwner: userData.nomeCompleto || "Autor do Projeto",
         sourceLanguage,
@@ -937,6 +948,24 @@ const ClientAddProject = () => {
       });
 
       await addDoc(collection(db, collectionName), projectDataToSave);
+
+      // Adicionar log de criação do projeto
+      const logData = {
+        timestamp: serverTimestamp(),
+        userEmail: getAuth().currentUser.email,
+        action: "criação de projeto aprovado",
+        details: {
+          projeto: projectName,
+          numeroProject: projectNumber,
+          tipoArquivo: projectData.hasManualQuoteFiles ? "DOCX" : "PDF/Imagens",
+          quantidadePaginas: projectData.totalPages || "A ser definido",
+          valorTotal: projectData.totalValue || 0,
+          idiomaOrigem: sourceLanguage,
+          idiomaDestino: targetLanguage,
+        },
+      };
+      await addDoc(collection(db, "activity_logs"), logData);
+
       alert("Projeto aprovado com sucesso!");
       navigate("/client/projects");
     } catch (error) {
@@ -994,6 +1023,10 @@ const ClientAddProject = () => {
   const saveProjectAndCheckout = async () => {
     try {
       const db = getFirestore();
+
+      // Gerar número do projeto
+      const projectNumber = await generateProjectNumber();
+
       const usersRef = collection(db, "users");
       const userQuery = query(
         usersRef,
@@ -1051,6 +1084,7 @@ const ClientAddProject = () => {
 
       const projectDataToSave = {
         createdAt: serverTimestamp(),
+        projectNumber: projectNumber,
         projectName,
         projectOwner: userData.nomeCompleto || "Autor do Projeto",
         sourceLanguage,
@@ -1084,6 +1118,24 @@ const ClientAddProject = () => {
         collection(db, collectionName),
         projectDataToSave
       );
+
+      // Adicionar log de criação do projeto
+      const logData = {
+        timestamp: serverTimestamp(),
+        userEmail: getAuth().currentUser.email,
+        action: "criação de projeto com checkout",
+        details: {
+          projeto: projectName,
+          numeroProject: projectNumber,
+          tipoArquivo: projectData.hasManualQuoteFiles ? "DOCX" : "PDF/Imagens",
+          quantidadePaginas: projectData.totalPages || "A ser definido",
+          valorTotal: projectData.totalValue || 0,
+          idiomaOrigem: sourceLanguage,
+          idiomaDestino: targetLanguage,
+        },
+      };
+      await addDoc(collection(db, "activity_logs"), logData);
+
       alert(
         collectionName === "b2bapproved"
           ? "Projeto aprovado com sucesso!"
@@ -2485,6 +2537,36 @@ const ClientAddProject = () => {
         </div>
       </div>
     );
+  };
+
+  // Função para gerar o número do projeto com auto incremento
+  const generateProjectNumber = async () => {
+    const db = getFirestore();
+
+    try {
+      const counterRef = doc(db, "counters", "projects");
+
+      const newProjectNumber = await runTransaction(db, async (transaction) => {
+        const counterDoc = await transaction.get(counterRef);
+
+        if (!counterDoc.exists()) {
+          // Se o documento não existe, criar com valor inicial 1
+          transaction.set(counterRef, { count: 1 });
+          return 1;
+        } else {
+          // Incrementar o contador existente
+          const currentCount = counterDoc.data().count || 0;
+          const newCount = currentCount + 1;
+          transaction.update(counterRef, { count: newCount });
+          return newCount;
+        }
+      });
+
+      return newProjectNumber;
+    } catch (error) {
+      console.error("Erro ao gerar número do projeto:", error);
+      throw new Error("Falha ao gerar número do projeto");
+    }
   };
 
   return renderContent();
