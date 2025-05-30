@@ -130,7 +130,7 @@ const ClientGoingOn = () => {
             return query(
               projectsRef,
               where("userEmail", "==", email),
-              where("translation_status", "==", "Em Andamento"),
+              where("translation_status", "==", "Em Tradução"),
               orderBy("createdAt", "desc")
             );
           })
@@ -390,6 +390,11 @@ const ClientGoingOn = () => {
       label: "Tradução",
       render: (value) => {
         const statusConfig = {
+          "Em Tradução": {
+            bg: "bg-blue-50",
+            text: "text-blue-700",
+            border: "border-blue-200",
+          },
           "Em Andamento": {
             bg: "bg-blue-50",
             text: "text-blue-700",
@@ -400,10 +405,20 @@ const ClientGoingOn = () => {
             text: "text-green-700",
             border: "border-green-200",
           },
+          Finalizado: {
+            bg: "bg-green-50",
+            text: "text-green-700",
+            border: "border-green-200",
+          },
           "Em Revisão": {
             bg: "bg-yellow-50",
             text: "text-yellow-700",
             border: "border-yellow-200",
+          },
+          "Em Certificação": {
+            bg: "bg-purple-50",
+            text: "text-purple-700",
+            border: "border-purple-200",
           },
           Cancelado: {
             bg: "bg-red-50",

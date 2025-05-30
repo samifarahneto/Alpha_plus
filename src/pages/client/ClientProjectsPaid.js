@@ -142,16 +142,24 @@ const ClientProjectsPaid = () => {
 
           // Para cada email relacionado
           emailsToSearch.forEach((email) => {
-            // Buscar projetos onde o email é o userEmail
-            const q = query(
+            // Buscar projetos onde o email é o userEmail e payment_status é "Pago" (string)
+            const q1 = query(
               collectionRef,
               where("userEmail", "==", email),
               where("payment_status", "==", "Pago"),
               orderBy("createdAt", "desc")
             );
 
-            // Adicionar listener para atualização em tempo real
-            const unsubscribe = onSnapshot(q, (snapshot) => {
+            // Buscar projetos onde o email é o userEmail e payment_status.status é "Pago" (objeto)
+            const q2 = query(
+              collectionRef,
+              where("userEmail", "==", email),
+              where("payment_status.status", "==", "Pago"),
+              orderBy("createdAt", "desc")
+            );
+
+            // Adicionar listener para atualização em tempo real - payment_status como string
+            const unsubscribe1 = onSnapshot(q1, (snapshot) => {
               // Primeiro, processar as mudanças
               snapshot.docChanges().forEach((change) => {
                 if (change.type === "removed") {
@@ -179,19 +187,20 @@ const ClientProjectsPaid = () => {
               });
             });
 
-            unsubscribeFunctions.push(unsubscribe);
-          });
+            // Adicionar listener para atualização em tempo real - payment_status.status como objeto
+            const unsubscribe2 = onSnapshot(q2, (snapshot) => {
+              // Primeiro, processar as mudanças
+              snapshot.docChanges().forEach((change) => {
+                if (change.type === "removed") {
+                  setProjects((prevProjects) =>
+                    prevProjects.filter(
+                      (project) => project.id !== change.doc.id
+                    )
+                  );
+                }
+              });
 
-          // Buscar também projetos onde o usuário é o registeredBy
-          if (!userType.includes("colab")) {
-            const registeredByQuery = query(
-              collectionRef,
-              where("registeredBy", "==", currentUser.email),
-              where("payment_status", "==", "Pago"),
-              orderBy("createdAt", "desc")
-            );
-
-            const unsubscribe = onSnapshot(registeredByQuery, (snapshot) => {
+              // Depois, atualizar com os novos dados
               const newProjects = snapshot.docs.map((doc) => ({
                 ...doc.data(),
                 id: doc.id,
@@ -207,7 +216,62 @@ const ClientProjectsPaid = () => {
               });
             });
 
-            unsubscribeFunctions.push(unsubscribe);
+            unsubscribeFunctions.push(unsubscribe1);
+            unsubscribeFunctions.push(unsubscribe2);
+          });
+
+          // Buscar também projetos onde o usuário é o registeredBy
+          if (!userType.includes("colab")) {
+            // Query para payment_status como string
+            const registeredByQuery1 = query(
+              collectionRef,
+              where("registeredBy", "==", currentUser.email),
+              where("payment_status", "==", "Pago"),
+              orderBy("createdAt", "desc")
+            );
+
+            // Query para payment_status.status como objeto
+            const registeredByQuery2 = query(
+              collectionRef,
+              where("registeredBy", "==", currentUser.email),
+              where("payment_status.status", "==", "Pago"),
+              orderBy("createdAt", "desc")
+            );
+
+            const unsubscribe1 = onSnapshot(registeredByQuery1, (snapshot) => {
+              const newProjects = snapshot.docs.map((doc) => ({
+                ...doc.data(),
+                id: doc.id,
+                collection: collectionName,
+              }));
+
+              setProjects((prevProjects) => {
+                const projectMap = new Map(prevProjects.map((p) => [p.id, p]));
+                newProjects.forEach((project) => {
+                  projectMap.set(project.id, project);
+                });
+                return Array.from(projectMap.values());
+              });
+            });
+
+            const unsubscribe2 = onSnapshot(registeredByQuery2, (snapshot) => {
+              const newProjects = snapshot.docs.map((doc) => ({
+                ...doc.data(),
+                id: doc.id,
+                collection: collectionName,
+              }));
+
+              setProjects((prevProjects) => {
+                const projectMap = new Map(prevProjects.map((p) => [p.id, p]));
+                newProjects.forEach((project) => {
+                  projectMap.set(project.id, project);
+                });
+                return Array.from(projectMap.values());
+              });
+            });
+
+            unsubscribeFunctions.push(unsubscribe1);
+            unsubscribeFunctions.push(unsubscribe2);
           }
         });
 
@@ -351,7 +415,12 @@ const ClientProjectsPaid = () => {
           },
         };
 
-        const status = value || "Pago";
+        // Verificar se payment_status é um objeto ou string
+        const status =
+          typeof value === "object" && value !== null
+            ? value.status || "Pago"
+            : value || "Pago";
+
         const config = statusConfig[status] || statusConfig["N/A"];
 
         return (

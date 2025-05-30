@@ -54,20 +54,20 @@ const ClientNavigation = ({
   return (
     <div
       ref={navRef}
-      className="flex w-full mb-6 border-b border-gray-200 overflow-x-auto scroll-smooth md:justify-center"
+      className="flex w-full mb-6 border-b border-gray-200 overflow-x-auto scroll-smooth lg:justify-center"
     >
       <span
         ref={activeLink === "projects" ? activeLinkRef : null}
         onClick={handleNavigation("/client/projects", "projects")}
-        className={`nav-link flex items-center justify-center gap-2 w-full h-[40px] md:w-auto md:min-w-[180px] ${
+        className={`nav-link flex items-center justify-center gap-1 xl:gap-2 w-full h-[40px] lg:w-auto lg:min-w-[160px] xl:min-w-[180px] px-2 xl:px-4 ${
           activeLink === "projects" ? "nav-link-active" : "nav-link-inactive"
         }`}
       >
-        <FolderIcon className="w-5 h-5" />
-        <span className="relative">
+        <FolderIcon className="w-4 h-4 xl:w-5 xl:h-5 flex-shrink-0" />
+        <span className="relative text-xs xl:text-sm font-medium whitespace-nowrap">
           Todos Projetos
           {unreadCount > 0 && (
-            <span className="absolute -top-2 -right-3 bg-red-500 text-white text-[11px] w-[17px] h-[17px] flex items-center justify-center rounded-full">
+            <span className="absolute -top-2 -right-3 bg-red-500 text-white text-[10px] xl:text-[11px] w-[15px] h-[15px] xl:w-[17px] xl:h-[17px] flex items-center justify-center rounded-full">
               {unreadCount}
             </span>
           )}
@@ -76,17 +76,17 @@ const ClientNavigation = ({
       <span
         ref={activeLink === "projects-budget" ? activeLinkRef : null}
         onClick={handleNavigation("/client/projects-budget", "projects-budget")}
-        className={`nav-link flex items-center justify-center gap-2 w-full h-[40px] md:w-auto md:min-w-[180px] ${
+        className={`nav-link flex items-center justify-center gap-1 xl:gap-2 w-full h-[40px] lg:w-auto lg:min-w-[160px] xl:min-w-[180px] px-2 xl:px-4 ${
           activeLink === "projects-budget"
             ? "nav-link-active"
             : "nav-link-inactive"
         }`}
       >
-        <ClipboardDocumentCheckIcon className="w-5 h-5" />
-        <span className="relative">
+        <ClipboardDocumentCheckIcon className="w-4 h-4 xl:w-5 xl:h-5 flex-shrink-0" />
+        <span className="relative text-xs xl:text-sm font-medium whitespace-nowrap">
           Aguardando Orçamento
           {unreadBudgetCount > 0 && (
-            <span className="absolute -top-2 -right-3 bg-red-500 text-white text-[11px] w-[17px] h-[17px] flex items-center justify-center rounded-full">
+            <span className="absolute -top-2 -right-3 bg-red-500 text-white text-[10px] xl:text-[11px] w-[15px] h-[15px] xl:w-[17px] xl:h-[17px] flex items-center justify-center rounded-full">
               {unreadBudgetCount}
             </span>
           )}
@@ -98,17 +98,17 @@ const ClientNavigation = ({
           "/client/projects-budget-received",
           "projects-budget-received"
         )}
-        className={`nav-link flex items-center justify-center gap-2 w-full h-[40px] md:w-auto md:min-w-[180px] ${
+        className={`nav-link flex items-center justify-center gap-1 xl:gap-2 w-full h-[40px] lg:w-auto lg:min-w-[160px] xl:min-w-[180px] px-2 xl:px-4 ${
           activeLink === "projects-budget-received"
             ? "nav-link-active"
             : "nav-link-inactive"
         }`}
       >
-        <DocumentCheckIcon className="w-5 h-5" />
-        <span className="relative">
+        <DocumentCheckIcon className="w-4 h-4 xl:w-5 xl:h-5 flex-shrink-0" />
+        <span className="relative text-xs xl:text-sm font-medium whitespace-nowrap">
           Orçamento Recebido
           {unreadApprovalCount > 0 && (
-            <span className="absolute -top-2 -right-3 bg-red-500 text-white text-[11px] w-[17px] h-[17px] flex items-center justify-center rounded-full">
+            <span className="absolute -top-2 -right-3 bg-red-500 text-white text-[10px] xl:text-[11px] w-[15px] h-[15px] xl:w-[17px] xl:h-[17px] flex items-center justify-center rounded-full">
               {unreadApprovalCount}
             </span>
           )}
@@ -117,12 +117,14 @@ const ClientNavigation = ({
       <span
         ref={activeLink === "going-on" ? activeLinkRef : null}
         onClick={handleNavigation("/client/going-on", "going-on")}
-        className={`nav-link flex items-center justify-center gap-2 w-full h-[40px] md:w-auto md:min-w-[180px] ${
+        className={`nav-link flex items-center justify-center gap-1 xl:gap-2 w-full h-[40px] lg:w-auto lg:min-w-[160px] xl:min-w-[180px] px-2 xl:px-4 ${
           activeLink === "going-on" ? "nav-link-active" : "nav-link-inactive"
         }`}
       >
-        <ArrowPathIcon className="w-5 h-5" />
-        Em Andamento
+        <ArrowPathIcon className="w-4 h-4 xl:w-5 xl:h-5 flex-shrink-0" />
+        <span className="text-xs xl:text-sm font-medium whitespace-nowrap">
+          Em Andamento
+        </span>
       </span>
       <span
         ref={activeLink === "projects-analysis" ? activeLinkRef : null}
@@ -130,48 +132,56 @@ const ClientNavigation = ({
           "/client/projects-analysis",
           "projects-analysis"
         )}
-        className={`nav-link flex items-center justify-center gap-2 w-full h-[40px] md:w-auto md:min-w-[180px] ${
+        className={`nav-link flex items-center justify-center gap-1 xl:gap-2 w-full h-[40px] lg:w-auto lg:min-w-[160px] xl:min-w-[180px] px-2 xl:px-4 ${
           activeLink === "projects-analysis"
             ? "nav-link-active"
             : "nav-link-inactive"
         }`}
       >
-        <ClipboardDocumentCheckIcon className="w-5 h-5" />
-        Em Análise
+        <ClipboardDocumentCheckIcon className="w-4 h-4 xl:w-5 xl:h-5 flex-shrink-0" />
+        <span className="text-xs xl:text-sm font-medium whitespace-nowrap">
+          Em Análise
+        </span>
       </span>
       <span
         ref={activeLink === "projects-done" ? activeLinkRef : null}
         onClick={handleNavigation("/client/projects-done", "projects-done")}
-        className={`nav-link flex items-center justify-center gap-2 w-full h-[40px] md:w-auto md:min-w-[180px] ${
+        className={`nav-link flex items-center justify-center gap-1 xl:gap-2 w-full h-[40px] lg:w-auto lg:min-w-[160px] xl:min-w-[180px] px-2 xl:px-4 ${
           activeLink === "projects-done"
             ? "nav-link-active"
             : "nav-link-inactive"
         }`}
       >
-        <CheckCircleIcon className="w-5 h-5" />
-        Projetos Concluídos
+        <CheckCircleIcon className="w-4 h-4 xl:w-5 xl:h-5 flex-shrink-0" />
+        <span className="text-xs xl:text-sm font-medium whitespace-nowrap">
+          Projetos Concluídos
+        </span>
       </span>
       <span
         ref={activeLink === "projects-paid" ? activeLinkRef : null}
         onClick={handleNavigation("/client/projects-paid", "projects-paid")}
-        className={`nav-link flex items-center justify-center gap-2 w-full h-[40px] md:w-auto md:min-w-[180px] ${
+        className={`nav-link flex items-center justify-center gap-1 xl:gap-2 w-full h-[40px] lg:w-auto lg:min-w-[160px] xl:min-w-[180px] px-2 xl:px-4 ${
           activeLink === "projects-paid"
             ? "nav-link-active"
             : "nav-link-inactive"
         }`}
       >
-        <CurrencyDollarIcon className="w-5 h-5" />
-        Projetos Pagos
+        <CurrencyDollarIcon className="w-4 h-4 xl:w-5 xl:h-5 flex-shrink-0" />
+        <span className="text-xs xl:text-sm font-medium whitespace-nowrap">
+          Projetos Pagos
+        </span>
       </span>
       <span
         ref={activeLink === "payments" ? activeLinkRef : null}
         onClick={handleNavigation("/client/payments", "payments")}
-        className={`nav-link flex items-center justify-center gap-2 w-full h-[40px] md:w-auto md:min-w-[180px] ${
+        className={`nav-link flex items-center justify-center gap-1 xl:gap-2 w-full h-[40px] lg:w-auto lg:min-w-[160px] xl:min-w-[180px] px-2 xl:px-4 ${
           activeLink === "payments" ? "nav-link-active" : "nav-link-inactive"
         }`}
       >
-        <CreditCardIcon className="w-5 h-5" />
-        Pagamentos Pendentes
+        <CreditCardIcon className="w-4 h-4 xl:w-5 xl:h-5 flex-shrink-0" />
+        <span className="text-xs xl:text-sm font-medium whitespace-nowrap">
+          Pagamentos Pendentes
+        </span>
       </span>
     </div>
   );
