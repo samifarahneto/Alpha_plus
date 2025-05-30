@@ -20,7 +20,7 @@ const Header = () => {
     return (
       <nav className="bg-white shadow-md fixed w-full top-0 z-40">
         <div className="w-full mx-auto">
-          <div className="flex justify-between items-end h-[70px] px-4 md:px-[100px]">
+          <div className="flex justify-between items-end h-[70px] px-4 lg:px-[100px]">
             <div className="flex items-end">
               <img
                 src={logo}
@@ -28,7 +28,7 @@ const Header = () => {
                 className="h-[60px] w-auto object-contain"
               />
             </div>
-            <div className="hidden md:flex items-end space-x-4">
+            <div className="hidden lg:flex items-end space-x-4">
               <span className="text-gray-500">Carregando...</span>
             </div>
           </div>
@@ -101,11 +101,11 @@ const Header = () => {
       <>
         <nav className="bg-white shadow-md fixed w-full top-0 z-40">
           <div className="w-full mx-auto">
-            <div className="flex items-end h-[70px] px-4 md:px-[100px]">
-              {/* Menu Button - Mobile */}
+            <div className="flex items-end h-[70px] px-4 lg:px-[100px]">
+              {/* Menu Button - Mobile/Tablet */}
               <button
                 onClick={toggleSidebar}
-                className="md:hidden text-gray-700 hover:text-primary p-2 self-end"
+                className="lg:hidden text-gray-700 hover:text-primary p-2 self-end"
               >
                 <FaBars className="w-6 h-6" />
               </button>
@@ -113,7 +113,7 @@ const Header = () => {
               {/* Logo - Mobile & Desktop */}
               <Link
                 to={user ? "/client/dashboard" : "/"}
-                className="flex-1 md:flex-none flex justify-center md:justify-start"
+                className="flex-1 lg:flex-none flex justify-center lg:justify-start"
               >
                 <img
                   src={logo}
@@ -123,12 +123,12 @@ const Header = () => {
               </Link>
 
               {/* Navigation Links - Desktop */}
-              <div className="hidden md:flex items-end space-x-4 ml-auto self-end">
+              <div className="hidden lg:flex items-end space-x-2 xl:space-x-4 ml-auto self-end">
                 {publicLinks.map((link) => (
                   <Link
                     key={link.to}
                     to={link.to}
-                    className={`text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium ${
+                    className={`text-gray-700 hover:text-primary px-2 xl:px-3 py-2 rounded-md text-xs xl:text-sm font-medium ${
                       location.pathname === link.activePath
                         ? "text-primary font-bold"
                         : ""
@@ -142,7 +142,7 @@ const Header = () => {
           </div>
         </nav>
 
-        {/* Sidebar Mobile */}
+        {/* Sidebar Mobile/Tablet */}
         <div
           className={`fixed inset-y-0 left-0 transform ${
             isSidebarOpen ? "translate-x-0" : "-translate-x-full"
@@ -221,11 +221,11 @@ const Header = () => {
       <>
         <nav className="bg-white shadow-md fixed w-full top-0 z-40">
           <div className="w-full mx-auto">
-            <div className="flex items-end h-[70px] px-4 md:px-[100px]">
-              {/* Menu Button - Mobile */}
+            <div className="flex items-end h-[70px] px-4 lg:px-[100px] relative">
+              {/* Menu Button - Mobile/Tablet */}
               <button
                 onClick={toggleSidebar}
-                className="md:hidden text-gray-700 hover:text-primary p-2 self-end"
+                className="lg:hidden text-gray-700 hover:text-primary p-2 self-end"
               >
                 <FaBars className="w-6 h-6" />
               </button>
@@ -233,7 +233,7 @@ const Header = () => {
               {/* Logo - Mobile & Desktop */}
               <Link
                 to="/company/master/dashboard"
-                className="flex-1 md:flex-none flex justify-center md:justify-start"
+                className="flex-1 lg:flex-none flex justify-center lg:justify-start"
               >
                 <img
                   src={logo}
@@ -243,19 +243,19 @@ const Header = () => {
               </Link>
 
               {/* User Info - Desktop */}
-              <div className="hidden md:block absolute left-1/2 transform -translate-x-1/2 text-center self-end">
-                <p className="text-gray-700 text-sm px-3 py-2">
+              <div className="hidden lg:block absolute left-1/2 transform -translate-x-1/2 text-center self-end">
+                <p className="text-gray-700 text-sm px-3 py-2 whitespace-nowrap">
                   Olá, {user?.email}
                 </p>
               </div>
 
               {/* Navigation Links - Desktop */}
-              <div className="hidden md:flex items-end space-x-4 ml-auto self-end">
+              <div className="hidden lg:flex items-end space-x-1 xl:space-x-2 ml-auto self-end">
                 {masterLinks.map((link) => (
                   <Link
                     key={link.to}
                     to={link.to}
-                    className={`text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium ${
+                    className={`text-gray-700 hover:text-primary px-1 xl:px-2 py-2 rounded-md text-xs xl:text-sm font-medium whitespace-nowrap ${
                       location.pathname.includes(link.activePath)
                         ? "text-primary font-bold"
                         : ""
@@ -266,7 +266,7 @@ const Header = () => {
                 ))}
                 <button
                   onClick={handleLogout}
-                  className="text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium"
+                  className="text-gray-700 hover:text-primary px-1 xl:px-2 py-2 rounded-md text-xs xl:text-sm font-medium whitespace-nowrap"
                 >
                   Sair
                 </button>
@@ -275,7 +275,7 @@ const Header = () => {
           </div>
         </nav>
 
-        {/* Sidebar Mobile */}
+        {/* Sidebar Mobile/Tablet */}
         <div
           className={`fixed inset-y-0 left-0 transform ${
             isSidebarOpen ? "translate-x-0" : "-translate-x-full"
@@ -355,11 +355,11 @@ const Header = () => {
       <>
         <nav className="bg-white shadow-md fixed w-full top-0 z-40">
           <div className="w-full mx-auto">
-            <div className="flex items-end h-[70px] px-4 md:px-[100px]">
-              {/* Menu Button - Mobile */}
+            <div className="flex items-end h-[70px] px-4 lg:px-[100px] relative">
+              {/* Menu Button - Mobile/Tablet */}
               <button
                 onClick={toggleSidebar}
-                className="md:hidden text-gray-700 hover:text-primary p-2 self-end"
+                className="lg:hidden text-gray-700 hover:text-primary p-2 self-end"
               >
                 <FaBars className="w-6 h-6" />
               </button>
@@ -367,7 +367,7 @@ const Header = () => {
               {/* Logo - Mobile & Desktop */}
               <Link
                 to="/client/dashboard"
-                className="flex-1 md:flex-none flex justify-center md:justify-start"
+                className="flex-1 lg:flex-none flex justify-center lg:justify-start"
               >
                 <img
                   src={logo}
@@ -377,19 +377,19 @@ const Header = () => {
               </Link>
 
               {/* User Info - Desktop */}
-              <div className="hidden md:block absolute left-1/2 transform -translate-x-1/2 text-center self-end">
-                <p className="text-gray-700 text-sm px-3 py-2">
+              <div className="hidden lg:block absolute left-1/2 transform -translate-x-1/2 text-center self-end">
+                <p className="text-gray-700 text-sm px-3 py-2 whitespace-nowrap">
                   Olá, {user?.email}
                 </p>
               </div>
 
               {/* Navigation Links - Desktop */}
-              <div className="hidden md:flex items-end space-x-4 ml-auto self-end">
+              <div className="hidden lg:flex items-end space-x-1 xl:space-x-2 ml-auto self-end">
                 {clientLinks.map((link) => (
                   <Link
                     key={link.to}
                     to={link.to}
-                    className={`text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium ${
+                    className={`text-gray-700 hover:text-primary px-1 xl:px-2 py-2 rounded-md text-xs xl:text-sm font-medium whitespace-nowrap ${
                       location.pathname.includes(link.activePath)
                         ? "text-primary font-bold"
                         : ""
@@ -400,7 +400,7 @@ const Header = () => {
                 ))}
                 <button
                   onClick={handleLogout}
-                  className="text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium"
+                  className="text-gray-700 hover:text-primary px-1 xl:px-2 py-2 rounded-md text-xs xl:text-sm font-medium whitespace-nowrap"
                 >
                   Sair
                 </button>
@@ -409,7 +409,7 @@ const Header = () => {
           </div>
         </nav>
 
-        {/* Sidebar Mobile */}
+        {/* Sidebar Mobile/Tablet */}
         <div
           className={`fixed inset-y-0 left-0 transform ${
             isSidebarOpen ? "translate-x-0" : "-translate-x-full"
@@ -481,11 +481,11 @@ const Header = () => {
       <>
         <nav className="bg-white shadow-md fixed w-full top-0 z-40">
           <div className="w-full mx-auto">
-            <div className="flex items-end h-[70px] px-4 md:px-[100px]">
-              {/* Menu Button - Mobile */}
+            <div className="flex items-end h-[70px] px-4 lg:px-[100px] relative">
+              {/* Menu Button - Mobile/Tablet */}
               <button
                 onClick={toggleSidebar}
-                className="md:hidden text-gray-700 hover:text-primary p-2 self-end"
+                className="lg:hidden text-gray-700 hover:text-primary p-2 self-end"
               >
                 <FaBars className="w-6 h-6" />
               </button>
@@ -493,7 +493,7 @@ const Header = () => {
               {/* Logo - Mobile & Desktop */}
               <Link
                 to="/client/dashboard"
-                className="flex-1 md:flex-none flex justify-center md:justify-start"
+                className="flex-1 lg:flex-none flex justify-center lg:justify-start"
               >
                 <img
                   src={logo}
@@ -503,19 +503,19 @@ const Header = () => {
               </Link>
 
               {/* User Info - Desktop */}
-              <div className="hidden md:block absolute left-1/2 transform -translate-x-1/2 text-center self-end">
-                <p className="text-gray-700 text-sm px-3 py-2">
+              <div className="hidden lg:block absolute left-1/2 transform -translate-x-1/2 text-center self-end">
+                <p className="text-gray-700 text-sm px-3 py-2 whitespace-nowrap">
                   Olá, {user?.email}
                 </p>
               </div>
 
               {/* Navigation Links - Desktop */}
-              <div className="hidden md:flex items-end space-x-4 ml-auto self-end">
+              <div className="hidden lg:flex items-end space-x-1 xl:space-x-2 ml-auto self-end">
                 {colabLinks.map((link) => (
                   <Link
                     key={link.to}
                     to={link.to}
-                    className={`text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium ${
+                    className={`text-gray-700 hover:text-primary px-1 xl:px-2 py-2 rounded-md text-xs xl:text-sm font-medium whitespace-nowrap ${
                       location.pathname.includes(link.activePath)
                         ? "text-primary font-bold"
                         : ""
@@ -526,7 +526,7 @@ const Header = () => {
                 ))}
                 <button
                   onClick={handleLogout}
-                  className="text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium"
+                  className="text-gray-700 hover:text-primary px-1 xl:px-2 py-2 rounded-md text-xs xl:text-sm font-medium whitespace-nowrap"
                 >
                   Sair
                 </button>
@@ -535,7 +535,7 @@ const Header = () => {
           </div>
         </nav>
 
-        {/* Sidebar Mobile */}
+        {/* Sidebar Mobile/Tablet */}
         <div
           className={`fixed inset-y-0 left-0 transform ${
             isSidebarOpen ? "translate-x-0" : "-translate-x-full"
