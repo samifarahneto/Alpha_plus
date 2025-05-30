@@ -242,15 +242,22 @@ const Header = () => {
                 />
               </Link>
 
-              {/* User Info - Desktop */}
-              <div className="hidden lg:block absolute left-1/2 transform -translate-x-1/2 text-center self-end">
+              {/* User Info - Desktop - Apenas em resoluções muito altas */}
+              <div className="hidden 2xl:block absolute left-1/2 transform -translate-x-1/2 text-center self-end">
                 <p className="text-gray-700 text-sm px-3 py-2 whitespace-nowrap">
                   Olá, {user?.email}
                 </p>
               </div>
 
+              {/* User Info - Desktop - Versão compacta para resoluções intermediárias */}
+              <div className="hidden lg:block 2xl:hidden ml-4 self-end">
+                <p className="text-gray-700 text-xs px-2 py-2 whitespace-nowrap truncate max-w-[120px]">
+                  {user?.email}
+                </p>
+              </div>
+
               {/* Navigation Links - Desktop */}
-              <div className="hidden lg:flex items-end space-x-1 xl:space-x-2 ml-auto self-end">
+              <div className="hidden lg:flex items-end space-x-1 xl:space-x-2 2xl:ml-auto self-end">
                 {masterLinks.map((link) => (
                   <Link
                     key={link.to}
@@ -376,15 +383,22 @@ const Header = () => {
                 />
               </Link>
 
-              {/* User Info - Desktop */}
-              <div className="hidden lg:block absolute left-1/2 transform -translate-x-1/2 text-center self-end">
+              {/* User Info - Desktop - Apenas em resoluções muito altas */}
+              <div className="hidden 2xl:block absolute left-1/2 transform -translate-x-1/2 text-center self-end">
                 <p className="text-gray-700 text-sm px-3 py-2 whitespace-nowrap">
                   Olá, {user?.email}
                 </p>
               </div>
 
+              {/* User Info - Desktop - Versão compacta para resoluções intermediárias */}
+              <div className="hidden lg:block 2xl:hidden ml-4 self-end">
+                <p className="text-gray-700 text-xs px-2 py-2 whitespace-nowrap truncate max-w-[120px]">
+                  {user?.email}
+                </p>
+              </div>
+
               {/* Navigation Links - Desktop */}
-              <div className="hidden lg:flex items-end space-x-1 xl:space-x-2 ml-auto self-end">
+              <div className="hidden lg:flex items-end space-x-1 xl:space-x-2 2xl:ml-auto self-end">
                 {clientLinks.map((link) => (
                   <Link
                     key={link.to}
@@ -502,15 +516,22 @@ const Header = () => {
                 />
               </Link>
 
-              {/* User Info - Desktop */}
-              <div className="hidden lg:block absolute left-1/2 transform -translate-x-1/2 text-center self-end">
+              {/* User Info - Desktop - Apenas em resoluções muito altas */}
+              <div className="hidden 2xl:block absolute left-1/2 transform -translate-x-1/2 text-center self-end">
                 <p className="text-gray-700 text-sm px-3 py-2 whitespace-nowrap">
                   Olá, {user?.email}
                 </p>
               </div>
 
+              {/* User Info - Desktop - Versão compacta para resoluções intermediárias */}
+              <div className="hidden lg:block 2xl:hidden ml-4 self-end">
+                <p className="text-gray-700 text-xs px-2 py-2 whitespace-nowrap truncate max-w-[120px]">
+                  {user?.email}
+                </p>
+              </div>
+
               {/* Navigation Links - Desktop */}
-              <div className="hidden lg:flex items-end space-x-1 xl:space-x-2 ml-auto self-end">
+              <div className="hidden lg:flex items-end space-x-1 xl:space-x-2 2xl:ml-auto self-end">
                 {colabLinks.map((link) => (
                   <Link
                     key={link.to}
