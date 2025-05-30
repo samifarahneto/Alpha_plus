@@ -379,8 +379,57 @@ const ClientProjectsPaid = () => {
       label: "Prazo",
       render: (value) => {
         if (!value) return "N/A";
-        const date = value.toDate ? value.toDate() : new Date(value);
-        return date.toLocaleDateString("pt-BR");
+
+        // Se for uma string que representa prazo em texto (não data)
+        if (typeof value === "string") {
+          // Verificar se é uma string de prazo em texto
+          const textualDeadlines = [
+            "A definir",
+            "Não definido",
+            "A Definir",
+            "N/A",
+            "n/a",
+            "dias úteis",
+            "úteis",
+            "útil",
+          ];
+
+          const isTextualDeadline = textualDeadlines.some((text) =>
+            value.toLowerCase().includes(text.toLowerCase())
+          );
+
+          if (isTextualDeadline) {
+            return value;
+          }
+
+          // Tentar converter string de data
+          const dateFromString = new Date(value);
+          if (!isNaN(dateFromString.getTime())) {
+            return dateFromString.toLocaleDateString("pt-BR");
+          }
+
+          // Se não conseguiu converter, retornar o valor original
+          return value;
+        }
+
+        // Se for um timestamp do Firebase
+        if (typeof value === "object" && value.toDate) {
+          return value.toDate().toLocaleDateString("pt-BR");
+        }
+
+        // Se for um objeto com seconds (timestamp do Firestore)
+        if (typeof value === "object" && value.seconds) {
+          return new Date(value.seconds * 1000).toLocaleDateString("pt-BR");
+        }
+
+        // Tentar converter como Date
+        const date = new Date(value);
+        if (!isNaN(date.getTime())) {
+          return date.toLocaleDateString("pt-BR");
+        }
+
+        // Se nada funcionou, retornar o valor original ou N/A
+        return value || "N/A";
       },
     },
     {

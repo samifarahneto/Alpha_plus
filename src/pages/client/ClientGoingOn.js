@@ -181,10 +181,57 @@ const ClientGoingOn = () => {
 
   const formatDate = (date) => {
     if (!date) return "";
+
+    // Se for uma string que representa prazo em texto (não data)
+    if (typeof date === "string") {
+      // Verificar se é uma string de prazo em texto
+      const textualDeadlines = [
+        "A definir",
+        "Não definido",
+        "A Definir",
+        "N/A",
+        "n/a",
+        "dias úteis",
+        "úteis",
+        "útil",
+      ];
+
+      const isTextualDeadline = textualDeadlines.some((text) =>
+        date.toLowerCase().includes(text.toLowerCase())
+      );
+
+      if (isTextualDeadline) {
+        return date;
+      }
+
+      // Tentar converter string de data
+      const dateFromString = new Date(date);
+      if (!isNaN(dateFromString.getTime())) {
+        return dateFromString.toLocaleDateString("pt-BR");
+      }
+
+      // Se não conseguiu converter, retornar o valor original
+      return date;
+    }
+
+    // Se for um objeto com seconds (timestamp do Firestore)
     if (typeof date === "object" && date.seconds) {
       return new Date(date.seconds * 1000).toLocaleDateString("pt-BR");
     }
-    return new Date(date).toLocaleDateString("pt-BR");
+
+    // Se for um timestamp do Firebase
+    if (typeof date === "object" && date.toDate) {
+      return date.toDate().toLocaleDateString("pt-BR");
+    }
+
+    // Tentar converter como Date
+    const dateObj = new Date(date);
+    if (!isNaN(dateObj.getTime())) {
+      return dateObj.toLocaleDateString("pt-BR");
+    }
+
+    // Se nada funcionou, retornar o valor original
+    return date || "";
   };
 
   const calculateTotalValue = (files) => {
