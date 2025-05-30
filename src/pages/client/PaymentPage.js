@@ -5,10 +5,10 @@ import {
   getFirestore,
   doc,
   getDoc,
-  updateDoc,
   deleteDoc,
   collection,
   onSnapshot,
+  setDoc,
 } from "firebase/firestore";
 import PageLayout from "../../components/PageLayout";
 
@@ -199,14 +199,33 @@ const PaymentPage = () => {
       const firestore = getFirestore();
       await Promise.all(
         projectIds.map(async (id) => {
-          // Tentar atualizar na coleção projects primeiro
-          let projectRef = doc(firestore, "projects", id);
-          let projectDoc = await getDoc(projectRef);
+          // Encontrar o projeto na coleção correta (usar o mesmo código do fetchProjects)
+          const collections = [
+            "b2bapproved",
+            "b2bprojectspaid",
+            "b2bprojectpaid",
+            "b2bsketch",
+            "b2csketch",
+            "b2bdocprojects",
+            "b2cdocprojects",
+            "b2bapproval",
+            "projects",
+            "clientprojects",
+          ];
 
-          // Se não encontrar na coleção projects, tentar na clientprojects
-          if (!projectDoc.exists()) {
-            projectRef = doc(firestore, "clientprojects", id);
+          let projectDoc = null;
+          let projectRef = null;
+          let originalCollection = null;
+
+          // Buscar o projeto em todas as coleções possíveis
+          for (const collection of collections) {
+            projectRef = doc(firestore, collection, id);
             projectDoc = await getDoc(projectRef);
+
+            if (projectDoc.exists()) {
+              originalCollection = collection;
+              break;
+            }
           }
 
           if (projectDoc.exists()) {
@@ -222,40 +241,53 @@ const PaymentPage = () => {
             const deadlineDate = addBusinessDays(new Date(), deadlineDays);
 
             // Determinar a coleção correta baseada no tipo de usuário
-            let targetCollection;
+            let targetCollection = "b2cprojectspaid"; // valor padrão
             const userInfo = clientTypes[projectData.userEmail];
+
+            console.log("User info:", userInfo);
+            console.log("Project data userEmail:", projectData.userEmail);
 
             if (userInfo?.userType === "colab") {
               // Para colaboradores, usa o registeredByType
               if (userInfo.registeredByType === "b2b") {
                 targetCollection = "b2bprojectspaid";
-              } else if (userInfo.registeredByType === "b2c") {
+              } else {
                 targetCollection = "b2cprojectspaid";
               }
             } else {
               // Para usuários normais, usa o userType
               if (userInfo?.userType === "b2b") {
                 targetCollection = "b2bprojectspaid";
-              } else if (userInfo?.userType === "b2c") {
+              } else {
                 targetCollection = "b2cprojectspaid";
               }
             }
 
+            console.log("Target collection:", targetCollection);
+
             // Criar referência para o novo documento na coleção correta
             const newProjectRef = doc(firestore, targetCollection, id);
 
-            // Atualizar o projeto na nova coleção
-            await updateDoc(newProjectRef, {
+            // Criar o documento na nova coleção com setDoc (não updateDoc)
+            await setDoc(newProjectRef, {
               ...projectData,
               payment_status: "Pago",
               project_status: "Em análise",
+              translation_status: "N/A",
               deadlineDate: deadlineDate.toISOString(),
               paidAt: new Date().toISOString(),
               collection: targetCollection,
+              originalCollection: originalCollection,
             });
 
             // Deletar o projeto da coleção antiga
             await deleteDoc(projectRef);
+
+            console.log(
+              `Projeto ${id} movido de ${originalCollection} para ${targetCollection}`
+            );
+          } else {
+            console.error(`Projeto ${id} não encontrado em nenhuma coleção`);
           }
         })
       );

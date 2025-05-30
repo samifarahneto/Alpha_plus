@@ -46,6 +46,7 @@ const ClientProjects = () => {
     return savedVisibleColumns
       ? JSON.parse(savedVisibleColumns)
       : [
+          "projectNumber",
           "projectOwner",
           "userEmail",
           "projectName",
@@ -78,6 +79,7 @@ const ClientProjects = () => {
   const fixedColumns = ["projectOwner", "userEmail", "projectName", "selector"];
 
   const availableColumns = [
+    { id: "projectNumber", label: "Nº" },
     { id: "projectOwner", label: "Autor", fixed: true },
     { id: "userEmail", label: "Email", fixed: true },
     { id: "projectName", label: "Projeto", fixed: true },
@@ -985,6 +987,15 @@ const ClientProjects = () => {
   };
 
   const columns = [
+    {
+      id: "projectNumber",
+      label: "Nº",
+      render: (value) => (
+        <span className="text-sm font-medium text-gray-900">
+          {value || "N/A"}
+        </span>
+      ),
+    },
     {
       id: "projectOwner",
       label: "Autor",

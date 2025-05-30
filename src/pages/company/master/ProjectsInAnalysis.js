@@ -291,7 +291,10 @@ const ProjectsInAnalysis = () => {
 
   const formattedData = React.useMemo(() => {
     return paginatedData
-      .filter((row) => row && row.id && row.project_status === "Em Análise")
+      .filter(
+        (row) =>
+          row && row.id && row.project_status?.toLowerCase() === "em análise"
+      )
       .map((row) => ({
         ...row,
         id: row.id || `temp-${Math.random()}`,
