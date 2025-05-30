@@ -150,120 +150,89 @@ const ClientAnalysis = () => {
 
           // Para cada email relacionado
           emailsToSearch.forEach((email) => {
+            // Função para criar queries para ambas as variações de status
+            const createQueries = (emailField, emailValue) => {
+              return [
+                // Query para "Em Análise" (maiúsculo)
+                query(
+                  collectionRef,
+                  where(emailField, "==", emailValue),
+                  where("project_status", "==", "Em Análise"),
+                  orderBy("createdAt", "desc")
+                ),
+                // Query para "Em análise" (minúsculo)
+                query(
+                  collectionRef,
+                  where(emailField, "==", emailValue),
+                  where("project_status", "==", "Em análise"),
+                  orderBy("createdAt", "desc")
+                ),
+              ];
+            };
+
             // Buscar projetos onde o email é o projectOwner
-            const q1 = query(
-              collectionRef,
-              where("projectOwner", "==", email),
-              where("project_status", "==", "Em Análise"),
-              orderBy("createdAt", "desc")
-            );
+            const projectOwnerQueries = createQueries("projectOwner", email);
 
             // Buscar projetos onde o email é o userEmail
-            const q2 = query(
-              collectionRef,
-              where("userEmail", "==", email),
-              where("project_status", "==", "Em Análise"),
-              orderBy("createdAt", "desc")
-            );
+            const userEmailQueries = createQueries("userEmail", email);
 
-            // Adicionar listeners para atualização em tempo real
-            const unsubscribe1 = onSnapshot(q1, async (snapshot) => {
-              if (!snapshot.empty) {
-                const newProjects = await Promise.all(
-                  snapshot.docs.map(async (doc) => {
-                    const projectData = doc.data();
-                    const firestore = getFirestore();
-                    const usersCollection = collection(firestore, "users");
+            // Combinar todas as queries
+            const allQueries = [...projectOwnerQueries, ...userEmailQueries];
 
-                    let authorName = "Não informado";
-                    if (projectData.projectOwner) {
-                      try {
-                        const userQuery = query(
-                          usersCollection,
-                          where("email", "==", projectData.projectOwner)
-                        );
-                        const userSnapshot = await getDocs(userQuery);
-                        if (!userSnapshot.empty) {
-                          const userData = userSnapshot.docs[0].data();
-                          authorName = userData.nomeCompleto || "Não informado";
+            // Adicionar listeners para cada query
+            allQueries.forEach((queryObj) => {
+              const unsubscribe = onSnapshot(queryObj, async (snapshot) => {
+                if (!snapshot.empty) {
+                  const newProjects = await Promise.all(
+                    snapshot.docs.map(async (doc) => {
+                      const projectData = doc.data();
+                      const firestore = getFirestore();
+                      const usersCollection = collection(firestore, "users");
+
+                      let authorName = "Não informado";
+                      if (projectData.projectOwner) {
+                        try {
+                          const userQuery = query(
+                            usersCollection,
+                            where("email", "==", projectData.projectOwner)
+                          );
+                          const userSnapshot = await getDocs(userQuery);
+                          if (!userSnapshot.empty) {
+                            const userData = userSnapshot.docs[0].data();
+                            authorName =
+                              userData.nomeCompleto || "Não informado";
+                          }
+                        } catch (error) {
+                          console.error("Erro ao buscar nome do autor:", error);
                         }
-                      } catch (error) {
-                        console.error("Erro ao buscar nome do autor:", error);
                       }
-                    }
 
-                    return {
-                      ...projectData,
-                      id: doc.id,
-                      collection: collectionName,
-                      authorName: authorName,
-                      projectOwner: projectData.projectOwner || "Não informado",
-                      userEmail: projectData.userEmail || "Não informado",
-                    };
-                  })
-                );
-
-                setProjects((prevProjects) => {
-                  const projectMap = new Map(
-                    prevProjects.map((p) => [p.id, p])
+                      return {
+                        ...projectData,
+                        id: doc.id,
+                        collection: collectionName,
+                        authorName: authorName,
+                        projectOwner:
+                          projectData.projectOwner || "Não informado",
+                        userEmail: projectData.userEmail || "Não informado",
+                      };
+                    })
                   );
-                  newProjects.forEach((project) => {
-                    projectMap.set(project.id, project);
+
+                  setProjects((prevProjects) => {
+                    const projectMap = new Map(
+                      prevProjects.map((p) => [p.id, p])
+                    );
+                    newProjects.forEach((project) => {
+                      projectMap.set(project.id, project);
+                    });
+                    return Array.from(projectMap.values());
                   });
-                  return Array.from(projectMap.values());
-                });
-              }
+                }
+              });
+
+              unsubscribeFunctions.push(unsubscribe);
             });
-
-            const unsubscribe2 = onSnapshot(q2, async (snapshot) => {
-              if (!snapshot.empty) {
-                const newProjects = await Promise.all(
-                  snapshot.docs.map(async (doc) => {
-                    const projectData = doc.data();
-                    const firestore = getFirestore();
-                    const usersCollection = collection(firestore, "users");
-
-                    let authorName = "Não informado";
-                    if (projectData.projectOwner) {
-                      try {
-                        const userQuery = query(
-                          usersCollection,
-                          where("email", "==", projectData.projectOwner)
-                        );
-                        const userSnapshot = await getDocs(userQuery);
-                        if (!userSnapshot.empty) {
-                          const userData = userSnapshot.docs[0].data();
-                          authorName = userData.nomeCompleto || "Não informado";
-                        }
-                      } catch (error) {
-                        console.error("Erro ao buscar nome do autor:", error);
-                      }
-                    }
-
-                    return {
-                      ...projectData,
-                      id: doc.id,
-                      collection: collectionName,
-                      authorName: authorName,
-                      projectOwner: projectData.projectOwner || "Não informado",
-                      userEmail: projectData.userEmail || "Não informado",
-                    };
-                  })
-                );
-
-                setProjects((prevProjects) => {
-                  const projectMap = new Map(
-                    prevProjects.map((p) => [p.id, p])
-                  );
-                  newProjects.forEach((project) => {
-                    projectMap.set(project.id, project);
-                  });
-                  return Array.from(projectMap.values());
-                });
-              }
-            });
-
-            unsubscribeFunctions.push(unsubscribe1, unsubscribe2);
           });
         });
 

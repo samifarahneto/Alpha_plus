@@ -272,7 +272,7 @@ const PaymentPage = () => {
             await setDoc(newProjectRef, {
               ...projectData,
               payment_status: "Pago",
-              project_status: "Em análise",
+              project_status: "Em Análise",
               translation_status: "N/A",
               deadlineDate: deadlineDate.toISOString(),
               paidAt: new Date().toISOString(),
