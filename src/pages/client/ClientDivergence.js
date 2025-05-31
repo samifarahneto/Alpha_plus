@@ -191,11 +191,8 @@ const ClientDivergence = () => {
         setLoading(true);
         const currentUser = auth.currentUser;
         if (!currentUser) {
-          console.log("Usuário não encontrado");
           return;
         }
-
-        console.log("Usuário atual:", currentUser.email);
 
         const firestore = getFirestore();
         const userDoc = await getDocs(
@@ -214,9 +211,6 @@ const ClientDivergence = () => {
         const userData = userDoc.docs[0].data();
         const userEmail = userData.email;
 
-        console.log("Dados do usuário:", userData);
-        console.log("Email do usuário:", userEmail);
-
         // Configurar listeners para b2bprojectspaid, b2cprojectspaid e b2bapproval
         const collections = [
           "b2bprojectspaid",
@@ -224,8 +218,6 @@ const ClientDivergence = () => {
           "b2bapproval",
         ];
         const unsubscribeFunctions = [];
-
-        console.log("Coleções a serem consultadas:", collections);
 
         collections.forEach((collectionName) => {
           const projectsRef = collection(firestore, collectionName);
@@ -235,28 +227,13 @@ const ClientDivergence = () => {
             orderBy("createdAt", "desc")
           );
 
-          console.log(`Configurando listener para coleção: ${collectionName}`);
-
           const unsubscribe = onSnapshot(q, (snapshot) => {
-            console.log(
-              `Projetos encontrados na coleção ${collectionName}:`,
-              snapshot.docs.length
-            );
-
             const newProjects = snapshot.docs
-              .map((doc) => {
-                const data = doc.data();
-                console.log(`Projeto ${doc.id}:`, {
-                  payment_status: data.payment_status,
-                  project_status: data.project_status,
-                  projectName: data.projectName,
-                });
-                return {
-                  id: doc.id,
-                  ...data,
-                  collection: collectionName,
-                };
-              })
+              .map((doc) => ({
+                id: doc.id,
+                ...doc.data(),
+                collection: collectionName,
+              }))
               .filter((project) => {
                 // Filtrar apenas projetos em divergência que ainda não foram pagos
                 const paymentStatus =
@@ -264,29 +241,12 @@ const ClientDivergence = () => {
                     ? project.payment_status.status
                     : project.payment_status;
 
-                console.log(
-                  `Projeto ${project.id} - Status de pagamento:`,
-                  paymentStatus
-                );
-
                 // Apenas projetos que estão atualmente em divergência e não foram pagos
-                const isInDivergence =
+                return (
                   paymentStatus === "Em Divergência" ||
-                  paymentStatus === "Divergência";
-
-                console.log(
-                  `Projeto ${project.id} - Em divergência:`,
-                  isInDivergence
+                  paymentStatus === "Divergência"
                 );
-
-                return isInDivergence;
               });
-
-            console.log(
-              `Projetos filtrados da coleção ${collectionName}:`,
-              newProjects.length
-            );
-            console.log("Projetos filtrados:", newProjects);
 
             setAllProjects((prevProjects) => {
               // Remover projetos antigos desta coleção
@@ -294,12 +254,7 @@ const ClientDivergence = () => {
                 (p) => p.collection !== collectionName
               );
               // Adicionar novos projetos
-              const updatedProjects = [...filteredProjects, ...newProjects];
-              console.log(
-                "Total de projetos após atualização:",
-                updatedProjects.length
-              );
-              return updatedProjects;
+              return [...filteredProjects, ...newProjects];
             });
           });
 
@@ -323,12 +278,27 @@ const ClientDivergence = () => {
 
   // useEffect para atualizar dados quando allProjects muda
   useEffect(() => {
-    console.log("AllProjects atualizado:", allProjects.length, allProjects);
     setProjects(allProjects);
   }, [allProjects]);
 
   const handleProjectClick = (projectId, collection) => {
-    navigate(`/client/project/${projectId}?collection=${collection}`);
+    // Encontrar o projeto nos dados
+    const project = projects.find((p) => p.id === projectId);
+    if (!project) {
+      console.error("Projeto não encontrado:", projectId);
+      return;
+    }
+
+    console.log("Projeto clicado:", project);
+    console.log("Coleção do projeto:", project.collection);
+
+    // Navegar para a página de detalhes com a coleção correta
+    navigate(`/client/projects/${projectId}`, {
+      state: {
+        project: project,
+        collection: project.collection,
+      },
+    });
   };
 
   const formatDate = (date) => {

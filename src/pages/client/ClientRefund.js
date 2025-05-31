@@ -256,7 +256,23 @@ const ClientRefund = () => {
   }, [allProjects]);
 
   const handleProjectClick = (projectId, collection) => {
-    navigate(`/client/project/${projectId}?collection=${collection}`);
+    // Encontrar o projeto nos dados
+    const project = projects.find((p) => p.id === projectId);
+    if (!project) {
+      console.error("Projeto não encontrado:", projectId);
+      return;
+    }
+
+    console.log("Projeto clicado:", project);
+    console.log("Coleção do projeto:", project.collection);
+
+    // Navegar para a página de detalhes com a coleção correta
+    navigate(`/client/projects/${projectId}`, {
+      state: {
+        project: project,
+        collection: project.collection,
+      },
+    });
   };
 
   const formatDate = (date) => {
