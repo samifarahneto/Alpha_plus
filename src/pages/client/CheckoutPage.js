@@ -273,10 +273,27 @@ const CheckoutPage = () => {
 
   const formatDate = (date) => {
     if (!date) return "A definir";
-    const day = String(date.getDate()).padStart(2, "0");
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const year = date.getFullYear();
-    return `${day}/${month}/${year}`;
+
+    try {
+      // Verificar se é uma data válida
+      if (!(date instanceof Date) || isNaN(date.getTime())) {
+        return "A definir";
+      }
+
+      const day = String(date.getDate()).padStart(2, "0");
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const year = date.getFullYear();
+
+      // Verificar se os valores são válidos
+      if (isNaN(day) || isNaN(month) || isNaN(year)) {
+        return "A definir";
+      }
+
+      return `${day}/${month}/${year}`;
+    } catch (error) {
+      console.error("Erro ao formatar data:", error);
+      return "A definir";
+    }
   };
 
   const calculateTotalPages = (files) => {
@@ -446,21 +463,32 @@ const CheckoutPage = () => {
               status: "completed",
             };
 
-            // Calcular o novo prazo baseado nas páginas adicionais
-            const originalDeadline = new Date(
-              project.deadlineDate.split("/").reverse().join("-")
+            // Calcular o novo prazo baseado no total de páginas (originais + divergência)
+            const originalPages = project.files.reduce(
+              (total, file) => total + (Number(file.pageCount) || 0),
+              0
             );
             const additionalPages = Number(project.payment_status.pages);
-            const daysToAdd = determineDeadlineDays(
-              additionalPages,
+            const totalPages = originalPages + additionalPages;
+
+            const totalDeadlineDays = determineDeadlineDays(
+              totalPages,
               project.isPriority
             );
-            const newDeadline = addBusinessDays(originalDeadline, daysToAdd);
+            const newDeadlineDate = addBusinessDays(
+              new Date(
+                project.createdAt?.toDate?.() || project.createdAt || new Date()
+              ),
+              totalDeadlineDays
+            );
 
             // Formatar a nova data
-            const day = String(newDeadline.getDate()).padStart(2, "0");
-            const month = String(newDeadline.getMonth() + 1).padStart(2, "0");
-            const year = newDeadline.getFullYear();
+            const day = String(newDeadlineDate.getDate()).padStart(2, "0");
+            const month = String(newDeadlineDate.getMonth() + 1).padStart(
+              2,
+              "0"
+            );
+            const year = newDeadlineDate.getFullYear();
             const formattedDeadlineDate = `${day}/${month}/${year}`;
 
             // Manter os valores existentes e atualizar apenas o necessário
@@ -489,7 +517,7 @@ const CheckoutPage = () => {
               updatedAt: serverTimestamp(),
               paymentHistory: arrayUnion(paymentHistory),
               deadlineDate: formattedDeadlineDate,
-              deadline: `${daysToAdd} dias úteis`,
+              deadline: `${totalDeadlineDays} dias úteis`,
               paidAt: new Date().toISOString(),
             });
           } else {
@@ -654,7 +682,28 @@ const CheckoutPage = () => {
                                 Prazo Original:
                               </span>
                               <span className="text-emerald-600 font-medium">
-                                {project.deadlineDate}
+                                {(() => {
+                                  // Calcular o prazo original baseado nas páginas iniciais
+                                  const originalPages = project.files.reduce(
+                                    (total, file) =>
+                                      total + (Number(file.pageCount) || 0),
+                                    0
+                                  );
+                                  const originalDeadlineDays =
+                                    determineDeadlineDays(
+                                      originalPages,
+                                      project.isPriority
+                                    );
+                                  const originalDeadlineDate = addBusinessDays(
+                                    new Date(
+                                      project.createdAt?.toDate?.() ||
+                                        project.createdAt ||
+                                        new Date()
+                                    ),
+                                    originalDeadlineDays
+                                  );
+                                  return formatDate(originalDeadlineDate);
+                                })()}
                               </span>
                             </div>
                             {project.payment_status &&
@@ -665,24 +714,34 @@ const CheckoutPage = () => {
                                   </span>
                                   <span className="text-red-600 font-medium">
                                     {(() => {
-                                      const originalDeadline = new Date(
-                                        project.deadlineDate
-                                          .split("/")
-                                          .reverse()
-                                          .join("-")
-                                      );
+                                      // Calcular o novo prazo baseado no total de páginas (originais + divergência)
+                                      const originalPages =
+                                        project.files.reduce(
+                                          (total, file) =>
+                                            total +
+                                            (Number(file.pageCount) || 0),
+                                          0
+                                        );
                                       const additionalPages = Number(
                                         project.payment_status.pages
                                       );
-                                      const daysToAdd = determineDeadlineDays(
-                                        additionalPages,
-                                        project.isPriority
+                                      const totalPages =
+                                        originalPages + additionalPages;
+
+                                      const totalDeadlineDays =
+                                        determineDeadlineDays(
+                                          totalPages,
+                                          project.isPriority
+                                        );
+                                      const newDeadlineDate = addBusinessDays(
+                                        new Date(
+                                          project.createdAt?.toDate?.() ||
+                                            project.createdAt ||
+                                            new Date()
+                                        ),
+                                        totalDeadlineDays
                                       );
-                                      const newDeadline = addBusinessDays(
-                                        originalDeadline,
-                                        daysToAdd
-                                      );
-                                      return formatDate(newDeadline);
+                                      return formatDate(newDeadlineDate);
                                     })()}
                                   </span>
                                 </div>

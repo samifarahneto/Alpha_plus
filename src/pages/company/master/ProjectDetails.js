@@ -786,6 +786,9 @@ const ProjectDetails = () => {
 
       // Calcular o valor da divergência baseado no valor por página
       let divergencePayment = 0;
+      let newDeadlineDate = project.deadlineDate;
+      let newDeadlineText = project.deadline;
+
       if (divergenceInfo) {
         const totalPages = project.files.reduce(
           (total, file) => total + (Number(file.pageCount) || 0),
@@ -795,6 +798,55 @@ const ProjectDetails = () => {
           Number(project.totalProjectValue || project.totalValue || 0) /
           totalPages;
         divergencePayment = valuePerPage * Number(divergenceInfo.pages);
+
+        // Calcular novo prazo baseado no total de páginas (originais + divergência)
+        const totalPagesWithDivergence =
+          totalPages + Number(divergenceInfo.pages);
+        let deadlineDays = 0;
+
+        if (totalPagesWithDivergence <= 5) {
+          deadlineDays = 5;
+        } else if (totalPagesWithDivergence <= 20) {
+          deadlineDays = 10;
+        } else if (totalPagesWithDivergence <= 50) {
+          deadlineDays = 11;
+        } else if (totalPagesWithDivergence <= 90) {
+          deadlineDays = 15;
+        } else if (totalPagesWithDivergence <= 130) {
+          deadlineDays = 20;
+        } else {
+          deadlineDays = 25;
+        }
+
+        // Calcular nova data de prazo
+        const currentDate = new Date();
+        const newDeadline = new Date(currentDate);
+        newDeadline.setDate(currentDate.getDate() + deadlineDays);
+
+        // Pular fins de semana
+        while (newDeadline.getDay() === 0 || newDeadline.getDay() === 6) {
+          newDeadline.setDate(newDeadline.getDate() + 1);
+        }
+
+        // Garantir que sempre temos uma nova data válida
+        newDeadlineDate = newDeadline.toISOString();
+        newDeadlineText = newDeadline.toLocaleDateString("pt-BR", {
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+          timeZone: "America/Sao_Paulo",
+        });
+
+        console.log("Debug - Novo prazo calculado:", {
+          totalPagesOriginais: totalPages,
+          paginasDivergencia: Number(divergenceInfo.pages),
+          totalPagesComDivergencia: totalPagesWithDivergence,
+          diasUteis: deadlineDays,
+          novaDataISO: newDeadlineDate,
+          novaDataFormatada: newDeadlineText,
+        });
       }
 
       const totalPayment = initialPayment + divergencePayment;
@@ -817,12 +869,19 @@ const ProjectDetails = () => {
         ...(divergenceInfo && {
           project_status: "Em Divergência",
           translation_status: "N/A",
+          deadlineDate: newDeadlineDate,
+          deadline: newDeadlineText,
         }),
         ...(isPaid && {
           project_status: "Em Análise",
           translation_status: "N/A",
         }),
       };
+
+      console.log(
+        "Debug - updateData que será enviado ao Firestore:",
+        updateData
+      );
 
       if (isPaid && targetCollection !== project.collection) {
         const newProjectRef = doc(firestore, targetCollection, projectId);
@@ -858,38 +917,8 @@ const ProjectDetails = () => {
       return;
     }
     updatePaymentStatus("Divergência", divergenceData);
-    updateProjectStatus("Em Divergência");
-  };
-
-  const updateProjectStatus = async (newStatus) => {
-    try {
-      if (!projectId || !project?.collection) {
-        console.error("ID do projeto ou coleção não disponível:", {
-          projectId,
-          collection: project?.collection,
-        });
-        alert("Erro: ID do projeto ou coleção não disponível");
-        return;
-      }
-
-      const firestore = getFirestore();
-      const projectRef = doc(firestore, project.collection, projectId);
-
-      const updateData = {
-        project_status: newStatus,
-      };
-
-      await updateDoc(projectRef, updateData);
-
-      // Atualizar o estado local
-      setProject((prevProject) => ({
-        ...prevProject,
-        ...updateData,
-      }));
-    } catch (error) {
-      console.error("Erro ao atualizar status do projeto:", error);
-      alert("Erro ao atualizar status do projeto. Tente novamente.");
-    }
+    // Remover esta linha pois updatePaymentStatus já atualiza o project_status
+    // updateProjectStatus("Em Divergência");
   };
 
   const handleRefundOptionChange = (e) => {
@@ -1518,13 +1547,46 @@ const ProjectDetails = () => {
     if (!date) return "A definir";
 
     try {
+      // Verificar casos específicos de valores inválidos
+      if (typeof date === "string") {
+        // Se contém NaN ou é uma string inválida
+        if (
+          date.includes("NaN") ||
+          date === "A ser definido" ||
+          date === "Invalid Date"
+        ) {
+          return "A definir";
+        }
+
+        // Se a data vier como string no formato dd/mm/yyyy, manter o formato
+        if (date.includes("/")) {
+          const [day, month, year] = date.split("/");
+          // Verificar se os componentes são válidos
+          if (
+            day &&
+            month &&
+            year &&
+            !day.includes("NaN") &&
+            !month.includes("NaN") &&
+            !year.includes("NaN")
+          ) {
+            return `${day}/${month}/${year.slice(-2)}`;
+          } else {
+            return "A definir";
+          }
+        }
+      }
+
       // Se for um timestamp do Firestore
-      if (date.seconds) {
+      if (typeof date === "object" && date.seconds) {
         const dateObj = new Date(date.seconds * 1000);
+        if (isNaN(dateObj.getTime())) {
+          return "A definir";
+        }
         return dateObj.toLocaleDateString("pt-BR");
       }
 
-      // Se for uma string de data
+      // Se for uma string de data ISO ou qualquer formato válido
       if (typeof date === "string") {
         const dateObj = new Date(date);
         if (isNaN(dateObj.getTime())) {
