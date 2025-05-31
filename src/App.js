@@ -31,6 +31,8 @@ import ClientPayments from "./pages/client/ClientPayments";
 import ClientGoingOn from "./pages/client/ClientGoingOn";
 import ClientAnalysis from "./pages/client/ClientAnalysis";
 import ClientBudgetReady from "./pages/client/ClientBudgetReady";
+import ClientRefund from "./pages/client/ClientRefund";
+import ClientDivergence from "./pages/client/ClientDivergence";
 
 // Master
 import MasterClient from "./pages/company/master/MasterClient";
@@ -112,6 +114,11 @@ const AppContent = () => {
           />
           <Route path="/client/payments" element={<ClientPayments />} />
           <Route path="/client/going-on" element={<ClientGoingOn />} />
+          <Route path="/client/projects-refund" element={<ClientRefund />} />
+          <Route
+            path="/client/projects-divergence"
+            element={<ClientDivergence />}
+          />
           <Route
             path="/client/projects/clientaddproject"
             element={<ClientAddProject />}

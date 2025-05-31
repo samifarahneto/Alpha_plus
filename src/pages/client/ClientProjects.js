@@ -97,8 +97,10 @@ const ClientProjects = () => {
   ];
 
   // Função para verificar se há páginas zeradas
-  const hasZeroPages = (files) => {
-    return files.some((file) => file.pageCount === 0);
+  const hasZeroPages = (files, project) => {
+    // Usar a mesma lógica do calculateTotalPages para determinar o total
+    const totalPages = calculateTotalPages(files, project);
+    return totalPages === 0;
   };
 
   useEffect(() => {
@@ -319,135 +321,121 @@ const ClientProjects = () => {
 
             // Adicionar listeners para atualização em tempo real
             const unsubscribe1 = onSnapshot(q1, async (snapshot) => {
-              if (!snapshot.empty) {
-                const newProjects = await Promise.all(
-                  snapshot.docs.map(async (doc) => {
-                    const projectData = doc.data();
-                    const firestore = getFirestore();
-                    const usersCollection = collection(firestore, "users");
+              const newProjects = await Promise.all(
+                snapshot.docs.map(async (doc) => {
+                  const projectData = doc.data();
+                  const firestore = getFirestore();
+                  const usersCollection = collection(firestore, "users");
 
-                    let authorName = "Não informado";
-                    if (projectData.projectOwner) {
-                      try {
-                        const userQuery = query(
-                          usersCollection,
-                          where("email", "==", projectData.projectOwner)
-                        );
-                        const userSnapshot = await getDocs(userQuery);
-                        if (!userSnapshot.empty) {
-                          const userData = userSnapshot.docs[0].data();
-                          authorName = userData.nomeCompleto || "Não informado";
-                        }
-                      } catch (error) {
-                        console.error("Erro ao buscar nome do autor:", error);
+                  let authorName = "Não informado";
+                  if (projectData.projectOwner) {
+                    try {
+                      const userQuery = query(
+                        usersCollection,
+                        where("email", "==", projectData.projectOwner)
+                      );
+                      const userSnapshot = await getDocs(userQuery);
+                      if (!userSnapshot.empty) {
+                        const userData = userSnapshot.docs[0].data();
+                        authorName = userData.nomeCompleto || "Não informado";
                       }
+                    } catch (error) {
+                      console.error("Erro ao buscar nome do autor:", error);
                     }
+                  }
 
-                    return {
-                      ...projectData,
-                      id: doc.id,
-                      collection: collectionName,
-                      authorName: authorName,
-                      projectOwner: projectData.projectOwner || "Não informado",
-                      userEmail: projectData.userEmail || "Não informado",
-                    };
-                  })
-                );
+                  return {
+                    ...projectData,
+                    id: doc.id,
+                    collection: collectionName,
+                    authorName: authorName,
+                    projectOwner: projectData.projectOwner || "Não informado",
+                    userEmail: projectData.userEmail || "Não informado",
+                  };
+                })
+              );
 
-                setProjects((prevProjects) => {
-                  const projectMap = new Map(
-                    prevProjects.map((p) => [p.id, p])
-                  );
-                  newProjects.forEach((project) => {
-                    projectMap.set(project.id, project);
-                  });
-                  return Array.from(projectMap.values());
+              // Atualizar o estado com os novos dados
+              setProjects((prevProjects) => {
+                const projectMap = new Map(prevProjects.map((p) => [p.id, p]));
+
+                // Adicionar novos projetos
+                newProjects.forEach((project) => {
+                  projectMap.set(project.id, project);
                 });
 
-                setAllProjects((prevProjects) => {
-                  const projectMap = new Map(
-                    prevProjects.map((p) => [p.id, p])
-                  );
-                  newProjects.forEach((project) => {
-                    projectMap.set(project.id, project);
-                  });
-                  return Array.from(projectMap.values());
+                return Array.from(projectMap.values());
+              });
+
+              setAllProjects((prevProjects) => {
+                const projectMap = new Map(prevProjects.map((p) => [p.id, p]));
+
+                // Adicionar novos projetos
+                newProjects.forEach((project) => {
+                  projectMap.set(project.id, project);
                 });
-              } else {
-                // Se a coleção estiver vazia, limpar os projetos dessa coleção
-                setProjects((prevProjects) =>
-                  prevProjects.filter((p) => p.collection !== collectionName)
-                );
-                setAllProjects((prevProjects) =>
-                  prevProjects.filter((p) => p.collection !== collectionName)
-                );
-              }
+
+                return Array.from(projectMap.values());
+              });
             });
 
             const unsubscribe2 = onSnapshot(q2, async (snapshot) => {
-              if (!snapshot.empty) {
-                const newProjects = await Promise.all(
-                  snapshot.docs.map(async (doc) => {
-                    const projectData = doc.data();
-                    const firestore = getFirestore();
-                    const usersCollection = collection(firestore, "users");
+              const newProjects = await Promise.all(
+                snapshot.docs.map(async (doc) => {
+                  const projectData = doc.data();
+                  const firestore = getFirestore();
+                  const usersCollection = collection(firestore, "users");
 
-                    let authorName = "Não informado";
-                    if (projectData.projectOwner) {
-                      try {
-                        const userQuery = query(
-                          usersCollection,
-                          where("email", "==", projectData.projectOwner)
-                        );
-                        const userSnapshot = await getDocs(userQuery);
-                        if (!userSnapshot.empty) {
-                          const userData = userSnapshot.docs[0].data();
-                          authorName = userData.nomeCompleto || "Não informado";
-                        }
-                      } catch (error) {
-                        console.error("Erro ao buscar nome do autor:", error);
+                  let authorName = "Não informado";
+                  if (projectData.projectOwner) {
+                    try {
+                      const userQuery = query(
+                        usersCollection,
+                        where("email", "==", projectData.projectOwner)
+                      );
+                      const userSnapshot = await getDocs(userQuery);
+                      if (!userSnapshot.empty) {
+                        const userData = userSnapshot.docs[0].data();
+                        authorName = userData.nomeCompleto || "Não informado";
                       }
+                    } catch (error) {
+                      console.error("Erro ao buscar nome do autor:", error);
                     }
+                  }
 
-                    return {
-                      ...projectData,
-                      id: doc.id,
-                      collection: collectionName,
-                      authorName: authorName,
-                      projectOwner: projectData.projectOwner || "Não informado",
-                      userEmail: projectData.userEmail || "Não informado",
-                    };
-                  })
-                );
+                  return {
+                    ...projectData,
+                    id: doc.id,
+                    collection: collectionName,
+                    authorName: authorName,
+                    projectOwner: projectData.projectOwner || "Não informado",
+                    userEmail: projectData.userEmail || "Não informado",
+                  };
+                })
+              );
 
-                setProjects((prevProjects) => {
-                  const projectMap = new Map(
-                    prevProjects.map((p) => [p.id, p])
-                  );
-                  newProjects.forEach((project) => {
-                    projectMap.set(project.id, project);
-                  });
-                  return Array.from(projectMap.values());
+              // Atualizar o estado com os novos dados
+              setProjects((prevProjects) => {
+                const projectMap = new Map(prevProjects.map((p) => [p.id, p]));
+
+                // Adicionar novos projetos
+                newProjects.forEach((project) => {
+                  projectMap.set(project.id, project);
                 });
 
-                setAllProjects((prevProjects) => {
-                  const projectMap = new Map(
-                    prevProjects.map((p) => [p.id, p])
-                  );
-                  newProjects.forEach((project) => {
-                    projectMap.set(project.id, project);
-                  });
-                  return Array.from(projectMap.values());
+                return Array.from(projectMap.values());
+              });
+
+              setAllProjects((prevProjects) => {
+                const projectMap = new Map(prevProjects.map((p) => [p.id, p]));
+
+                // Adicionar novos projetos
+                newProjects.forEach((project) => {
+                  projectMap.set(project.id, project);
                 });
-              } else {
-                // Se a coleção estiver vazia, limpar os projetos dessa coleção
-                setProjects((prevProjects) =>
-                  prevProjects.filter((p) => p.collection !== collectionName)
-                );
-                setAllProjects((prevProjects) =>
-                  prevProjects.filter((p) => p.collection !== collectionName)
-                );
-              }
+
+                return Array.from(projectMap.values());
+              });
             });
 
             unsubscribeFunctions.push(unsubscribe1, unsubscribe2);
@@ -469,6 +457,13 @@ const ClientProjects = () => {
 
     fetchProjects();
   }, []);
+
+  // useEffect para atualizar dados filtrados quando allProjects muda
+  useEffect(() => {
+    if (allProjects.length > 0) {
+      filterData(filters, allProjects);
+    }
+  }, [allProjects, filters]);
 
   // Adicionar useEffect para fechar o dropdown quando clicar fora
   useEffect(() => {
@@ -546,12 +541,36 @@ const ClientProjects = () => {
     setProjects(filteredData);
   };
 
-  const calculateTotalPages = useCallback((files) => {
-    if (!files || !Array.isArray(files)) return 0;
-    return files.reduce((total, file) => {
-      const pageCount = parseInt(file.pageCount) || 0;
-      return total + pageCount;
-    }, 0);
+  const calculateTotalPages = useCallback((files, row) => {
+    // Primeiro, calcular as páginas dos arquivos originais
+    let originalPages = 0;
+    if (files && Array.isArray(files)) {
+      originalPages = files.reduce((total, file) => {
+        // Converter pageCount para número, lidando com diferentes tipos
+        let pageCount = 0;
+        if (file.pageCount !== undefined && file.pageCount !== null) {
+          if (typeof file.pageCount === "string") {
+            pageCount = parseInt(file.pageCount) || 0;
+          } else if (typeof file.pageCount === "number") {
+            pageCount = file.pageCount;
+          }
+        }
+        return total + pageCount;
+      }, 0);
+    }
+
+    // Se há payment_status com páginas de divergência, somar ao valor original
+    if (row?.payment_status?.pages) {
+      const divergencePages =
+        typeof row.payment_status.pages === "string"
+          ? parseInt(row.payment_status.pages) || 0
+          : row.payment_status.pages || 0;
+
+      return originalPages + divergencePages;
+    }
+
+    // Se não há divergência, retornar apenas as páginas originais
+    return originalPages;
   }, []);
 
   const calculateTotalValue = useCallback((files) => {
@@ -572,10 +591,34 @@ const ClientProjects = () => {
   const formatDate = (date) => {
     if (!date) return "A definir";
 
-    // Se a data vier como string no formato dd/mm/yyyy, manter o formato
-    if (typeof date === "string" && date.includes("/")) {
-      const [day, month, year] = date.split("/");
-      return `${day}/${month}/${year.slice(-2)}`;
+    // Verificar casos específicos de valores inválidos
+    if (typeof date === "string") {
+      // Se contém NaN ou é uma string inválida
+      if (
+        date.includes("NaN") ||
+        date === "A ser definido" ||
+        date === "Invalid Date"
+      ) {
+        return "A definir";
+      }
+
+      // Se a data vier como string no formato dd/mm/yyyy, manter o formato
+      if (date.includes("/")) {
+        const [day, month, year] = date.split("/");
+        // Verificar se os componentes são válidos
+        if (
+          day &&
+          month &&
+          year &&
+          !day.includes("NaN") &&
+          !month.includes("NaN") &&
+          !year.includes("NaN")
+        ) {
+          return `${day}/${month}/${year.slice(-2)}`;
+        } else {
+          return "A definir";
+        }
+      }
     }
 
     let dateObj;
@@ -585,7 +628,7 @@ const ClientProjects = () => {
     } else if (date instanceof Date) {
       // Caso seja um objeto Date
       dateObj = date;
-    } else if (typeof date === "string" && date !== "A ser definido") {
+    } else if (typeof date === "string") {
       // Caso seja uma string ISO (como o deadlineDate)
       try {
         dateObj = new Date(date);
@@ -619,7 +662,7 @@ const ClientProjects = () => {
     // Filtrar projetos selecionados que não têm páginas zeradas
     const validProjects = selectedProjects.filter((projectId) => {
       const project = projects.find((p) => p.id === projectId);
-      return project && !hasZeroPages(project.files);
+      return project && !hasZeroPages(project.files, project);
     });
 
     if (validProjects.length === 0) {
@@ -1037,7 +1080,14 @@ const ClientProjects = () => {
     {
       id: "pages",
       label: "Págs",
-      render: (value, row) => calculateTotalPages(row.files),
+      render: (value, row) => {
+        const totalPages = calculateTotalPages(row.files, row);
+        return (
+          <span key={`${row.id}-pages-${row.files?.length || 0}-${Date.now()}`}>
+            {totalPages}
+          </span>
+        );
+      },
     },
     {
       id: "files",
@@ -1115,11 +1165,11 @@ const ClientProjects = () => {
         const isPendingPayment =
           row.payment_status === "Pendente" &&
           calculateTotalValue(row.files) !== "0.00";
-        const hasZeroPages = row.files?.some((file) => file.pageCount === 0);
+        const hasZeroPagesValue = hasZeroPages(row.files, row);
 
         return (
           <div onClick={(e) => e.stopPropagation()}>
-            {isPendingPayment && !hasZeroPages && (
+            {isPendingPayment && !hasZeroPagesValue && (
               <input
                 type="checkbox"
                 checked={selectedProjects.some((p) => p === row.id)}
@@ -1136,7 +1186,7 @@ const ClientProjects = () => {
                 className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 cursor-pointer"
               />
             )}
-            {hasZeroPages && (
+            {hasZeroPagesValue && (
               <span className="text-xs text-red-500">
                 {row.collection === "b2bdocsaved" ||
                 row.collection === "b2cdocsaved"

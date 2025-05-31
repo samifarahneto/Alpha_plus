@@ -299,10 +299,43 @@ const ClientBudgetReady = () => {
 
   const formatDate = (date) => {
     if (!date) return "";
-    if (typeof date === "object" && date.seconds) {
-      return new Date(date.seconds * 1000).toLocaleDateString("pt-BR");
+
+    try {
+      // Se for um objeto Firestore Timestamp
+      if (typeof date === "object" && date.seconds) {
+        return new Date(date.seconds * 1000).toLocaleDateString("pt-BR");
+      }
+
+      // Se for uma string, tenta converter
+      if (typeof date === "string") {
+        // Se for uma string no formato ISO ou qualquer formato válido
+        const parsedDate = new Date(date);
+        if (!isNaN(parsedDate.getTime())) {
+          return parsedDate.toLocaleDateString("pt-BR");
+        }
+        // Se não conseguir converter, retorna a string original
+        return date;
+      }
+
+      // Se for um objeto Date
+      if (date instanceof Date) {
+        if (!isNaN(date.getTime())) {
+          return date.toLocaleDateString("pt-BR");
+        }
+      }
+
+      // Tenta converter qualquer outro tipo
+      const parsedDate = new Date(date);
+      if (!isNaN(parsedDate.getTime())) {
+        return parsedDate.toLocaleDateString("pt-BR");
+      }
+
+      // Se nada funcionar, retorna o valor original convertido para string
+      return String(date);
+    } catch (error) {
+      console.warn("Erro ao formatar data:", error, "Valor original:", date);
+      return String(date);
     }
-    return new Date(date).toLocaleDateString("pt-BR");
   };
 
   const calculateTotalValue = (files) => {
@@ -349,7 +382,10 @@ const ClientBudgetReady = () => {
     {
       id: "createdAt",
       label: "Data",
-      render: (value) => formatDate(value),
+      render: (value) => {
+        const formattedDate = formatDate(value);
+        return formattedDate || "N/A";
+      },
     },
     {
       id: "sourceLanguage",
@@ -387,7 +423,8 @@ const ClientBudgetReady = () => {
       label: "Prazo",
       render: (value) => {
         if (!value) return "N/A";
-        return formatDate(value);
+        const formattedDate = formatDate(value);
+        return formattedDate || "N/A";
       },
     },
     {

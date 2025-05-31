@@ -82,15 +82,18 @@ const DataTableHeader = ({
   onFilterChange,
   fixedColumns = [],
 }) => {
+  // Verificação de segurança para garantir que columnOrder seja um array
+  const safeColumnOrder = Array.isArray(columnOrder) ? columnOrder : [];
+
   return (
     <thead className="table-header sticky top-0 z-[1] bg-white">
       <tr>
         <SortableContext
-          items={columnOrder}
+          items={safeColumnOrder}
           strategy={horizontalListSortingStrategy}
         >
-          {columnOrder.map((columnId) => {
-            const column = columns.find((c) => c.id === columnId);
+          {safeColumnOrder.map((columnId) => {
+            const column = columns?.find((c) => c.id === columnId);
             if (!column) return null;
 
             return (
@@ -106,9 +109,9 @@ const DataTableHeader = ({
           })}
         </SortableContext>
       </tr>
-      {columns.some((col) => col.filter) && (
+      {columns && columns.some((col) => col.filter) && (
         <tr className="!h-0">
-          {columnOrder.map((columnId) => {
+          {safeColumnOrder.map((columnId) => {
             const column = columns.find((c) => c.id === columnId);
             if (!column) return null;
 

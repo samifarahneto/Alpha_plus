@@ -177,7 +177,13 @@ const MasterProjects = ({ style, isMobile }) => {
     // Configurar listeners para cada coleção
     const unsubscribeFunctions = collections.map((collectionName) => {
       const collectionRef = collection(db, collectionName);
+      console.log(`Configurando listener para coleção: ${collectionName}`);
       return onSnapshot(collectionRef, (snapshot) => {
+        console.log(
+          `Dados recebidos da coleção ${collectionName}:`,
+          snapshot.docs.length,
+          "documentos"
+        );
         setAllUploads((prevUploads) => {
           const newUploads = [...prevUploads];
           snapshot.docChanges().forEach((change) => {
@@ -187,6 +193,12 @@ const MasterProjects = ({ style, isMobile }) => {
               files: change.doc.data().files || [],
               collection: collectionName,
             };
+
+            console.log(`Projeto da coleção ${collectionName}:`, {
+              id: projectData.id,
+              projectName: projectData.projectName,
+              changeType: change.type,
+            });
 
             const index = newUploads.findIndex((p) => p.id === change.doc.id);
 
@@ -211,6 +223,19 @@ const MasterProjects = ({ style, isMobile }) => {
 
   useEffect(() => {
     if (!allUploads) return;
+
+    console.log("Estado atual do allUploads:", {
+      total: allUploads.length,
+      collections: allUploads.reduce((acc, project) => {
+        acc[project.collection] = (acc[project.collection] || 0) + 1;
+        return acc;
+      }, {}),
+      projects: allUploads.map((p) => ({
+        id: p.id,
+        name: p.projectName,
+        collection: p.collection,
+      })),
+    });
 
     // Processar todos os contadores em um único bloco
     const processCounters = () => {
@@ -282,8 +307,22 @@ const MasterProjects = ({ style, isMobile }) => {
 
     // Aplicar filtro de data
     if (dateFilter.start || dateFilter.end) {
+      console.log("Aplicando filtro de data:", dateFilter);
+      const beforeFilter = filteredData.length;
       filteredData = filteredData.filter((upload) => {
-        if (!upload.createdAt?.seconds) return false;
+        // Se não há filtro de data definido, incluir todos os projetos
+        if (!dateFilter.start && !dateFilter.end) return true;
+
+        // Se o projeto não tem createdAt.seconds, incluir mesmo assim (não excluir)
+        if (!upload.createdAt?.seconds) {
+          console.log(
+            "Projeto sem createdAt.seconds (incluindo mesmo assim):",
+            upload.id,
+            upload.projectName
+          );
+          return true; // Mudança: incluir ao invés de excluir
+        }
+
         const uploadDate = new Date(upload.createdAt.seconds * 1000);
 
         if (dateFilter.start && dateFilter.end) {
@@ -299,6 +338,9 @@ const MasterProjects = ({ style, isMobile }) => {
         }
         return true;
       });
+      console.log(
+        `Filtro de data: ${beforeFilter} -> ${filteredData.length} projetos`
+      );
     }
 
     // Aplicar filtro de língua de origem
@@ -321,9 +363,21 @@ const MasterProjects = ({ style, isMobile }) => {
 
     // Aplicar filtro de tipo de cliente
     if (clientTypeFilter) {
+      console.log("Aplicando filtro de tipo de cliente:", clientTypeFilter);
+      const beforeFilter = filteredData.length;
       filteredData = filteredData.filter((upload) => {
         const userInfo = clientTypes[upload.userEmail];
-        if (!userInfo) return false;
+        if (!userInfo) {
+          console.log(
+            "Projeto sem userInfo (incluindo mesmo assim quando não há filtro):",
+            upload.id,
+            upload.projectName,
+            upload.userEmail
+          );
+          // Se não há informações do usuário, incluir o projeto mesmo assim
+          // pois pode ser um projeto válido com dados incompletos
+          return true;
+        }
 
         if (userInfo.userType === "colaborator" && userInfo.registeredBy) {
           const registeredByInfo = clientTypes[userInfo.registeredBy];
@@ -343,6 +397,9 @@ const MasterProjects = ({ style, isMobile }) => {
         }
         return userInfo.clientType === clientTypeFilter;
       });
+      console.log(
+        `Filtro de tipo de cliente: ${beforeFilter} -> ${filteredData.length} projetos`
+      );
     }
 
     // Aplicar filtro de status do projeto
@@ -362,6 +419,46 @@ const MasterProjects = ({ style, isMobile }) => {
     }
 
     _setFilteredUploads(filteredData);
+
+    // Debug específico para as coleções problemáticas
+    const problematicCollections = [
+      "b2bapproved",
+      "b2bapproval",
+      "b2bdocprojects",
+      "b2cdocprojects",
+    ];
+    const problematicProjects = filteredData.filter((project) =>
+      problematicCollections.includes(project.collection)
+    );
+
+    if (problematicProjects.length > 0) {
+      console.log("Projetos das coleções problemáticas encontrados:", {
+        total: problematicProjects.length,
+        projects: problematicProjects.map((p) => ({
+          id: p.id,
+          name: p.projectName,
+          collection: p.collection,
+          userEmail: p.userEmail,
+        })),
+      });
+    } else {
+      console.log(
+        "Nenhum projeto das coleções problemáticas encontrado em filteredData"
+      );
+      console.log("Verificando em allUploads...");
+      const allProblematicProjects = allUploads.filter((project) =>
+        problematicCollections.includes(project.collection)
+      );
+      console.log("Projetos problemáticos em allUploads:", {
+        total: allProblematicProjects.length,
+        projects: allProblematicProjects.map((p) => ({
+          id: p.id,
+          name: p.projectName,
+          collection: p.collection,
+          userEmail: p.userEmail,
+        })),
+      });
+    }
   }, [
     allUploads,
     clientTypes,

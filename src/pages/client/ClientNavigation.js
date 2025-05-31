@@ -8,6 +8,8 @@ import {
   CreditCardIcon,
   ArrowPathIcon,
   DocumentCheckIcon,
+  ArrowUturnLeftIcon,
+  ExclamationTriangleIcon,
 } from "@heroicons/react/24/outline";
 
 const ClientNavigation = ({
@@ -64,8 +66,10 @@ const ClientNavigation = ({
         }`}
       >
         <FolderIcon className="w-4 h-4 xl:w-5 xl:h-5 flex-shrink-0" />
-        <span className="relative text-xs xl:text-sm font-medium whitespace-nowrap">
-          Todos Projetos
+        <span className="relative text-xs xl:text-sm font-medium text-center leading-tight">
+          Todos
+          <br />
+          Projetos
           {unreadCount > 0 && (
             <span className="absolute -top-2 -right-3 bg-red-500 text-white text-[10px] xl:text-[11px] w-[15px] h-[15px] xl:w-[17px] xl:h-[17px] flex items-center justify-center rounded-full">
               {unreadCount}
@@ -83,8 +87,10 @@ const ClientNavigation = ({
         }`}
       >
         <ClipboardDocumentCheckIcon className="w-4 h-4 xl:w-5 xl:h-5 flex-shrink-0" />
-        <span className="relative text-xs xl:text-sm font-medium whitespace-nowrap">
-          Aguardando Orçamento
+        <span className="relative text-xs xl:text-sm font-medium text-center leading-tight">
+          Aguardando
+          <br />
+          Orçamento
           {unreadBudgetCount > 0 && (
             <span className="absolute -top-2 -right-3 bg-red-500 text-white text-[10px] xl:text-[11px] w-[15px] h-[15px] xl:w-[17px] xl:h-[17px] flex items-center justify-center rounded-full">
               {unreadBudgetCount}
@@ -105,8 +111,10 @@ const ClientNavigation = ({
         }`}
       >
         <DocumentCheckIcon className="w-4 h-4 xl:w-5 xl:h-5 flex-shrink-0" />
-        <span className="relative text-xs xl:text-sm font-medium whitespace-nowrap">
-          Orçamento Recebido
+        <span className="relative text-xs xl:text-sm font-medium text-center leading-tight">
+          Orçamento
+          <br />
+          Recebido
           {unreadApprovalCount > 0 && (
             <span className="absolute -top-2 -right-3 bg-red-500 text-white text-[10px] xl:text-[11px] w-[15px] h-[15px] xl:w-[17px] xl:h-[17px] flex items-center justify-center rounded-full">
               {unreadApprovalCount}
@@ -122,8 +130,10 @@ const ClientNavigation = ({
         }`}
       >
         <ArrowPathIcon className="w-4 h-4 xl:w-5 xl:h-5 flex-shrink-0" />
-        <span className="text-xs xl:text-sm font-medium whitespace-nowrap">
-          Em Andamento
+        <span className="text-xs xl:text-sm font-medium text-center leading-tight">
+          Em
+          <br />
+          Andamento
         </span>
       </span>
       <span
@@ -139,8 +149,10 @@ const ClientNavigation = ({
         }`}
       >
         <ClipboardDocumentCheckIcon className="w-4 h-4 xl:w-5 xl:h-5 flex-shrink-0" />
-        <span className="text-xs xl:text-sm font-medium whitespace-nowrap">
-          Em Análise
+        <span className="text-xs xl:text-sm font-medium text-center leading-tight">
+          Em
+          <br />
+          Análise
         </span>
       </span>
       <span
@@ -153,8 +165,10 @@ const ClientNavigation = ({
         }`}
       >
         <CheckCircleIcon className="w-4 h-4 xl:w-5 xl:h-5 flex-shrink-0" />
-        <span className="text-xs xl:text-sm font-medium whitespace-nowrap">
-          Projetos Concluídos
+        <span className="text-xs xl:text-sm font-medium text-center leading-tight">
+          Projetos
+          <br />
+          Concluídos
         </span>
       </span>
       <span
@@ -167,8 +181,10 @@ const ClientNavigation = ({
         }`}
       >
         <CurrencyDollarIcon className="w-4 h-4 xl:w-5 xl:h-5 flex-shrink-0" />
-        <span className="text-xs xl:text-sm font-medium whitespace-nowrap">
-          Projetos Pagos
+        <span className="text-xs xl:text-sm font-medium text-center leading-tight">
+          Projetos
+          <br />
+          Pagos
         </span>
       </span>
       <span
@@ -179,8 +195,45 @@ const ClientNavigation = ({
         }`}
       >
         <CreditCardIcon className="w-4 h-4 xl:w-5 xl:h-5 flex-shrink-0" />
-        <span className="text-xs xl:text-sm font-medium whitespace-nowrap">
-          Pagamentos Pendentes
+        <span className="text-xs xl:text-sm font-medium text-center leading-tight">
+          Pagamentos
+          <br />
+          Pendentes
+        </span>
+      </span>
+      <span
+        ref={activeLink === "projects-refund" ? activeLinkRef : null}
+        onClick={handleNavigation("/client/projects-refund", "projects-refund")}
+        className={`nav-link flex items-center justify-center gap-1 xl:gap-2 w-full h-[40px] lg:w-auto lg:min-w-[160px] xl:min-w-[180px] px-2 xl:px-4 ${
+          activeLink === "projects-refund"
+            ? "nav-link-active"
+            : "nav-link-inactive"
+        }`}
+      >
+        <ArrowUturnLeftIcon className="w-4 h-4 xl:w-5 xl:h-5 flex-shrink-0" />
+        <span className="text-xs xl:text-sm font-medium text-center leading-tight">
+          Em
+          <br />
+          Reembolso
+        </span>
+      </span>
+      <span
+        ref={activeLink === "projects-divergence" ? activeLinkRef : null}
+        onClick={handleNavigation(
+          "/client/projects-divergence",
+          "projects-divergence"
+        )}
+        className={`nav-link flex items-center justify-center gap-1 xl:gap-2 w-full h-[40px] lg:w-auto lg:min-w-[160px] xl:min-w-[180px] px-2 xl:px-4 ${
+          activeLink === "projects-divergence"
+            ? "nav-link-active"
+            : "nav-link-inactive"
+        }`}
+      >
+        <ExclamationTriangleIcon className="w-4 h-4 xl:w-5 xl:h-5 flex-shrink-0" />
+        <span className="text-xs xl:text-sm font-medium text-center leading-tight">
+          Em
+          <br />
+          Divergência
         </span>
       </span>
     </div>

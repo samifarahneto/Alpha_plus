@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import DataTableHeader from "./DataTableHeader";
 import {
   DndContext,
@@ -19,9 +19,23 @@ const DataTable = ({
   onRowClick,
   getRowClassName,
 }) => {
-  const [columnOrder, setColumnOrder] = useState(initialColumnOrder);
+  // Criar um fallback para columnOrder baseado nos IDs das colunas
+  const defaultColumnOrder = useMemo(() => {
+    return columns?.map((col) => col.id) || [];
+  }, [columns]);
+
+  const [columnOrder, setColumnOrder] = useState(
+    initialColumnOrder || defaultColumnOrder
+  );
   const [sortConfig, setSortConfig] = useState({ key: null, direction: "asc" });
   const [filters, setFilters] = useState({});
+
+  // Atualizar columnOrder quando columns mudarem, se initialColumnOrder não foi fornecido
+  React.useEffect(() => {
+    if (!initialColumnOrder && columns?.length > 0) {
+      setColumnOrder(columns.map((col) => col.id));
+    }
+  }, [columns, initialColumnOrder]);
 
   const handleSort = (key) => {
     let direction = "asc";
@@ -93,6 +107,21 @@ const DataTable = ({
       });
     }
   };
+
+  // Verificar se temos columns e columnOrder válidos
+  if (!columns || !Array.isArray(columns) || columns.length === 0) {
+    return (
+      <div className="text-center p-4 text-gray-500">
+        Nenhuma coluna definida para a tabela
+      </div>
+    );
+  }
+
+  if (!columnOrder || !Array.isArray(columnOrder) || columnOrder.length === 0) {
+    return (
+      <div className="text-center p-4 text-gray-500">Carregando tabela...</div>
+    );
+  }
 
   return (
     <DndContext
