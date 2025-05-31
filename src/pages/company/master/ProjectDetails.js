@@ -1182,6 +1182,13 @@ const ProjectDetails = () => {
         targetCollection = "b2csketch";
       }
 
+      // Determinar o status do projeto baseado no canTest do usuário
+      console.log("Debug userData:", userData);
+      console.log("Debug canTest:", userData.canTest);
+      const projectStatus =
+        userData.canTest === true ? "Ag. Aprovação" : "Ag. Pagamento";
+      console.log("Debug projectStatus:", projectStatus);
+
       // Criar o documento na coleção de destino
       const projectData = {
         ...project,
@@ -1196,7 +1203,7 @@ const ProjectDetails = () => {
         approvedAt: serverTimestamp(),
         approvedBy: project.userEmail,
         approvedByName: userData.nomeCompleto || "N/A",
-        project_status: "Ag. Pagamento",
+        project_status: projectStatus,
         payment_status: "Pendente",
         translation_status: "N/A",
         totalValue: newTotalProjectValue,
@@ -1222,7 +1229,7 @@ const ProjectDetails = () => {
           totalValor: newTotalProjectValue,
           prazo: `${deadlineDays} dias úteis`,
           statusAnterior: project.project_status,
-          statusNovo: "Ag. Aprovação",
+          statusNovo: projectStatus,
         },
       };
 

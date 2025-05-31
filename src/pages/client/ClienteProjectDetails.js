@@ -333,7 +333,7 @@ const ClienteProjectDetails = () => {
         deadline: deadlineDays,
         deadlineDate: deadlineDate,
         collection: targetCollection,
-        project_status: "Ag. Pagamento",
+        project_status: "Em Análise",
         payment_status: "Pendente",
         translation_status: "N/A",
       };
@@ -1206,18 +1206,49 @@ const ClienteProjectDetails = () => {
           <div className="flex justify-center">
             {userData?.canTest === true &&
             project.collection === "b2bapproval" ? (
-              <button
-                onClick={() => setShowApprovalModal(true)}
-                className="w-full md:w-[350px] px-4 md:px-6 py-2 md:py-3 bg-blue-500 text-white text-sm md:text-base rounded-lg border-none cursor-pointer transition-colors duration-200 hover:bg-blue-600 flex items-center justify-center gap-2"
-              >
-                <FaCheck />
-                Aprovar Projeto
-              </button>
+              <div className="flex gap-4 flex-col md:flex-row">
+                <button
+                  onClick={() => setShowApprovalModal(true)}
+                  className="w-full md:w-[350px] px-4 md:px-6 py-2 md:py-3 bg-blue-500 text-white text-sm md:text-base rounded-lg border-none cursor-pointer transition-colors duration-200 hover:bg-blue-600 flex items-center justify-center gap-2"
+                >
+                  <FaCheck />
+                  Aprovar
+                </button>
+                <button
+                  onClick={async () => {
+                    // Primeiro aprova o projeto
+                    await handleProjectApproval();
+                    // Depois redireciona para o checkout
+                    setTimeout(() => {
+                      navigate("/client/checkout", {
+                        state: {
+                          selectedProjects: [projectId],
+                          collection: "b2bapproved", // já será movido para b2bapproved
+                        },
+                      });
+                    }, 1000); // Pequeno delay para garantir que a aprovação foi processada
+                  }}
+                  className="w-full md:w-[350px] px-4 md:px-6 py-2 md:py-3 bg-green-500 text-white text-sm md:text-base rounded-lg border-none cursor-pointer transition-colors duration-200 hover:bg-green-600 flex items-center justify-center gap-2"
+                >
+                  <FaCreditCard />
+                  Aprovar e Pagar
+                </button>
+              </div>
             ) : (
               <>
                 {(typeof project.payment_status === "object" &&
-                  project.payment_status.status === "Pago") ||
-                project.payment_status === "Pago" ? (
+                  project.payment_status.status === "Reembolsado") ||
+                project.payment_status === "Reembolsado" ? (
+                  <button
+                    disabled
+                    className="w-full md:w-[350px] px-4 md:px-6 py-2 md:py-3 bg-gray-500 text-white text-sm md:text-base rounded-lg border-none cursor-not-allowed flex items-center justify-center gap-2"
+                  >
+                    <FaUndo />
+                    Reembolsado
+                  </button>
+                ) : (typeof project.payment_status === "object" &&
+                    project.payment_status.status === "Pago") ||
+                  project.payment_status === "Pago" ? (
                   <button
                     disabled
                     className="w-full md:w-[350px] px-4 md:px-6 py-2 md:py-3 bg-gray-500 text-white text-sm md:text-base rounded-lg border-none cursor-not-allowed flex items-center justify-center gap-2"
