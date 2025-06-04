@@ -160,7 +160,7 @@ const ClientProjects = () => {
                 window.open(row.shareLink, "_blank");
               }}
               className="text-blue-600 hover:text-blue-800 transition-colors p-1 rounded"
-              title="Abrir Google Sheets"
+              title="Arquivos Traduzidos"
             >
               <FaGoogle size={16} />
             </button>
@@ -1246,7 +1246,7 @@ const ClientProjects = () => {
                 window.open(row.shareLink, "_blank");
               }}
               className="text-blue-600 hover:text-blue-800 transition-colors p-1 rounded"
-              title="Abrir Google Sheets"
+              title="Arquivos Traduzidos"
             >
               <FaGoogle size={16} />
             </button>

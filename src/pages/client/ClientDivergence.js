@@ -211,11 +211,13 @@ const ClientDivergence = () => {
         const userData = userDoc.docs[0].data();
         const userEmail = userData.email;
 
-        // Configurar listeners para b2bprojectspaid, b2cprojectspaid e b2bapproval
+        // Configurar listeners para todas as coleções de projetos
         const collections = [
           "b2bprojectspaid",
           "b2cprojectspaid",
           "b2bapproval",
+          "b2bdocprojects",
+          "b2bapproved",
         ];
         const unsubscribeFunctions = [];
 
