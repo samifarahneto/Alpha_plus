@@ -511,7 +511,7 @@ const ClienteProjectDetails = () => {
       const firestore = getFirestore();
       const projectRef = doc(firestore, project.collection, projectId);
 
-      const refundValue = Number(calculateCorrectTotalValue());
+      const refundValue = Number(calculateRefundValue());
 
       await updateDoc(projectRef, {
         payment_status: "Em Reembolso",
@@ -612,6 +612,21 @@ const ClienteProjectDetails = () => {
         project.totalValue ||
         calculateTotalValue(project.files)
     ).toFixed(2);
+  };
+
+  // Função para calcular o valor correto do reembolso (apenas valor já pago)
+  const calculateRefundValue = () => {
+    // Se está em divergência e foi pago anteriormente, reembolsar apenas o valor inicial pago
+    if (
+      typeof project.payment_status === "object" &&
+      project.payment_status.status === "Divergência" &&
+      isProjectPaid()
+    ) {
+      return Number(project.payment_status.initialPayment || 0).toFixed(2);
+    }
+
+    // Para outros casos, usar o cálculo normal
+    return calculateCorrectTotalValue();
   };
 
   const renderBadge = (status, config) => {
@@ -1567,7 +1582,7 @@ const ClienteProjectDetails = () => {
               </p>
               {isProjectPaid() && (
                 <p className="text-base md:text-lg font-bold text-blue-600">
-                  Valor do Reembolso: U$ {calculateCorrectTotalValue()}
+                  Valor do Reembolso: U$ {calculateRefundValue()}
                 </p>
               )}
             </div>
