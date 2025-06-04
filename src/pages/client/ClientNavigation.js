@@ -58,6 +58,7 @@ const ClientNavigation = ({
       ref={navRef}
       className="flex w-full mb-6 border-b border-gray-200 overflow-x-auto scroll-smooth lg:justify-center"
     >
+      {/* 1- Todos Projetos */}
       <span
         ref={activeLink === "projects" ? activeLinkRef : null}
         onClick={handleNavigation("/client/projects", "projects")}
@@ -77,6 +78,8 @@ const ClientNavigation = ({
           )}
         </span>
       </span>
+
+      {/* 2- Aguardando Orçamento */}
       <span
         ref={activeLink === "projects-budget" ? activeLinkRef : null}
         onClick={handleNavigation("/client/projects-budget", "projects-budget")}
@@ -98,6 +101,8 @@ const ClientNavigation = ({
           )}
         </span>
       </span>
+
+      {/* 3- Orçamento Recebido */}
       <span
         ref={activeLink === "projects-budget-received" ? activeLinkRef : null}
         onClick={handleNavigation(
@@ -122,20 +127,29 @@ const ClientNavigation = ({
           )}
         </span>
       </span>
+
+      {/* 4- Em Divergência */}
       <span
-        ref={activeLink === "going-on" ? activeLinkRef : null}
-        onClick={handleNavigation("/client/going-on", "going-on")}
+        ref={activeLink === "projects-divergence" ? activeLinkRef : null}
+        onClick={handleNavigation(
+          "/client/projects-divergence",
+          "projects-divergence"
+        )}
         className={`nav-link flex items-center justify-center gap-1 xl:gap-2 w-full h-[40px] lg:w-auto lg:min-w-[160px] xl:min-w-[180px] px-2 xl:px-4 ${
-          activeLink === "going-on" ? "nav-link-active" : "nav-link-inactive"
+          activeLink === "projects-divergence"
+            ? "nav-link-active"
+            : "nav-link-inactive"
         }`}
       >
-        <ArrowPathIcon className="w-4 h-4 xl:w-5 xl:h-5 flex-shrink-0" />
+        <ExclamationTriangleIcon className="w-4 h-4 xl:w-5 xl:h-5 flex-shrink-0" />
         <span className="text-xs xl:text-sm font-medium text-center leading-tight">
           Em
           <br />
-          Andamento
+          Divergência
         </span>
       </span>
+
+      {/* 5- Em Análise */}
       <span
         ref={activeLink === "projects-analysis" ? activeLinkRef : null}
         onClick={handleNavigation(
@@ -155,6 +169,24 @@ const ClientNavigation = ({
           Análise
         </span>
       </span>
+
+      {/* 6- Em Andamento */}
+      <span
+        ref={activeLink === "going-on" ? activeLinkRef : null}
+        onClick={handleNavigation("/client/going-on", "going-on")}
+        className={`nav-link flex items-center justify-center gap-1 xl:gap-2 w-full h-[40px] lg:w-auto lg:min-w-[160px] xl:min-w-[180px] px-2 xl:px-4 ${
+          activeLink === "going-on" ? "nav-link-active" : "nav-link-inactive"
+        }`}
+      >
+        <ArrowPathIcon className="w-4 h-4 xl:w-5 xl:h-5 flex-shrink-0" />
+        <span className="text-xs xl:text-sm font-medium text-center leading-tight">
+          Em
+          <br />
+          Andamento
+        </span>
+      </span>
+
+      {/* 7- Projetos Concluídos */}
       <span
         ref={activeLink === "projects-done" ? activeLinkRef : null}
         onClick={handleNavigation("/client/projects-done", "projects-done")}
@@ -171,6 +203,24 @@ const ClientNavigation = ({
           Concluídos
         </span>
       </span>
+
+      {/* 8- Pagamentos Pendentes */}
+      <span
+        ref={activeLink === "payments" ? activeLinkRef : null}
+        onClick={handleNavigation("/client/payments", "payments")}
+        className={`nav-link flex items-center justify-center gap-1 xl:gap-2 w-full h-[40px] lg:w-auto lg:min-w-[160px] xl:min-w-[180px] px-2 xl:px-4 ${
+          activeLink === "payments" ? "nav-link-active" : "nav-link-inactive"
+        }`}
+      >
+        <CreditCardIcon className="w-4 h-4 xl:w-5 xl:h-5 flex-shrink-0" />
+        <span className="text-xs xl:text-sm font-medium text-center leading-tight">
+          Pagamentos
+          <br />
+          Pendentes
+        </span>
+      </span>
+
+      {/* 9- Projetos Pagos */}
       <span
         ref={activeLink === "projects-paid" ? activeLinkRef : null}
         onClick={handleNavigation("/client/projects-paid", "projects-paid")}
@@ -187,20 +237,8 @@ const ClientNavigation = ({
           Pagos
         </span>
       </span>
-      <span
-        ref={activeLink === "payments" ? activeLinkRef : null}
-        onClick={handleNavigation("/client/payments", "payments")}
-        className={`nav-link flex items-center justify-center gap-1 xl:gap-2 w-full h-[40px] lg:w-auto lg:min-w-[160px] xl:min-w-[180px] px-2 xl:px-4 ${
-          activeLink === "payments" ? "nav-link-active" : "nav-link-inactive"
-        }`}
-      >
-        <CreditCardIcon className="w-4 h-4 xl:w-5 xl:h-5 flex-shrink-0" />
-        <span className="text-xs xl:text-sm font-medium text-center leading-tight">
-          Pagamentos
-          <br />
-          Pendentes
-        </span>
-      </span>
+
+      {/* 10- Em Reembolso */}
       <span
         ref={activeLink === "projects-refund" ? activeLinkRef : null}
         onClick={handleNavigation("/client/projects-refund", "projects-refund")}
@@ -215,25 +253,6 @@ const ClientNavigation = ({
           Em
           <br />
           Reembolso
-        </span>
-      </span>
-      <span
-        ref={activeLink === "projects-divergence" ? activeLinkRef : null}
-        onClick={handleNavigation(
-          "/client/projects-divergence",
-          "projects-divergence"
-        )}
-        className={`nav-link flex items-center justify-center gap-1 xl:gap-2 w-full h-[40px] lg:w-auto lg:min-w-[160px] xl:min-w-[180px] px-2 xl:px-4 ${
-          activeLink === "projects-divergence"
-            ? "nav-link-active"
-            : "nav-link-inactive"
-        }`}
-      >
-        <ExclamationTriangleIcon className="w-4 h-4 xl:w-5 xl:h-5 flex-shrink-0" />
-        <span className="text-xs xl:text-sm font-medium text-center leading-tight">
-          Em
-          <br />
-          Divergência
         </span>
       </span>
     </div>
