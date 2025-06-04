@@ -12,7 +12,7 @@ import {
 import { auth } from "../../firebaseConfig";
 import { getStorage, ref, getDownloadURL } from "firebase/storage";
 import { IoMdSettings } from "react-icons/io";
-import { FaDownload } from "react-icons/fa";
+import { FaDownload, FaGoogle } from "react-icons/fa";
 import "../../styles/Pagination.css";
 import Filter from "../../components/Filter";
 import "../../components/FilterBar.css";
@@ -60,6 +60,7 @@ const ClientProjects = () => {
           "deadlineDate",
           "project_status",
           "translation_status",
+          "link",
           "selector",
         ];
   });
@@ -71,12 +72,66 @@ const ClientProjects = () => {
   const [showRowsDropdown, setShowRowsDropdown] = useState(false);
   const [columnOrder] = useState(() => {
     const savedColumnOrder = localStorage.getItem("clientProjectsColumnOrder");
-    return savedColumnOrder ? JSON.parse(savedColumnOrder) : visibleColumns;
+    const defaultOrder = [
+      "projectNumber",
+      "projectOwner",
+      "userEmail",
+      "projectName",
+      "createdAt",
+      "pages",
+      "files",
+      "sourceLanguage",
+      "targetLanguage",
+      "totalValue",
+      "isPaid",
+      "deadlineDate",
+      "project_status",
+      "translation_status",
+      "link",
+      "selector",
+    ];
+
+    if (savedColumnOrder) {
+      const parsed = JSON.parse(savedColumnOrder);
+      // Se não tem a coluna link, adicionar ela antes do selector
+      if (!parsed.includes("link")) {
+        const selectorIndex = parsed.indexOf("selector");
+        if (selectorIndex !== -1) {
+          parsed.splice(selectorIndex, 0, "link");
+        } else {
+          parsed.push("link");
+        }
+      }
+      return parsed;
+    }
+    return defaultOrder;
   });
   const [isFiltersExpanded, setIsFiltersExpanded] = useState(false);
   const navigate = useNavigate();
 
   const fixedColumns = ["projectOwner", "userEmail", "projectName", "selector"];
+
+  // Garantir que a coluna 'link' está sempre presente no visibleColumns
+  useEffect(() => {
+    if (!visibleColumns.includes("link")) {
+      const selectorIndex = visibleColumns.indexOf("selector");
+      let newVisibleColumns;
+      if (selectorIndex !== -1) {
+        // Inserir 'link' antes de 'selector'
+        newVisibleColumns = [...visibleColumns];
+        newVisibleColumns.splice(selectorIndex, 0, "link");
+      } else {
+        // Se não tem selector, adicionar no final
+        newVisibleColumns = [...visibleColumns, "link"];
+      }
+      setVisibleColumns(newVisibleColumns);
+      // Salvar no localStorage
+      localStorage.setItem(
+        "clientProjectsVisibleColumns",
+        JSON.stringify(newVisibleColumns)
+      );
+    }
+  }, [visibleColumns]);
 
   const availableColumns = [
     { id: "projectNumber", label: "Nº" },
@@ -93,6 +148,28 @@ const ClientProjects = () => {
     { id: "deadlineDate", label: "Prazo" },
     { id: "project_status", label: "Status" },
     { id: "translation_status", label: "Tradução" },
+    {
+      id: "link",
+      label: "Link",
+      render: (value, row) => (
+        <div className="flex items-center justify-center">
+          {row.shareLink ? (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                window.open(row.shareLink, "_blank");
+              }}
+              className="text-blue-600 hover:text-blue-800 transition-colors p-1 rounded"
+              title="Abrir Google Sheets"
+            >
+              <FaGoogle size={16} />
+            </button>
+          ) : (
+            <span className="text-gray-400 text-sm">-</span>
+          )}
+        </div>
+      ),
+    },
     { id: "selector", label: "Sel.", fixed: true },
   ];
 
@@ -1156,6 +1233,28 @@ const ClientProjects = () => {
       id: "translation_status",
       label: "Tradução",
       render: (value) => renderProjectStatusBadge(value),
+    },
+    {
+      id: "link",
+      label: "Link",
+      render: (value, row) => (
+        <div className="flex items-center justify-center">
+          {row.shareLink ? (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                window.open(row.shareLink, "_blank");
+              }}
+              className="text-blue-600 hover:text-blue-800 transition-colors p-1 rounded"
+              title="Abrir Google Sheets"
+            >
+              <FaGoogle size={16} />
+            </button>
+          ) : (
+            <span className="text-gray-400 text-sm">-</span>
+          )}
+        </div>
+      ),
     },
     {
       id: "selector",

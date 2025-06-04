@@ -10,7 +10,7 @@ import {
   getDocs,
 } from "firebase/firestore";
 import { auth } from "../../firebaseConfig";
-import { FaDownload } from "react-icons/fa";
+import { FaDownload, FaGoogle } from "react-icons/fa";
 import "../../styles/Pagination.css";
 import ClientLayout from "../../components/layouts/ClientLayout";
 import "../../styles/Navigation.css";
@@ -50,6 +50,7 @@ const ClientProjectsDone = () => {
           "project_status",
           "translation_status",
           "totalValue",
+          "link",
         ];
   });
   const navigate = useNavigate();
@@ -206,28 +207,75 @@ const ClientProjectsDone = () => {
   const formatDate = (date) => {
     if (!date) return "N/A";
 
+    // Verificar casos específicos de valores inválidos
+    if (typeof date === "string") {
+      // Se contém NaN ou é uma string inválida
+      if (
+        date.includes("NaN") ||
+        date === "A ser definido" ||
+        date === "Invalid Date" ||
+        date.toLowerCase().includes("invalid")
+      ) {
+        return "N/A";
+      }
+
+      // Se a data vier como string no formato dd/mm/yyyy, manter o formato
+      if (date.includes("/")) {
+        const [day, month, year] = date.split("/");
+        // Verificar se os componentes são válidos
+        if (
+          day &&
+          month &&
+          year &&
+          !day.includes("NaN") &&
+          !month.includes("NaN") &&
+          !year.includes("NaN")
+        ) {
+          // Garantir formato dd/mm/aaaa
+          const paddedDay = day.padStart(2, "0");
+          const paddedMonth = month.padStart(2, "0");
+          const fullYear = year.length === 2 ? `20${year}` : year;
+          return `${paddedDay}/${paddedMonth}/${fullYear}`;
+        } else {
+          return "N/A";
+        }
+      }
+    }
+
     try {
+      let dateObj;
+
       // Se for um Timestamp do Firestore
       if (date && typeof date.toDate === "function") {
-        return date.toDate().toLocaleDateString("pt-BR");
+        dateObj = date.toDate();
       }
-
-      // Se for uma string de data
-      if (typeof date === "string") {
-        return new Date(date).toLocaleDateString("pt-BR");
-      }
-
-      // Se for um objeto Date
-      if (date instanceof Date) {
-        return date.toLocaleDateString("pt-BR");
-      }
-
       // Se for um objeto com seconds (Timestamp do Firestore em outro formato)
-      if (date && typeof date.seconds === "number") {
-        return new Date(date.seconds * 1000).toLocaleDateString("pt-BR");
+      else if (date && typeof date.seconds === "number") {
+        dateObj = new Date(date.seconds * 1000);
+      }
+      // Se for um objeto Date
+      else if (date instanceof Date) {
+        dateObj = date;
+      }
+      // Se for uma string de data
+      else if (typeof date === "string") {
+        dateObj = new Date(date);
+      } else {
+        return "N/A";
       }
 
-      return "N/A";
+      // Verificar se a data é válida
+      if (isNaN(dateObj.getTime())) {
+        return "N/A";
+      }
+
+      // Garantir que a data seja exibida no formato dd/mm/aaaa
+      const day = String(dateObj.getDate()).padStart(2, "0");
+      const month = String(dateObj.getMonth() + 1).padStart(2, "0");
+      const year = String(dateObj.getFullYear());
+
+      // Retornar no formato dd/mm/aaaa
+      return `${day}/${month}/${year}`;
     } catch (error) {
       console.error("Erro ao formatar data:", error);
       return "N/A";
@@ -235,9 +283,14 @@ const ClientProjectsDone = () => {
   };
 
   const calculateTotalValue = (files) => {
-    if (!files) return "0.00";
-    const total = files.reduce((sum, file) => sum + (file.value || 0), 0);
-    return total.toFixed(2);
+    if (!files || !Array.isArray(files)) return "0.00";
+
+    return files
+      .reduce((acc, file) => {
+        const fileTotal = Number(file.total) || 0;
+        return acc + fileTotal;
+      }, 0)
+      .toFixed(2);
   };
 
   const renderFilesModal = () => {
@@ -541,6 +594,28 @@ const ClientProjectsDone = () => {
       id: "totalValue",
       label: "Valor Total",
       render: (value, row) => `U$ ${calculateTotalValue(row.files)}`,
+    },
+    {
+      id: "link",
+      label: "Link",
+      render: (value, row) => (
+        <div className="flex items-center justify-center">
+          {row.shareLink ? (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                window.open(row.shareLink, "_blank");
+              }}
+              className="text-blue-600 hover:text-blue-800 transition-colors p-1 rounded"
+              title="Abrir Google Sheets"
+            >
+              <FaGoogle size={16} />
+            </button>
+          ) : (
+            <span className="text-gray-400 text-sm">-</span>
+          )}
+        </div>
+      ),
     },
   ];
 
