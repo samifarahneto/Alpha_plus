@@ -542,6 +542,46 @@ const ClienteProjectDetails = () => {
     }
   };
 
+  // Nova função para cancelar projeto não pago
+  const handleCancelProject = async () => {
+    try {
+      const firestore = getFirestore();
+      const projectRef = doc(firestore, project.collection, projectId);
+
+      await updateDoc(projectRef, {
+        project_status: "Cancelado",
+        translation_status: "Cancelado",
+        payment_status: "Pendente",
+      });
+
+      // Atualizar o estado local
+      setProject((prev) => ({
+        ...prev,
+        project_status: "Cancelado",
+        translation_status: "Cancelado",
+        payment_status: "Pendente",
+      }));
+
+      setShowRefundModal(false);
+      alert("Projeto cancelado com sucesso!");
+    } catch (error) {
+      console.error("Erro ao cancelar projeto:", error);
+      alert("Erro ao cancelar projeto. Por favor, tente novamente.");
+    }
+  };
+
+  // Função para verificar se o projeto foi pago
+  const isProjectPaid = () => {
+    // Verifica se tem data de pagamento ou se está em coleção paga
+    return (
+      (typeof project.payment_status === "object" &&
+        project.payment_status.paymentDate) ||
+      project.collection === "b2bprojectspaid" ||
+      project.collection === "b2cprojectspaid" ||
+      project.paidAt
+    );
+  };
+
   const renderBadge = (status, config) => {
     const defaultConfig = {
       true: {
@@ -1197,7 +1237,9 @@ const ClienteProjectDetails = () => {
                     className="w-[350px] bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center gap-2"
                   >
                     <FaUndo />
-                    Cancelar e Pedir Reembolso
+                    {isProjectPaid()
+                      ? "Cancelar e Pedir Reembolso"
+                      : "Cancelar"}
                   </button>
                 </div>
               </div>
@@ -1480,27 +1522,34 @@ const ClienteProjectDetails = () => {
         <div className="fixed top-0 left-0 w-full h-full bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
           <div className="bg-white p-4 md:p-5 rounded-lg shadow-lg w-full max-w-[384px] text-center">
             <h3 className="mt-0 bg-blue-200 p-2 rounded text-center text-sm md:text-base">
-              Confirmar Cancelamento e Reembolso
+              {isProjectPaid()
+                ? "Confirmar Cancelamento e Reembolso"
+                : "Confirmar Cancelamento"}
             </h3>
 
             <div className="my-4 md:my-5 flex flex-col items-center gap-3 w-fit mx-auto">
               <p className="text-sm md:text-base">
-                Ao cancelar e pedir o reembolso, você será extornado do valor
-                pago e seu projeto será cancelado.
+                {isProjectPaid()
+                  ? "Ao cancelar e pedir o reembolso, você será extornado do valor pago e seu projeto será cancelado."
+                  : "Tem certeza que deseja cancelar este projeto?"}
               </p>
-              <p className="text-base md:text-lg font-bold text-blue-600">
-                Valor do Reembolso: U${" "}
-                {Number(
-                  project.totalProjectValue ||
-                    project.totalValue ||
-                    calculateTotalValue(project.files)
-                ).toFixed(2)}
-              </p>
+              {isProjectPaid() && (
+                <p className="text-base md:text-lg font-bold text-blue-600">
+                  Valor do Reembolso: U${" "}
+                  {Number(
+                    project.totalProjectValue ||
+                      project.totalValue ||
+                      calculateTotalValue(project.files)
+                  ).toFixed(2)}
+                </p>
+              )}
             </div>
 
             <div className="flex justify-center mt-4 md:mt-5 gap-8 md:gap-12">
               <button
-                onClick={handleRefundRequest}
+                onClick={
+                  isProjectPaid() ? handleRefundRequest : handleCancelProject
+                }
                 className="px-3 py-1 bg-blue-500 border-none rounded-full cursor-pointer shadow-sm text-white text-sm md:text-base"
               >
                 Confirmar
