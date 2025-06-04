@@ -511,11 +511,7 @@ const ClienteProjectDetails = () => {
       const firestore = getFirestore();
       const projectRef = doc(firestore, project.collection, projectId);
 
-      const refundValue = Number(
-        project.totalProjectValue ||
-          project.totalValue ||
-          calculateTotalValue(project.files)
-      );
+      const refundValue = Number(calculateCorrectTotalValue());
 
       await updateDoc(projectRef, {
         payment_status: "Em Reembolso",
@@ -580,6 +576,42 @@ const ClienteProjectDetails = () => {
       project.collection === "b2cprojectspaid" ||
       project.paidAt
     );
+  };
+
+  // Função para calcular o valor total correto do projeto
+  const calculateCorrectTotalValue = () => {
+    // Se o projeto foi reembolsado, usar o valor original
+    if (
+      typeof project.payment_status === "object" &&
+      project.payment_status.status === "Reembolsado"
+    ) {
+      return Number(project.payment_status.originalAmount || 0).toFixed(2);
+    }
+
+    // Se o projeto foi pago e tem informações de pagamento estruturadas
+    if (
+      typeof project.payment_status === "object" &&
+      project.payment_status.totalPayment
+    ) {
+      return Number(project.payment_status.totalPayment).toFixed(2);
+    }
+
+    // Se o projeto NÃO foi pago anteriormente, calcular: páginas × valor por página
+    if (!isProjectPaid()) {
+      const totalPages = calculateTotalPages(project.files);
+      const valuePerPage =
+        project.files && project.files.length > 0
+          ? Number(project.files[0].valuePerPage) || 0
+          : 0;
+      return (totalPages * valuePerPage).toFixed(2);
+    }
+
+    // Fallback para valores já salvos no projeto
+    return Number(
+      project.totalProjectValue ||
+        project.totalValue ||
+        calculateTotalValue(project.files)
+    ).toFixed(2);
   };
 
   const renderBadge = (status, config) => {
@@ -1121,19 +1153,7 @@ const ClienteProjectDetails = () => {
                   Valor Total:
                 </span>
                 <span className="text-sm md:text-base text-gray-800">
-                  U${" "}
-                  {typeof project.payment_status === "object" &&
-                  project.payment_status.status === "Reembolsado"
-                    ? Number(
-                        project.payment_status.originalAmount || 0
-                      ).toFixed(2)
-                    : Number(
-                        typeof project.payment_status === "object"
-                          ? project.payment_status.totalPayment
-                          : project.totalProjectValue ||
-                              project.totalValue ||
-                              calculateTotalValue(project.files)
-                      ).toFixed(2)}
+                  U$ {calculateCorrectTotalValue()}
                 </span>
               </div>
             </div>
@@ -1188,7 +1208,8 @@ const ClienteProjectDetails = () => {
                               project.totalProjectValue || project.totalValue
                             ) /
                               calculateTotalPages(project.files)) *
-                            project.payment_status.pages
+                            (calculateTotalPages(project.files) +
+                              Number(project.payment_status.pages))
                           ).toFixed(2)}
                         </td>
                       </tr>
@@ -1199,38 +1220,49 @@ const ClienteProjectDetails = () => {
                 <div className="flex justify-center mt-6 gap-4">
                   <button
                     onClick={() => {
-                      const totalProjectValue = Number(
-                        project.totalProjectValue || project.totalValue
-                      );
                       const totalPages = calculateTotalPages(project.files);
-                      const divergencePages = project.payment_status.pages;
+                      const divergencePages = Number(
+                        project.payment_status.pages
+                      );
+                      const valuePerPage =
+                        project.files && project.files.length > 0
+                          ? Number(project.files[0].valuePerPage) || 0
+                          : 0;
 
-                      console.log("Cálculo do valor de divergência:", {
-                        totalProjectValue,
+                      // Se o projeto NÃO foi pago anteriormente, enviar valor total
+                      // Se JÁ foi pago, enviar apenas valor da divergência
+                      const paymentValue = !isProjectPaid()
+                        ? (
+                            (totalPages + divergencePages) *
+                            valuePerPage
+                          ).toFixed(2) // Valor total
+                        : (divergencePages * valuePerPage).toFixed(2); // Apenas divergência
+
+                      console.log("Cálculo do valor para pagamento:", {
                         totalPages,
                         divergencePages,
-                        valuePerPage: totalProjectValue / totalPages,
-                        divergenceValue: (
-                          (totalProjectValue / totalPages) *
-                          divergencePages
-                        ).toFixed(2),
+                        valuePerPage,
+                        isProjectPaid: isProjectPaid(),
+                        paymentValue,
+                        type: !isProjectPaid()
+                          ? "valor_total"
+                          : "apenas_divergencia",
                       });
 
                       navigate("/client/checkout", {
                         state: {
                           selectedProjects: [projectId],
                           isDivergencePayment: true,
-                          divergenceValue: (
-                            (totalProjectValue / totalPages) *
-                            divergencePages
-                          ).toFixed(2),
+                          divergenceValue: paymentValue,
                         },
                       });
                     }}
                     className="w-[350px] bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center gap-2"
                   >
                     <FaCreditCard />
-                    Pagar Valor da Divergência
+                    {!isProjectPaid()
+                      ? "Pagar Projeto Completo"
+                      : "Pagar Valor da Divergência"}
                   </button>
                   <button
                     onClick={() => setShowRefundModal(true)}
@@ -1535,12 +1567,7 @@ const ClienteProjectDetails = () => {
               </p>
               {isProjectPaid() && (
                 <p className="text-base md:text-lg font-bold text-blue-600">
-                  Valor do Reembolso: U${" "}
-                  {Number(
-                    project.totalProjectValue ||
-                      project.totalValue ||
-                      calculateTotalValue(project.files)
-                  ).toFixed(2)}
+                  Valor do Reembolso: U$ {calculateCorrectTotalValue()}
                 </p>
               )}
             </div>
