@@ -1335,6 +1335,14 @@ const ClienteProjectDetails = () => {
                     <FaUndo />
                     Reembolsado
                   </button>
+                ) : project.payment_status === "Em Reembolso" ? (
+                  <button
+                    disabled
+                    className="w-full md:w-[350px] px-4 md:px-6 py-2 md:py-3 bg-yellow-500 text-white text-sm md:text-base rounded-lg border-none cursor-not-allowed flex items-center justify-center gap-2"
+                  >
+                    <FaClock />
+                    Aguardando Reembolso
+                  </button>
                 ) : (typeof project.payment_status === "object" &&
                     project.payment_status.status === "Pago") ||
                   project.payment_status === "Pago" ? (
