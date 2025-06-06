@@ -11,6 +11,26 @@ service firebase.storage {
       return request.auth.token.role == 'master';
     }
 
+    // Regras para a pasta uploads (usada pelo Master para criar projetos)
+    match /uploads/{emailFolder}/{fileName} {
+      // Permitir leitura para usuários autenticados
+      allow read: if isAuthenticated();
+      
+      // Permitir escrita para usuários autenticados (masters podem criar projetos para qualquer cliente)
+      // e se o arquivo for menor que 50MB
+      allow write: if isAuthenticated() 
+        && request.resource.size < 50 * 1024 * 1024
+        && (
+          request.resource.contentType.matches('application/pdf') ||
+          request.resource.contentType.matches('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet') ||
+          request.resource.contentType.matches('application/vnd.ms-excel') ||
+          request.resource.contentType.matches('application/vnd.openxmlformats-officedocument.wordprocessingml.document') ||
+          request.resource.contentType.matches('application/msword') ||
+          request.resource.contentType.matches('text/plain') ||
+          request.resource.contentType.matches('image/.*')
+        );
+    }
+
     // Regras para a pasta pdfs
     match /pdfs/{userId}/{fileName} {
       // Permitir leitura para usuários autenticados

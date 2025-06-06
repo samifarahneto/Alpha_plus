@@ -9,6 +9,7 @@ import {
   FaCheckDouble,
   FaMoneyBillWave,
   FaCreditCard,
+  FaPlus,
 } from "react-icons/fa";
 
 const NavigationLinks = ({
@@ -31,6 +32,7 @@ const NavigationLinks = ({
       "/company/master/projects-done": "projectsDone",
       "/company/master/projects-paid": "projectsPaid",
       "/company/master/payments": "payments",
+      "/company/master/add-project": "addProject", // Nova rota para adicionar projeto
     };
 
     const currentPath = location.pathname;
@@ -98,6 +100,12 @@ const NavigationLinks = ({
       path: "/company/master/payments",
       label: "Pagamentos Pendentes",
       icon: <FaCreditCard className="w-4 h-4" />,
+    },
+    {
+      id: "addProject",
+      path: "/company/master/add-project",
+      label: "Criar Projeto",
+      icon: <FaPlus className="w-4 h-4" />,
     },
   ];
 

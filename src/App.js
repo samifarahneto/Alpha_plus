@@ -49,6 +49,7 @@ import ProjectsApproved from "./pages/company/master/ProjectsApproved";
 import ProjectsInAnalysis from "./pages/company/master/ProjectsInAnalysis";
 import MasterDashboard from "./pages/company/master/MasterDashboard";
 import ActivityLog from "./pages/company/master/ActivityLog";
+import MasterAddProject from "./pages/company/master/MasterAddProject"; // Nova importação
 
 // Outras configurações
 import { getFirestore, collection, onSnapshot } from "firebase/firestore";
@@ -167,6 +168,8 @@ const AppContent = () => {
             <Route path="projects-done" element={<ProjectsDone />} />
             <Route path="projects-paid" element={<ProjectsPaid />} />
             <Route path="payments" element={<MasterPayments />} />
+            <Route path="add-project" element={<MasterAddProject />} />{" "}
+            {/* Nova rota */}
           </Route>
           <Route
             path="/company/master/project/:id"
