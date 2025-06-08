@@ -18,4 +18,10 @@ module.exports = {
       "@": path.resolve(__dirname, "src"),
     },
   },
+  devServer: {
+    setupMiddlewares: (middlewares, devServer) => {
+      // Substitui onAfterSetupMiddleware
+      return middlewares;
+    },
+  },
 };

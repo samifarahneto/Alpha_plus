@@ -1000,8 +1000,8 @@ const MasterAddProject = () => {
           className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
         >
           <option value="">Selecione o idioma de origem</option>
-          <option value="portugues brasil">Português (Brasil)</option>
-          <option value="espanhol america latina">
+          <option value="Português (Brasil)">Português (Brasil)</option>
+          <option value="Espanhol (América Latina)">
             Espanhol (América Latina)
           </option>
           {/* Adicione mais opções conforme necessário */}

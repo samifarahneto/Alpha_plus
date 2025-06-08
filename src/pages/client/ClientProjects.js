@@ -20,6 +20,22 @@ import ClientLayout from "../../components/layouts/ClientLayout";
 import "../../styles/Navigation.css";
 import DataTable from "../../components/DataTable";
 import "../../styles/Table.css";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  useSortable,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 const ClientProjects = () => {
   const [allProjects, setAllProjects] = useState([]);
@@ -70,7 +86,11 @@ const ClientProjects = () => {
     return savedRowsPerPage ? parseInt(savedRowsPerPage) : 10;
   });
   const [showRowsDropdown, setShowRowsDropdown] = useState(false);
-  const [columnOrder] = useState(() => {
+  const [sortConfig] = useState(() => {
+    // Sempre iniciar com ordenação por data decrescente
+    return { key: "createdAt", direction: "desc" };
+  });
+  const [columnOrder, setColumnOrder] = useState(() => {
     const savedColumnOrder = localStorage.getItem("clientProjectsColumnOrder");
     const defaultOrder = [
       "projectNumber",
@@ -107,6 +127,7 @@ const ClientProjects = () => {
     return defaultOrder;
   });
   const [isFiltersExpanded, setIsFiltersExpanded] = useState(false);
+  const [modalColumnOrder, setModalColumnOrder] = useState([]);
   const navigate = useNavigate();
 
   const fixedColumns = ["projectOwner", "userEmail", "projectName", "selector"];
@@ -563,6 +584,13 @@ const ClientProjects = () => {
     };
   }, []);
 
+  // useEffect para inicializar a ordem das colunas no modal
+  useEffect(() => {
+    if (showColumnSelector && modalColumnOrder.length === 0) {
+      setModalColumnOrder([...columnOrder]);
+    }
+  }, [showColumnSelector, columnOrder, modalColumnOrder.length]);
+
   const handleRowsPerPageChange = (value) => {
     setRowsPerPage(value);
     setCurrentPage(1);
@@ -570,10 +598,7 @@ const ClientProjects = () => {
     localStorage.setItem("clientProjectsRowsPerPage", value.toString());
   };
 
-  // Calcular índices para paginação
-  const indexOfLastRow = currentPage * rowsPerPage;
-  const indexOfFirstRow = indexOfLastRow - rowsPerPage;
-  const currentRows = projects.slice(indexOfFirstRow, indexOfLastRow);
+  // Calcular total de páginas para a paginação externa
   const totalPages = Math.ceil(projects.length / rowsPerPage);
 
   // Função para mudar página
@@ -855,65 +880,212 @@ const ClientProjects = () => {
     });
   };
 
+  // Componente para item sortable da coluna
+  const SortableColumnItem = ({ column }) => {
+    const {
+      attributes,
+      listeners,
+      setNodeRef,
+      transform,
+      transition,
+      isDragging,
+    } = useSortable({ id: column.id });
+
+    const style = {
+      transform: CSS.Transform.toString(transform),
+      transition,
+    };
+
+    return (
+      <div
+        ref={setNodeRef}
+        style={style}
+        className={`flex items-center group hover:bg-gray-50 rounded p-2 -mx-2 ${
+          isDragging ? "z-50 shadow-lg bg-white border" : ""
+        }`}
+      >
+        {/* Drag handle */}
+        <div
+          {...attributes}
+          {...listeners}
+          className="flex items-center mr-3 text-gray-400 cursor-grab active:cursor-grabbing"
+        >
+          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 8 8">
+            <circle cx="2" cy="2" r="0.5" />
+            <circle cx="6" cy="2" r="0.5" />
+            <circle cx="2" cy="4" r="0.5" />
+            <circle cx="6" cy="4" r="0.5" />
+            <circle cx="2" cy="6" r="0.5" />
+            <circle cx="6" cy="6" r="0.5" />
+          </svg>
+        </div>
+
+        {/* Checkbox */}
+        <input
+          type="checkbox"
+          id={column.id}
+          checked={column.fixed || visibleColumns.includes(column.id)}
+          onChange={() => handleColumnToggle(column.id)}
+          disabled={column.fixed}
+          className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 mr-3"
+        />
+
+        {/* Icon placeholder */}
+        <div className="w-5 h-5 flex items-center justify-center mr-3">
+          <svg
+            className="w-4 h-4 text-gray-400"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2h2a2 2 0 002-2z"
+            />
+          </svg>
+        </div>
+
+        {/* Label */}
+        <label
+          htmlFor={column.id}
+          className={`flex-1 text-sm cursor-pointer ${
+            column.fixed ? "text-gray-500" : "text-gray-700"
+          }`}
+        >
+          {column.label}
+          {column.fixed && (
+            <span className="ml-2 text-xs text-gray-400">(Coluna fixa)</span>
+          )}
+        </label>
+      </div>
+    );
+  };
+
   const handleSaveColumns = () => {
     // Salvar as colunas visíveis no localStorage
     localStorage.setItem(
       "clientProjectsVisibleColumns",
       JSON.stringify(visibleColumns)
     );
+    // Salvar a ordem das colunas no localStorage
+    localStorage.setItem(
+      "clientProjectsColumnOrder",
+      JSON.stringify(modalColumnOrder)
+    );
+    // Atualizar o estado da ordem das colunas
+    setColumnOrder(modalColumnOrder);
     setShowColumnSelector(false);
+  };
+
+  // Configurar sensors para drag and drop
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  // Função para lidar com o final do drag and drop
+  const handleDragEnd = (event) => {
+    const { active, over } = event;
+
+    if (active.id !== over?.id) {
+      setModalColumnOrder((items) => {
+        const oldIndex = items.indexOf(active.id);
+        const newIndex = items.indexOf(over.id);
+        return arrayMove(items, oldIndex, newIndex);
+      });
+    }
   };
 
   const renderColumnSelector = () => {
     if (!showColumnSelector) return null;
 
+    // Ordenar as colunas disponíveis baseado na ordem atual
+    const orderedColumns = modalColumnOrder
+      .map((id) => availableColumns.find((col) => col.id === id))
+      .filter(Boolean);
+
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-        <div className="w-96 bg-white rounded-lg shadow-xl p-6">
-          <div className="mb-4">
-            <h3 className="text-lg font-semibold text-gray-900 text-center">
-              Personalizar Colunas
+        <div className="w-[500px] max-w-[90vw] bg-white rounded-lg shadow-xl overflow-hidden">
+          {/* Header */}
+          <div className="flex items-center justify-between p-6 border-b border-gray-200">
+            <h3 className="text-lg font-medium text-gray-900">
+              Personalizar colunas da tabela
             </h3>
-          </div>
-
-          <div className="space-y-3 max-h-96 overflow-y-auto">
-            {availableColumns.map((column) => (
-              <div key={column.id} className="flex items-center">
-                <input
-                  type="checkbox"
-                  id={column.id}
-                  checked={column.fixed || visibleColumns.includes(column.id)}
-                  onChange={() => handleColumnToggle(column.id)}
-                  disabled={column.fixed}
-                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                />
-                <label
-                  htmlFor={column.id}
-                  className={`ml-2 text-sm ${
-                    column.fixed ? "text-gray-500" : "text-gray-700"
-                  }`}
-                >
-                  {column.label}
-                  {column.fixed && (
-                    <span className="ml-2 text-xs text-gray-400">(Fixa)</span>
-                  )}
-                </label>
-              </div>
-            ))}
-          </div>
-
-          <div className="mt-6 flex justify-center gap-4">
             <button
-              onClick={handleSaveColumns}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              onClick={() => {
+                setShowColumnSelector(false);
+                setModalColumnOrder([]); // Reset da ordem ao fechar
+              }}
+              className="w-8 h-8 flex items-center justify-center rounded-md hover:bg-gray-100 transition-colors"
             >
-              Salvar
+              <svg
+                className="w-5 h-5 text-gray-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </button>
+          </div>
+
+          {/* Content */}
+          <div className="p-6 overflow-hidden">
+            {/* Colunas da Tabela */}
+            <div className="mb-6">
+              <h4 className="text-sm font-medium text-gray-900 mb-3">
+                Colunas da tabela
+              </h4>
+              <div className="text-xs text-gray-500 mb-3">
+                As seguintes colunas estão disponíveis na tabela. Arraste para
+                reordenar.
+              </div>
+
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={handleDragEnd}
+              >
+                <SortableContext
+                  items={modalColumnOrder}
+                  strategy={verticalListSortingStrategy}
+                >
+                  <div className="space-y-2 max-h-80 overflow-y-auto overflow-x-hidden">
+                    {orderedColumns.map((column) => (
+                      <SortableColumnItem key={column.id} column={column} />
+                    ))}
+                  </div>
+                </SortableContext>
+              </DndContext>
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div className="flex justify-end gap-3 p-6 border-t border-gray-200 bg-gray-50 rounded-b-lg">
+            <button
+              onClick={() => {
+                setShowColumnSelector(false);
+                setModalColumnOrder([]); // Reset da ordem ao cancelar
+              }}
+              className="px-4 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+            >
+              Cancelar
             </button>
             <button
-              onClick={() => setShowColumnSelector(false)}
-              className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+              onClick={handleSaveColumns}
+              className="px-4 py-2 text-sm text-white bg-blue-600 rounded-md hover:bg-blue-700 transition-colors"
             >
-              Fechar
+              Salvar alterações
             </button>
           </div>
         </div>
@@ -1218,6 +1390,27 @@ const ClientProjects = () => {
     {
       id: "deadlineDate",
       label: "Prazo",
+      sortValue: (value) => {
+        // Retornar o valor original para ordenação
+        if (!value) return "A definir";
+
+        // Se for um objeto com seconds (Firestore timestamp)
+        if (value && typeof value === "object" && value.seconds) {
+          return new Date(value.seconds * 1000);
+        }
+
+        // Se for uma string ISO
+        if (typeof value === "string") {
+          return new Date(value);
+        }
+
+        // Se for um objeto Date
+        if (value instanceof Date) {
+          return value;
+        }
+
+        return "A definir";
+      },
       render: (value) => (
         <span className="text-xs font-medium">
           {value ? formatDate(value) : "A definir"}
@@ -1447,7 +1640,10 @@ const ClientProjects = () => {
                 <div className="w-full shadow-lg rounded-lg">
                   <DataTable
                     columns={visibleColumnsData}
-                    data={currentRows}
+                    data={projects}
+                    initialSortConfig={sortConfig}
+                    currentPage={currentPage}
+                    rowsPerPage={rowsPerPage}
                     initialColumnOrder={columnOrder}
                     fixedColumns={fixedColumns}
                     onRowClick={(row) =>

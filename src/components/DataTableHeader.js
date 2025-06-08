@@ -1,44 +1,60 @@
-import React from "react";
-import {
-  SortableContext,
-  useSortable,
-  horizontalListSortingStrategy,
-} from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
+import React, { useState, useRef, useEffect } from "react";
 
-const SortableItem = ({ id, column, isFixed, sortConfig, onSort }) => {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id });
+const HeaderItem = ({ column, sortConfig, onSort, width, onWidthChange }) => {
+  const [isResizing, setIsResizing] = useState(false);
+  const [startX, setStartX] = useState(0);
+  const [startWidth, setStartWidth] = useState(0);
+  const thRef = useRef(null);
 
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    position: isDragging ? "fixed" : "relative",
-    zIndex: isDragging ? 1000 : "auto",
-    minWidth: "100px",
-    backgroundColor: "white",
-    cursor: isDragging ? "grabbing" : "grab",
-    boxShadow: isDragging
-      ? "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)"
-      : "none",
+  const handleMouseDown = (e) => {
+    e.preventDefault();
+    setIsResizing(true);
+    setStartX(e.clientX);
+    setStartWidth(thRef.current?.offsetWidth || 0);
   };
+
+  useEffect(() => {
+    const handleMouseMove = (e) => {
+      if (!isResizing) return;
+
+      const diff = e.clientX - startX;
+      const newWidth = Math.max(80, startWidth + diff); // Largura mínima de 80px
+
+      if (onWidthChange) {
+        onWidthChange(column.id, newWidth);
+      }
+    };
+
+    const handleMouseUp = () => {
+      setIsResizing(false);
+    };
+
+    if (isResizing) {
+      document.addEventListener("mousemove", handleMouseMove);
+      document.addEventListener("mouseup", handleMouseUp);
+      document.body.style.cursor = "col-resize";
+      document.body.style.userSelect = "none";
+    }
+
+    return () => {
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
+    };
+  }, [isResizing, startX, startWidth, column.id, onWidthChange]);
 
   return (
     <th
-      ref={setNodeRef}
-      style={style}
-      className={`table-header-cell !py-0 whitespace-nowrap truncate text-center firstMobile:min-w-[120px] bg-white ${
-        isDragging ? "shadow-lg" : ""
-      }`}
+      ref={thRef}
+      className="table-header-cell !py-0 whitespace-nowrap truncate text-center bg-white relative border-r border-gray-200"
+      style={{
+        width: width ? `${width}px` : "auto",
+        minWidth: "80px",
+      }}
     >
       <span className="flex items-center justify-center gap-1 h-6">
-        <span {...attributes} {...listeners} className="flex-1">
+        <span className="flex-1">
           <span className="firstMobile:text-sm">{column.label}</span>
         </span>
         <span
@@ -68,6 +84,15 @@ const SortableItem = ({ id, column, isFixed, sortConfig, onSort }) => {
           </svg>
         </span>
       </span>
+
+      {/* Resizer Handle */}
+      <div
+        className="absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-blue-400 hover:bg-opacity-50 group"
+        onMouseDown={handleMouseDown}
+        style={{ zIndex: 10 }}
+      >
+        <div className="w-full h-full group-hover:bg-blue-400 group-hover:bg-opacity-30" />
+      </div>
     </th>
   );
 };
@@ -81,33 +106,36 @@ const DataTableHeader = ({
   filters,
   onFilterChange,
   fixedColumns = [],
+  columnWidths = {},
+  onColumnWidthChange,
 }) => {
   // Verificação de segurança para garantir que columnOrder seja um array
   const safeColumnOrder = Array.isArray(columnOrder) ? columnOrder : [];
 
+  const handleWidthChange = (columnId, newWidth) => {
+    if (onColumnWidthChange) {
+      onColumnWidthChange(columnId, newWidth);
+    }
+  };
+
   return (
     <thead className="table-header sticky top-0 z-[1] bg-white">
       <tr>
-        <SortableContext
-          items={safeColumnOrder}
-          strategy={horizontalListSortingStrategy}
-        >
-          {safeColumnOrder.map((columnId) => {
-            const column = columns?.find((c) => c.id === columnId);
-            if (!column) return null;
+        {safeColumnOrder.map((columnId) => {
+          const column = columns?.find((c) => c.id === columnId);
+          if (!column) return null;
 
-            return (
-              <SortableItem
-                key={columnId}
-                id={columnId}
-                column={column}
-                isFixed={fixedColumns.includes(columnId)}
-                sortConfig={sortConfig}
-                onSort={onSort}
-              />
-            );
-          })}
-        </SortableContext>
+          return (
+            <HeaderItem
+              key={columnId}
+              column={column}
+              sortConfig={sortConfig}
+              onSort={onSort}
+              width={columnWidths[columnId]}
+              onWidthChange={handleWidthChange}
+            />
+          );
+        })}
       </tr>
       {columns && columns.some((col) => col.filter) && (
         <tr className="!h-0">

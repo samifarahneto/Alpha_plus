@@ -87,13 +87,19 @@ const Filter = ({
                 onChange({ target: { name: "end", value: dateStr } });
                 setIsOpen(false);
               } else {
-                onChange({ target: { name: "end", value: value.start } });
+                // Se a data selecionada for anterior ao início, inverter as datas
                 onChange({ target: { name: "start", value: dateStr } });
+                setTimeout(() => {
+                  onChange({ target: { name: "end", value: value.start } });
+                }, 0);
                 setIsOpen(false);
               }
             } else {
+              // Resetar e iniciar nova seleção
               onChange({ target: { name: "start", value: dateStr } });
-              onChange({ target: { name: "end", value: "" } });
+              setTimeout(() => {
+                onChange({ target: { name: "end", value: "" } });
+              }, 0);
             }
           }}
           className={`
@@ -135,13 +141,16 @@ const Filter = ({
     if (type === "multiselect") {
       setSelectedOptions([]);
       onChange({ target: { name, value: [] } });
-    } else if (type === "date") {
-      onChange({ target: { name: "start", value: "" } });
-      onChange({ target: { name: "end", value: "" } });
+    } else if (type === "daterange") {
+      if (onClear) {
+        onClear();
+      } else {
+        onChange({ target: { name: "start", value: "" } });
+        onChange({ target: { name: "end", value: "" } });
+      }
     } else {
       onChange({ target: { name, value: "" } });
     }
-    if (onClear) onClear();
   };
 
   const isFilterActive = () => {

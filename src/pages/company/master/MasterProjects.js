@@ -17,6 +17,22 @@ import "../../../styles/Table.css";
 import Pagination from "../../../components/Pagination";
 import Filter from "../../../components/Filter";
 import { saveAs } from "file-saver";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 const MasterProjects = ({ style, isMobile }) => {
   const { user, loading } = useAuth();
@@ -48,26 +64,80 @@ const MasterProjects = ({ style, isMobile }) => {
     const savedVisibleColumns = localStorage.getItem(
       "masterProjectsVisibleColumns"
     );
-    return savedVisibleColumns
-      ? JSON.parse(savedVisibleColumns)
-      : [
-          "projectNumber", // Nº do Projeto (fixo)
-          "client", // Cliente (fixo)
-          "projectName", // Nome do Projeto (fixo)
-          "createdAt", // Data
-          "monthYear", // Mês/Ano
-          "sourceLanguage", // Origem
-          "targetLanguage", // Destino
-          "pages", // Pgs.
-          "filesDisplay", // Arq.
-          "totalValue", // Valor (U$)
-          "paymentStatus", // Status Pgto
-          "deadline", // Prazo
-          "clientType", // Tipo
-          "projectStatus", // Status do Projeto (fixo)
-          "translationStatus", // Status de Tradução (fixo)
-        ];
+    const defaultColumns = [
+      "projectNumber", // Nº do Projeto (fixo)
+      "client", // Cliente (fixo)
+      "projectName", // Nome do Projeto (fixo)
+      "createdAt", // Data
+      "monthYear", // Mês/Ano
+      "sourceLanguage", // Origem
+      "targetLanguage", // Destino
+      "pages", // Pgs.
+      "filesDisplay", // Arq.
+      "totalValue", // Valor (U$)
+      "paymentStatus", // Status Pgto
+      "deadline", // Prazo
+      "clientType", // Tipo
+      "projectStatus", // Status do Projeto (fixo)
+      "translationStatus", // Status de Tradução (fixo)
+    ];
+
+    if (savedVisibleColumns) {
+      const parsed = JSON.parse(savedVisibleColumns);
+      // Verificar se a coluna projectNumber está incluída
+      if (!parsed.includes("projectNumber")) {
+        // Se não estiver, adicionar no início
+        const updatedColumns = ["projectNumber", ...parsed];
+        // Salvar a versão atualizada
+        localStorage.setItem(
+          "masterProjectsVisibleColumns",
+          JSON.stringify(updatedColumns)
+        );
+        return updatedColumns;
+      }
+      return parsed;
+    }
+    return defaultColumns;
   });
+  const [columnOrder, setColumnOrder] = useState(() => {
+    // Carregar a ordem das colunas do localStorage, ou usar a ordem padrão
+    const savedOrder = localStorage.getItem("masterProjectsColumnOrder");
+    const defaultOrder = [
+      "projectNumber",
+      "client",
+      "projectName",
+      "createdAt",
+      "monthYear",
+      "sourceLanguage",
+      "targetLanguage",
+      "pages",
+      "filesDisplay",
+      "totalValue",
+      "paymentStatus",
+      "deadline",
+      "clientType",
+      "projectStatus",
+      "translationStatus",
+    ];
+
+    if (savedOrder) {
+      const parsed = JSON.parse(savedOrder);
+      // Verificar se a coluna projectNumber está incluída
+      if (!parsed.includes("projectNumber")) {
+        // Se não estiver, adicionar no início
+        const updatedOrder = ["projectNumber", ...parsed];
+        // Salvar a versão atualizada
+        localStorage.setItem(
+          "masterProjectsColumnOrder",
+          JSON.stringify(updatedOrder)
+        );
+        return updatedOrder;
+      }
+      return parsed;
+    }
+    return defaultOrder;
+  });
+  const [modalColumnOrder, setModalColumnOrder] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(() => {
     // Carregar a preferência do usuário do localStorage, ou usar 10 como padrão
@@ -75,16 +145,18 @@ const MasterProjects = ({ style, isMobile }) => {
     return savedRowsPerPage ? parseInt(savedRowsPerPage) : 10;
   });
   const [sortConfig] = useState(() => {
-    const savedSortConfig = localStorage.getItem("masterProjectsSortConfig");
-    return savedSortConfig
-      ? JSON.parse(savedSortConfig)
-      : { key: "createdAt", direction: "desc" };
+    // Sempre iniciar com ordenação por data decrescente
+    return { key: "createdAt", direction: "desc" };
   });
   const [projectStatusFilter, setProjectStatusFilter] = useState([]);
   const [translationStatusFilter, setTranslationStatusFilter] = useState([]);
 
   const columns = [
-    { id: "projectNumber", label: "#", fixed: true },
+    {
+      id: "projectNumber",
+      label: "Nº",
+      fixed: true,
+    },
     { id: "client", label: "Cliente", fixed: true },
     { id: "projectName", label: "Nome do Projeto", fixed: true },
     { id: "createdAt", label: "Data" },
@@ -325,16 +397,23 @@ const MasterProjects = ({ style, isMobile }) => {
 
         const uploadDate = new Date(upload.createdAt.seconds * 1000);
 
+        // Obter apenas a data (sem hora) para comparação
+        const uploadDateOnly = new Date(
+          uploadDate.getFullYear(),
+          uploadDate.getMonth(),
+          uploadDate.getDate()
+        );
+
         if (dateFilter.start && dateFilter.end) {
-          const startDate = new Date(`${dateFilter.start}T00:00:00`);
-          const endDate = new Date(`${dateFilter.end}T23:59:59`);
-          return uploadDate >= startDate && uploadDate <= endDate;
+          const startDate = new Date(dateFilter.start);
+          const endDate = new Date(dateFilter.end);
+          return uploadDateOnly >= startDate && uploadDateOnly <= endDate;
         } else if (dateFilter.start) {
-          const startDate = new Date(`${dateFilter.start}T00:00:00`);
-          return uploadDate >= startDate;
+          const startDate = new Date(dateFilter.start);
+          return uploadDateOnly >= startDate;
         } else if (dateFilter.end) {
-          const endDate = new Date(`${dateFilter.end}T23:59:59`);
-          return uploadDate <= endDate;
+          const endDate = new Date(dateFilter.end);
+          return uploadDateOnly <= endDate;
         }
         return true;
       });
@@ -829,68 +908,220 @@ const MasterProjects = ({ style, isMobile }) => {
     });
   };
 
+  // Componente para item sortable da coluna
+  const SortableColumnItem = ({ column }) => {
+    const {
+      attributes,
+      listeners,
+      setNodeRef,
+      transform,
+      transition,
+      isDragging,
+    } = useSortable({ id: column.id });
+
+    const style = {
+      transform: CSS.Transform.toString(transform),
+      transition,
+    };
+
+    return (
+      <div
+        ref={setNodeRef}
+        style={style}
+        className={`flex items-center group hover:bg-gray-50 rounded p-2 -mx-2 ${
+          isDragging ? "z-50 shadow-lg bg-white border" : ""
+        }`}
+      >
+        {/* Drag handle */}
+        <div
+          {...attributes}
+          {...listeners}
+          className="flex items-center mr-3 text-gray-400 cursor-grab active:cursor-grabbing"
+        >
+          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 8 8">
+            <circle cx="2" cy="2" r="0.5" />
+            <circle cx="6" cy="2" r="0.5" />
+            <circle cx="2" cy="4" r="0.5" />
+            <circle cx="6" cy="4" r="0.5" />
+            <circle cx="2" cy="6" r="0.5" />
+            <circle cx="6" cy="6" r="0.5" />
+          </svg>
+        </div>
+
+        {/* Checkbox */}
+        <input
+          type="checkbox"
+          id={column.id}
+          checked={column.fixed || visibleColumns.includes(column.id)}
+          onChange={() => handleColumnToggle(column.id)}
+          disabled={column.fixed}
+          className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 mr-3"
+        />
+
+        {/* Icon placeholder */}
+        <div className="w-5 h-5 flex items-center justify-center mr-3">
+          <svg
+            className="w-4 h-4 text-gray-400"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2h2a2 2 0 002-2z"
+            />
+          </svg>
+        </div>
+
+        {/* Label */}
+        <label
+          htmlFor={column.id}
+          className={`flex-1 text-sm cursor-pointer ${
+            column.fixed ? "text-gray-500" : "text-gray-700"
+          }`}
+        >
+          {column.label}
+          {column.fixed && (
+            <span className="ml-2 text-xs text-gray-400">(Coluna fixa)</span>
+          )}
+        </label>
+      </div>
+    );
+  };
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  const handleDragEnd = (event) => {
+    const { active, over } = event;
+
+    if (active.id !== over.id) {
+      setModalColumnOrder((items) => {
+        const oldIndex = items.findIndex((item) => item === active.id);
+        const newIndex = items.findIndex((item) => item === over.id);
+
+        return arrayMove(items, oldIndex, newIndex);
+      });
+    }
+  };
+
   const handleSaveColumns = () => {
-    // Salvar as colunas visíveis no localStorage
+    // Salvar as colunas visíveis e a ordem das colunas no localStorage
     localStorage.setItem(
       "masterProjectsVisibleColumns",
       JSON.stringify(visibleColumns)
     );
+    localStorage.setItem(
+      "masterProjectsColumnOrder",
+      JSON.stringify(modalColumnOrder)
+    );
+    // Atualizar o estado da ordem das colunas
+    setColumnOrder(modalColumnOrder);
     setShowColumnSelector(false);
   };
 
   const renderColumnSelector = () => {
     if (!showColumnSelector) return null;
 
+    // Inicializar ordem do modal quando o modal abrir
+    if (modalColumnOrder.length === 0) {
+      setModalColumnOrder([...columnOrder]);
+    }
+
+    // Reordenar colunas baseado na ordem do modal
+    const orderedColumns = modalColumnOrder
+      .map((colId) => columns.find((col) => col.id === colId))
+      .filter(Boolean);
+
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-        <div className="w-[90%] max-w-[420px] bg-white rounded-lg shadow-xl p-4">
-          <div className="mb-4">
-            <h3 className="text-lg font-semibold text-gray-900 text-center">
-              Personalizar Colunas
+        <div className="w-[500px] max-w-[90vw] bg-white rounded-lg shadow-xl overflow-hidden">
+          {/* Header */}
+          <div className="flex items-center justify-between p-6 border-b border-gray-200">
+            <h3 className="text-lg font-medium text-gray-900">
+              Personalizar colunas da tabela
             </h3>
-          </div>
-
-          <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-2">
-            {columns.map((column) => (
-              <div
-                key={column.id}
-                className="flex items-center p-2 hover:bg-gray-50 rounded-lg transition-colors"
-              >
-                <input
-                  type="checkbox"
-                  id={column.id}
-                  checked={column.fixed || visibleColumns.includes(column.id)}
-                  onChange={() => handleColumnToggle(column.id)}
-                  disabled={column.fixed}
-                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                />
-                <label
-                  htmlFor={column.id}
-                  className={`ml-3 text-sm flex-1 ${
-                    column.fixed ? "text-gray-500" : "text-gray-700"
-                  }`}
-                >
-                  {column.label}
-                  {column.fixed && (
-                    <span className="ml-2 text-xs text-gray-400">(Fixa)</span>
-                  )}
-                </label>
-              </div>
-            ))}
-          </div>
-
-          <div className="mt-6 flex justify-center gap-4">
             <button
-              onClick={handleSaveColumns}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              onClick={() => {
+                setShowColumnSelector(false);
+                setModalColumnOrder([]);
+              }}
+              className="w-8 h-8 flex items-center justify-center rounded-md hover:bg-gray-100 transition-colors"
             >
-              Salvar
+              <svg
+                className="w-5 h-5 text-gray-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </button>
+          </div>
+
+          <div className="p-6 overflow-hidden">
+            {/* Colunas da Tabela */}
+            <div className="mb-6">
+              <h4 className="text-sm font-medium text-gray-900 mb-3">
+                Colunas da tabela
+              </h4>
+              <div className="text-xs text-gray-500 mb-3">
+                As seguintes colunas estão disponíveis na tabela. Arraste para
+                reordenar.
+              </div>
+
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={handleDragEnd}
+              >
+                <SortableContext
+                  items={modalColumnOrder}
+                  strategy={verticalListSortingStrategy}
+                >
+                  <div className="space-y-2 max-h-80 overflow-y-auto overflow-x-hidden">
+                    {orderedColumns.map((column) => (
+                      <SortableColumnItem
+                        key={column.id}
+                        column={column}
+                        isVisible={visibleColumns.includes(column.id)}
+                        onToggle={handleColumnToggle}
+                        isFixed={column.fixed}
+                      />
+                    ))}
+                  </div>
+                </SortableContext>
+              </DndContext>
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div className="flex justify-end gap-3 p-6 border-t border-gray-200 bg-gray-50 rounded-b-lg">
+            <button
+              onClick={() => {
+                setShowColumnSelector(false);
+                setModalColumnOrder([]);
+              }}
+              className="px-4 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+            >
+              Cancelar
             </button>
             <button
-              onClick={() => setShowColumnSelector(false)}
-              className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+              onClick={handleSaveColumns}
+              className="px-4 py-2 text-sm text-white bg-blue-600 rounded-md hover:bg-blue-700 transition-colors"
             >
-              Fechar
+              Salvar alterações
             </button>
           </div>
         </div>
@@ -898,120 +1129,8 @@ const MasterProjects = ({ style, isMobile }) => {
     );
   };
 
-  const sortData = (data, config) => {
-    if (!config.key) return data;
-
-    return [...data].sort((a, b) => {
-      let aValue = a[config.key];
-      let bValue = b[config.key];
-
-      // Tratamento especial para campos específicos
-      if (config.key === "client") {
-        aValue = (
-          clientTypes[a.userEmail]?.nomeCompleto ||
-          a.userEmail ||
-          ""
-        ).toLowerCase();
-        bValue = (
-          clientTypes[b.userEmail]?.nomeCompleto ||
-          b.userEmail ||
-          ""
-        ).toLowerCase();
-      } else if (config.key === "projectName") {
-        aValue = (a.projectName || "").toLowerCase();
-        bValue = (b.projectName || "").toLowerCase();
-      } else if (config.key === "projectStatus") {
-        aValue = (a.project_status || "").toLowerCase();
-        bValue = (b.project_status || "").toLowerCase();
-      } else if (config.key === "translationStatus") {
-        aValue = (a.translation_status || "").toLowerCase();
-        bValue = (b.translation_status || "").toLowerCase();
-      } else if (config.key === "createdAt") {
-        aValue = new Date(aValue?.seconds * 1000);
-        bValue = new Date(bValue?.seconds * 1000);
-      } else if (config.key === "deadline") {
-        aValue = a.deadlineDate || a.deadline;
-        bValue = b.deadlineDate || b.deadline;
-      } else if (config.key === "totalValue") {
-        aValue = Number(
-          a.totalProjectValue || a.totalValue || calculateTotalValue(a.files, a)
-        );
-        bValue = Number(
-          b.totalProjectValue || b.totalValue || calculateTotalValue(b.files, b)
-        );
-      } else if (config.key === "pages") {
-        aValue = calculateTotalPages(a.files, a);
-        bValue = calculateTotalPages(b.files, b);
-      } else if (config.key === "files") {
-        aValue = a.files?.length || 0;
-        bValue = b.files?.length || 0;
-      } else if (config.key === "paymentStatus") {
-        aValue = (
-          typeof a.payment_status === "object"
-            ? a.payment_status.status
-            : a.payment_status || ""
-        ).toLowerCase();
-        bValue = (
-          typeof b.payment_status === "object"
-            ? b.payment_status.status
-            : b.payment_status || ""
-        ).toLowerCase();
-      } else if (config.key === "clientType") {
-        aValue = (() => {
-          const userInfo = clientTypes[a.userEmail];
-          if (!userInfo) return "N/A";
-          if (userInfo.userType === "colaborator" && userInfo.registeredBy) {
-            const registeredByInfo = clientTypes[userInfo.registeredBy];
-            if (registeredByInfo && registeredByInfo.userType === "b2b")
-              return "B2B";
-            if (
-              registeredByInfo &&
-              (registeredByInfo.clientType === "Cliente" ||
-                registeredByInfo.clientType === "Colab")
-            )
-              return "B2C";
-          } else if (
-            userInfo.clientType === "Colab" ||
-            userInfo.clientType === "Cliente"
-          ) {
-            return "B2C";
-          }
-          return userInfo.clientType || "N/A";
-        })().toLowerCase();
-        bValue = (() => {
-          const userInfo = clientTypes[b.userEmail];
-          if (!userInfo) return "N/A";
-          if (userInfo.userType === "colaborator" && userInfo.registeredBy) {
-            const registeredByInfo = clientTypes[userInfo.registeredBy];
-            if (registeredByInfo && registeredByInfo.userType === "b2b")
-              return "B2B";
-            if (
-              registeredByInfo &&
-              (registeredByInfo.clientType === "Cliente" ||
-                registeredByInfo.clientType === "Colab")
-            )
-              return "B2C";
-          } else if (
-            userInfo.clientType === "Colab" ||
-            userInfo.clientType === "Cliente"
-          ) {
-            return "B2C";
-          }
-          return userInfo.clientType || "N/A";
-        })().toLowerCase();
-      }
-
-      if (aValue < bValue) return config.direction === "asc" ? -1 : 1;
-      if (aValue > bValue) return config.direction === "asc" ? 1 : -1;
-      return 0;
-    });
-  };
-
-  const sortedUploads = sortData(filteredUploads, sortConfig);
-  const indexOfLastRow = currentPage * rowsPerPage;
-  const indexOfFirstRow = indexOfLastRow - rowsPerPage;
-  const currentRows = sortedUploads.slice(indexOfFirstRow, indexOfLastRow);
-  const totalPages = Math.ceil(sortedUploads.length / rowsPerPage);
+  // Usar filteredUploads diretamente, deixando a ordenação para o DataTable
+  const totalPages = Math.ceil(filteredUploads.length / rowsPerPage);
 
   // Função para mudar página
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
@@ -1507,10 +1626,20 @@ const MasterProjects = ({ style, isMobile }) => {
           <div className="w-full overflow-x-auto">
             <div className="w-full shadow-lg rounded-lg">
               <DataTable
-                columns={columns.filter(
-                  (col) => col.fixed || visibleColumns.includes(col.id)
-                )}
-                data={currentRows.map((row) => ({
+                columns={columnOrder
+                  .map((colId) => columns.find((col) => col.id === colId))
+                  .filter(
+                    (col) =>
+                      col && (col.fixed || visibleColumns.includes(col.id))
+                  )}
+                initialSortConfig={sortConfig}
+                initialColumnOrder={columnOrder.filter((colId) => {
+                  const col = columns.find((c) => c.id === colId);
+                  return col && (col.fixed || visibleColumns.includes(col.id));
+                })}
+                currentPage={currentPage}
+                rowsPerPage={rowsPerPage}
+                data={filteredUploads.map((row) => ({
                   ...row,
                   projectNumber: row.projectNumber || "N/A",
                   client:
@@ -1642,7 +1771,6 @@ const MasterProjects = ({ style, isMobile }) => {
                     </select>
                   ),
                 }))}
-                initialColumnOrder={columns.map((col) => col.id)}
                 fixedColumns={fixedColumns}
                 onRowClick={handleRowClick}
                 getRowClassName={getRowClassName}
@@ -1656,7 +1784,7 @@ const MasterProjects = ({ style, isMobile }) => {
             onPageChange={paginate}
             rowsPerPage={rowsPerPage}
             onRowsPerPageChange={handleRowsPerPageChange}
-            totalItems={sortedUploads.length}
+            totalItems={filteredUploads.length}
           />
 
           {renderFilesModal()}
