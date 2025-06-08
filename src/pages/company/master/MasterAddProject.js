@@ -921,315 +921,582 @@ const MasterAddProject = () => {
   };
 
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">Criar Novo Projeto (Master)</h1>
-
-      {/* Input para o email do usuário com autocompletar */}
-      <div className="mb-4 relative">
-        <label
-          htmlFor="userEmail"
-          className="block text-gray-700 text-sm font-bold mb-2"
-        >
-          Email do Cliente:
-        </label>
-        <input
-          type="email"
-          id="userEmail"
-          value={userEmail}
-          onChange={handleUserEmailChange}
-          className={`shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline ${
-            userEmailError ? "border-red-500" : ""
-          }`}
-          placeholder="Insira o email do cliente"
-          autoComplete="off"
-        />
-        {userEmailError && (
-          <p className="text-red-500 text-xs italic">{userEmailError}</p>
-        )}
-
-        {/* Lista de sugestões */}
-        {showSuggestions && userSuggestions.length > 0 && (
-          <div className="absolute z-10 w-full bg-white border border-gray-300 rounded mt-1 max-h-60 overflow-y-auto shadow-lg">
-            {userSuggestions.map((suggestion, index) => (
-              <div
-                key={index}
-                className="p-2 hover:bg-gray-100 cursor-pointer"
-                onClick={() => handleSelectSuggestion(suggestion.email)}
-              >
-                <div className="font-medium">{suggestion.email}</div>
-                {suggestion.nomeCompleto && (
-                  <div className="text-sm text-gray-600">
-                    {suggestion.nomeCompleto}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Restante do formulário */}
-      <div className="mb-4">
-        <label
-          htmlFor="projectName"
-          className="block text-gray-700 text-sm font-bold mb-2"
-        >
-          Nome do Projeto:
-        </label>
-        <input
-          type="text"
-          id="projectName"
-          value={projectName}
-          onChange={handleProjectNameChange}
-          className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-          placeholder="Ex: Tradução de Documentos Legais"
-        />
-      </div>
-
-      <div className="mb-4">
-        <label
-          htmlFor="sourceLanguage"
-          className="block text-gray-700 text-sm font-bold mb-2"
-        >
-          Idioma de Origem:
-        </label>
-        <select
-          id="sourceLanguage"
-          value={sourceLanguage}
-          onChange={handleSourceLanguageChange}
-          className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-        >
-          <option value="">Selecione o idioma de origem</option>
-          <option value="Português (Brasil)">Português (Brasil)</option>
-          <option value="Espanhol (América Latina)">
-            Espanhol (América Latina)
-          </option>
-          {/* Adicione mais opções conforme necessário */}
-        </select>
-      </div>
-
-      <div className="mb-4">
-        <label
-          htmlFor="targetLanguage"
-          className="block text-gray-700 text-sm font-bold mb-2"
-        >
-          Idioma de Destino:
-        </label>
-        <select
-          id="targetLanguage"
-          value={targetLanguage}
-          onChange={handleTargetLanguageChange}
-          className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-        >
-          <option value="">Selecione o idioma de destino</option>
-          <option value="ingles">Inglês</option>
-          {/* Adicione mais opções conforme necessário */}
-        </select>
-      </div>
-
-      <div className="mb-4">
-        <label className="block text-gray-700 text-sm font-bold mb-2">
-          Tipo de Tradução:
-        </label>
-        <div className="mt-2">
-          <label className="inline-flex items-center">
-            <input
-              type="radio"
-              className="form-radio"
-              name="certifiedOption"
-              value="true"
-              checked={isCertifiedSelected === true}
-              onChange={handleIsCertifiedChange}
-            />
-            <span className="ml-2">Certificada</span>
-          </label>
-          <label className="inline-flex items-center ml-6">
-            <input
-              type="radio"
-              className="form-radio"
-              name="certifiedOption"
-              value="false"
-              checked={isCertifiedSelected === false}
-              onChange={handleIsCertifiedChange}
-            />
-            <span className="ml-2">Não Certificada</span>
-          </label>
+    <div className="min-h-screen">
+      <div className="w-full max-w-full p-4 sm:p-6 md:p-8 space-y-4 sm:space-y-6 md:space-y-8 px-4 md:px-10">
+        <div className="text-center mb-4 md:mb-8">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
+            Criar Novo Projeto
+          </h1>
+          <p className="text-gray-600 text-sm sm:text-base md:text-lg">
+            Painel Master
+          </p>
         </div>
-      </div>
 
-      <div className="mb-4">
-        <label className="inline-flex items-center">
-          <input
-            type="checkbox"
-            className="form-checkbox"
-            checked={isPriority}
-            onChange={handleIsPriorityChange}
-          />
-          <span className="ml-2">
-            Prioritário (entrega mais rápida, custo adicional)
-          </span>
-        </label>
-      </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 md:gap-8">
+          {/* Primeira Div - Dados de Entrada */}
+          <div className="bg-white/80 backdrop-blur-sm p-4 sm:p-6 md:p-8 rounded-2xl shadow-xl border border-white/20 hover:shadow-2xl transition-all duration-300">
+            <div className="flex items-center mb-4 sm:mb-6">
+              <div className="w-2 sm:w-3 h-6 sm:h-8 bg-gradient-to-b from-blue-500 to-purple-500 rounded-full mr-3 sm:mr-4"></div>
+              <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-800">
+                Dados do Projeto
+              </h2>
+            </div>
 
-      <div className="mb-4">
-        <label
-          htmlFor="fileInput"
-          className="block text-gray-700 text-sm font-bold mb-2"
-        >
-          Anexar Arquivos:
-        </label>
-        <input
-          type="file"
-          id="fileInput"
-          multiple
-          onChange={handleFileChange}
-          className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-        />
-      </div>
-
-      {files.length > 0 && (
-        <div className="mb-4">
-          <h3 className="text-lg font-semibold mb-2">Arquivos Selecionados:</h3>
-          <ul>
-            {files.map((file, index) => (
-              <li
-                key={index}
-                className="flex items-center justify-between bg-gray-100 p-2 rounded mb-2"
+            {/* Input para o email do usuário com autocompletar */}
+            <div className="mb-4 sm:mb-6 relative">
+              <label
+                htmlFor="userEmail"
+                className="block text-gray-700 text-xs sm:text-sm font-semibold mb-2 sm:mb-3"
               >
-                <div className="flex items-center">
-                  <FontAwesomeIcon
-                    icon={renderFileIcon(file.type)}
-                    className="mr-2 text-blue-500"
-                  />
-                  <span>{file.name}</span>
+                Email do Cliente:
+              </label>
+              <input
+                type="email"
+                id="userEmail"
+                value={userEmail}
+                onChange={handleUserEmailChange}
+                className={`w-full px-3 sm:px-4 py-2 sm:py-3 border-2 rounded-xl bg-white/50 backdrop-blur-sm transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 hover:border-blue-300 text-sm sm:text-base ${
+                  userEmailError
+                    ? "border-red-400 focus:border-red-500 focus:ring-red-500/20"
+                    : "border-gray-200"
+                }`}
+                placeholder="Insira o email do cliente"
+                autoComplete="off"
+              />
+              {userEmailError && (
+                <p className="text-red-500 text-xs italic">{userEmailError}</p>
+              )}
+
+              {/* Lista de sugestões */}
+              {showSuggestions && userSuggestions.length > 0 && (
+                <div className="absolute z-10 w-full bg-white border border-gray-300 rounded mt-1 max-h-60 overflow-y-auto shadow-lg">
+                  {userSuggestions.map((suggestion, index) => (
+                    <div
+                      key={index}
+                      className="p-2 hover:bg-gray-100 cursor-pointer"
+                      onClick={() => handleSelectSuggestion(suggestion.email)}
+                    >
+                      <div className="font-medium">{suggestion.email}</div>
+                      {suggestion.nomeCompleto && (
+                        <div className="text-sm text-gray-600">
+                          {suggestion.nomeCompleto}
+                        </div>
+                      )}
+                    </div>
+                  ))}
                 </div>
-                <button
-                  onClick={() => handleRemoveFile(index)}
-                  className="text-red-500 hover:text-red-700"
+              )}
+            </div>
+
+            <div className="mb-4 sm:mb-6">
+              <label
+                htmlFor="projectName"
+                className="block text-gray-700 text-xs sm:text-sm font-semibold mb-2 sm:mb-3"
+              >
+                Nome do Projeto:
+              </label>
+              <input
+                type="text"
+                id="projectName"
+                value={projectName}
+                onChange={handleProjectNameChange}
+                className="w-full px-3 sm:px-4 py-2 sm:py-3 border-2 border-gray-200 rounded-xl bg-white/50 backdrop-blur-sm transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 hover:border-blue-300 text-sm sm:text-base"
+                placeholder="Ex: Tradução de Documentos Legais"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mb-4 sm:mb-6">
+              <div>
+                <label
+                  htmlFor="sourceLanguage"
+                  className="block text-gray-700 text-xs sm:text-sm font-semibold mb-2 sm:mb-3"
                 >
-                  <FontAwesomeIcon icon={faTrash} />
-                </button>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
+                  Idioma de Origem:
+                </label>
+                <select
+                  id="sourceLanguage"
+                  value={sourceLanguage}
+                  onChange={handleSourceLanguageChange}
+                  className="w-full px-3 sm:px-4 py-2 sm:py-3 border-2 border-gray-200 rounded-xl bg-white/50 backdrop-blur-sm transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 hover:border-blue-300 text-sm sm:text-base"
+                >
+                  <option value="">Selecione o idioma de origem</option>
+                  <option value="Português (Brasil)">Português (Brasil)</option>
+                  <option value="Espanhol (América Latina)">
+                    Espanhol (América Latina)
+                  </option>
+                  {/* Adicione mais opções conforme necessário */}
+                </select>
+              </div>
 
-      <div className="flex justify-between mt-6">
-        <button
-          onClick={handleResetForm}
-          className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-        >
-          Resetar
-        </button>
-        {currentStep === 1 && (
-          <button
-            onClick={convertFilesToPDF}
-            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-            disabled={
-              isAnalyzing ||
-              files.length === 0 ||
-              !sourceLanguage ||
-              !targetLanguage ||
-              !projectName ||
-              !userEmail
-            }
-          >
-            {isAnalyzing ? "Analisando..." : "Analisar Arquivos"}
-          </button>
-        )}
-        {currentStep === 2 && (
-          <div className="flex space-x-4">
-            <button
-              onClick={() => setShowSaveModal(true)}
-              className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-              disabled={isSubmitting}
-            >
-              Salvar Projeto
-            </button>
-          </div>
-        )}
-      </div>
+              <div>
+                <label
+                  htmlFor="targetLanguage"
+                  className="block text-gray-700 text-xs sm:text-sm font-semibold mb-2 sm:mb-3"
+                >
+                  Idioma de Destino:
+                </label>
+                <select
+                  id="targetLanguage"
+                  value={targetLanguage}
+                  onChange={handleTargetLanguageChange}
+                  className="w-full px-3 sm:px-4 py-2 sm:py-3 border-2 border-gray-200 rounded-xl bg-white/50 backdrop-blur-sm transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 hover:border-blue-300 text-sm sm:text-base"
+                >
+                  <option value="">Selecione o idioma de destino</option>
+                  <option value="Inglês">Inglês</option>
+                  {/* Adicione mais opções conforme necessário */}
+                </select>
+              </div>
+            </div>
 
-      {currentStep === 2 && (
-        <div className="mt-8 p-4 border rounded-lg shadow-md">
-          <h2 className="text-xl font-bold mb-4">Resumo do Projeto</h2>
-          <p>
-            <strong>Nome do Projeto:</strong> {projectName}
-          </p>
-          <p>
-            <strong>Idioma de Origem:</strong> {sourceLanguage}
-          </p>
-          <p>
-            <strong>Idioma de Destino:</strong> {targetLanguage}
-          </p>
-          <p>
-            <strong>Tradução Certificada:</strong>{" "}
-            {isCertifiedSelected ? "Sim" : "Não"}
-          </p>
-          <p>
-            <strong>Prioritário:</strong> {isPriority ? "Sim" : "Não"}
-          </p>
-          <p>
-            <strong>Email do Cliente:</strong> {userEmail}
-          </p>
+            <div className="mb-4 sm:mb-6">
+              <label className="block text-gray-700 text-xs sm:text-sm font-semibold mb-2 sm:mb-3">
+                Tipo de Tradução:
+              </label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                <label className="relative cursor-pointer group">
+                  <input
+                    type="radio"
+                    className="peer sr-only"
+                    name="certifiedOption"
+                    value="true"
+                    checked={isCertifiedSelected === true}
+                    onChange={handleIsCertifiedChange}
+                  />
+                  <div className="flex items-center justify-center p-3 sm:p-4 border-2 border-gray-200 rounded-xl bg-white/50 backdrop-blur-sm transition-all duration-300 peer-checked:border-blue-500 peer-checked:bg-blue-50 group-hover:border-blue-300">
+                    <span className="font-medium text-gray-700 peer-checked:text-blue-700 text-sm sm:text-base">
+                      Certificada
+                    </span>
+                  </div>
+                </label>
+                <label className="relative cursor-pointer group">
+                  <input
+                    type="radio"
+                    className="peer sr-only"
+                    name="certifiedOption"
+                    value="false"
+                    checked={isCertifiedSelected === false}
+                    onChange={handleIsCertifiedChange}
+                  />
+                  <div className="flex items-center justify-center p-3 sm:p-4 border-2 border-gray-200 rounded-xl bg-white/50 backdrop-blur-sm transition-all duration-300 peer-checked:border-blue-500 peer-checked:bg-blue-50 group-hover:border-blue-300">
+                    <span className="font-medium text-gray-700 peer-checked:text-blue-700 text-sm sm:text-base">
+                      Não Certificada
+                    </span>
+                  </div>
+                </label>
+              </div>
+            </div>
 
-          <h3 className="text-lg font-semibold mt-4 mb-2">
-            Detalhes dos Arquivos:
-          </h3>
-          <ul>
-            {convertedFiles.map((file, index) => (
-              <li key={index} className="mb-2">
-                {file.name} - {file.pages} páginas - R$ {file.value.toFixed(2)}
-                {file.requiresManualQuote && (
-                  <span className="text-red-500 ml-2">
-                    (Cotação Manual Necessária)
+            <div className="mb-4 sm:mb-6">
+              <div
+                className={`relative p-3 sm:p-4 border-2 rounded-xl bg-white/50 backdrop-blur-sm transition-all duration-300 hover:border-purple-300 ${
+                  isPriority
+                    ? "border-purple-500 bg-purple-50"
+                    : "border-gray-200"
+                }`}
+              >
+                <label className="cursor-pointer group inline-flex items-center w-full">
+                  <input
+                    type="checkbox"
+                    className="w-4 sm:w-5 h-4 sm:h-5 text-purple-600 border-2 border-gray-300 rounded focus:ring-purple-500 focus:ring-2 checked:bg-purple-600 checked:border-purple-600"
+                    checked={isPriority}
+                    onChange={handleIsPriorityChange}
+                  />
+                  <span className="ml-2 sm:ml-3 font-medium text-gray-700 text-sm sm:text-base">
+                    Prioritário (entrega mais rápida, custo adicional)
                   </span>
-                )}
-                {uploadProgress[file.name.replace(/\.[^/.]+$/, "")] === -1 && (
-                  <span className="text-red-500 ml-2">(Erro no Upload)</span>
-                )}
-              </li>
-            ))}
-          </ul>
+                </label>
+              </div>
+            </div>
 
-          <p className="text-lg font-bold mt-4">
-            Total de Páginas: {projectData.totalPages}
-          </p>
-          <p className="text-lg font-bold">
-            Valor por Página: R$ {projectData.valuePerPage.toFixed(2)}
-          </p>
-          <p className="text-xl font-bold text-green-600 mt-2">
-            Valor Total Estimado: R$ {projectData.totalValue.toFixed(2)}
-          </p>
-          {projectData.hasManualQuoteFiles && (
-            <p className="text-red-600 mt-2">
-              * Este projeto contém arquivos que requerem cotação manual. O
-              valor final pode ser ajustado.
-            </p>
-          )}
+            <div className="mb-4 sm:mb-6">
+              <label
+                htmlFor="fileInput"
+                className="block text-gray-700 text-xs sm:text-sm font-semibold mb-2 sm:mb-3"
+              >
+                Anexar Arquivos:
+              </label>
+              <div className="relative">
+                <input
+                  type="file"
+                  id="fileInput"
+                  multiple
+                  onChange={handleFileChange}
+                  className="hidden"
+                />
+                <label
+                  htmlFor="fileInput"
+                  className="flex flex-col items-center justify-center w-full h-24 sm:h-32 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer bg-white/50 backdrop-blur-sm hover:bg-blue-50 hover:border-blue-400 transition-all duration-300"
+                >
+                  <div className="flex flex-col items-center justify-center pt-3 sm:pt-5 pb-4 sm:pb-6">
+                    <svg
+                      className="w-6 sm:w-8 h-6 sm:h-8 mb-2 sm:mb-4 text-gray-500"
+                      aria-hidden="true"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 20 16"
+                    >
+                      <path
+                        stroke="currentColor"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"
+                      />
+                    </svg>
+                    <p className="mb-1 sm:mb-2 text-xs sm:text-sm text-gray-500">
+                      <span className="font-semibold">Clique para enviar</span>{" "}
+                      ou arraste e solte
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      PDF, DOC, DOCX, imagens
+                    </p>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            {files.length > 0 && (
+              <div className="mb-4 sm:mb-6">
+                <h3 className="text-base sm:text-lg font-semibold mb-2 sm:mb-3 text-gray-700">
+                  Arquivos Selecionados:
+                </h3>
+                <div className="space-y-2">
+                  {files.map((file, index) => (
+                    <div
+                      key={index}
+                      className="flex items-center justify-between bg-gradient-to-r from-blue-50 to-purple-50 p-3 sm:p-4 rounded-xl border border-blue-100 hover:shadow-md transition-all duration-300"
+                    >
+                      <div className="flex items-center min-w-0 flex-1">
+                        <FontAwesomeIcon
+                          icon={renderFileIcon(file.type)}
+                          className="mr-2 sm:mr-3 text-blue-600 text-base sm:text-lg flex-shrink-0"
+                        />
+                        <span className="font-medium text-gray-700 text-sm sm:text-base truncate">
+                          {file.name}
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => handleRemoveFile(index)}
+                        className="p-1 sm:p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-all duration-300 flex-shrink-0 ml-2"
+                      >
+                        <FontAwesomeIcon
+                          icon={faTrash}
+                          className="text-sm sm:text-base"
+                        />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mt-6 sm:mt-8 pt-4 sm:pt-6 border-t border-gray-200">
+              <button
+                onClick={handleResetForm}
+                className="w-full sm:w-auto px-4 sm:px-6 py-2 sm:py-3 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-red-500/20 text-sm sm:text-base"
+              >
+                Resetar
+              </button>
+              {currentStep === 1 && (
+                <button
+                  onClick={convertFilesToPDF}
+                  className="w-full sm:w-auto px-6 sm:px-8 py-2 sm:py-3 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500/20 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none text-sm sm:text-base"
+                  disabled={
+                    isAnalyzing ||
+                    files.length === 0 ||
+                    !sourceLanguage ||
+                    !targetLanguage ||
+                    !projectName ||
+                    !userEmail
+                  }
+                >
+                  {isAnalyzing ? "Analisando..." : "Analisar Arquivos"}
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Segunda Div - Resumo do Projeto */}
+          <div className="bg-gradient-to-br from-purple-50 to-pink-50 backdrop-blur-sm p-4 sm:p-6 md:p-8 rounded-2xl shadow-xl border border-purple-100 lg:sticky lg:top-6">
+            <div className="flex items-center mb-4 sm:mb-6">
+              <div className="w-2 sm:w-3 h-6 sm:h-8 bg-gradient-to-b from-purple-500 to-pink-500 rounded-full mr-3 sm:mr-4"></div>
+              <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-800">
+                Resumo do Projeto
+              </h2>
+            </div>
+
+            <div>
+              <div className="space-y-3 sm:space-y-4 mb-4 sm:mb-6">
+                <div className="bg-white/60 backdrop-blur-sm p-3 sm:p-4 rounded-xl border border-white/40">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-0">
+                    <span className="font-semibold text-gray-700 text-sm sm:text-base">
+                      📧 Email do Cliente:
+                    </span>
+                    <span
+                      className={
+                        userEmail
+                          ? "text-gray-900 font-medium text-sm sm:text-base"
+                          : "text-gray-500 italic text-sm sm:text-base"
+                      }
+                    >
+                      {userEmail || "Não informado"}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="bg-white/60 backdrop-blur-sm p-3 sm:p-4 rounded-xl border border-white/40">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-0">
+                    <span className="font-semibold text-gray-700 text-sm sm:text-base">
+                      📝 Nome do Projeto:
+                    </span>
+                    <span
+                      className={
+                        projectName
+                          ? "text-gray-900 font-medium text-sm sm:text-base"
+                          : "text-gray-500 italic text-sm sm:text-base"
+                      }
+                    >
+                      {projectName || "Não informado"}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 gap-3 sm:gap-4">
+                  <div className="bg-white/60 backdrop-blur-sm p-3 sm:p-4 rounded-xl border border-white/40">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-0">
+                      <span className="font-semibold text-gray-700 text-sm sm:text-base">
+                        🌐 Origem:
+                      </span>
+                      <span
+                        className={
+                          sourceLanguage
+                            ? "text-gray-900 font-medium text-sm sm:text-base"
+                            : "text-gray-500 italic text-sm sm:text-base"
+                        }
+                      >
+                        {sourceLanguage || "Não selecionado"}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="bg-white/60 backdrop-blur-sm p-3 sm:p-4 rounded-xl border border-white/40">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-0">
+                      <span className="font-semibold text-gray-700 text-sm sm:text-base">
+                        🎯 Destino:
+                      </span>
+                      <span
+                        className={
+                          targetLanguage
+                            ? "text-gray-900 font-medium text-sm sm:text-base"
+                            : "text-gray-500 italic text-sm sm:text-base"
+                        }
+                      >
+                        {targetLanguage || "Não selecionado"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 gap-3 sm:gap-4">
+                  <div className="bg-white/60 backdrop-blur-sm p-3 sm:p-4 rounded-xl border border-white/40">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-0">
+                      <span className="font-semibold text-gray-700 text-sm sm:text-base">
+                        📜 Certificada:
+                      </span>
+                      <span
+                        className={`inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium ${
+                          isCertifiedSelected
+                            ? "bg-green-100 text-green-800"
+                            : "bg-gray-100 text-gray-800"
+                        }`}
+                      >
+                        {isCertifiedSelected ? "✅ Sim" : "❌ Não"}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="bg-white/60 backdrop-blur-sm p-3 sm:p-4 rounded-xl border border-white/40">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-0">
+                      <span className="font-semibold text-gray-700 text-sm sm:text-base">
+                        ⚡ Prioritário:
+                      </span>
+                      <span
+                        className={`inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium ${
+                          isPriority
+                            ? "bg-purple-100 text-purple-800"
+                            : "bg-gray-100 text-gray-800"
+                        }`}
+                      >
+                        {isPriority ? "🚀 Sim" : "⏳ Não"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mb-4 sm:mb-6">
+                <div className="bg-white/60 backdrop-blur-sm p-3 sm:p-4 rounded-xl border border-white/40">
+                  <h3 className="text-base sm:text-lg font-semibold mb-2 sm:mb-3 text-gray-700 flex items-center">
+                    📁 Arquivos
+                    <span className="ml-2 bg-purple-100 text-purple-800 text-xs sm:text-sm font-medium px-2 py-1 rounded-full">
+                      {files.length}
+                    </span>
+                  </h3>
+                  {files.length > 0 ? (
+                    <div className="space-y-2">
+                      {files.map((file, index) => (
+                        <div
+                          key={index}
+                          className="flex items-center p-2 bg-white/40 rounded-lg border border-white/60"
+                        >
+                          <FontAwesomeIcon
+                            icon={renderFileIcon(file.type)}
+                            className="mr-2 sm:mr-3 text-blue-600 text-sm sm:text-base flex-shrink-0"
+                          />
+                          <span className="text-xs sm:text-sm font-medium text-gray-700 truncate">
+                            {file.name}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-3 sm:py-4">
+                      <div className="text-2xl sm:text-4xl mb-1 sm:mb-2">
+                        📂
+                      </div>
+                      <p className="text-gray-500 italic text-xs sm:text-sm">
+                        Nenhum arquivo selecionado
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {currentStep === 2 && convertedFiles.length > 0 && (
+                <div>
+                  <h3 className="text-lg font-semibold mt-4 mb-2">
+                    Detalhes dos Arquivos:
+                  </h3>
+                  <ul className="space-y-2">
+                    {convertedFiles.map((file, index) => (
+                      <li key={index} className="text-sm bg-white p-2 rounded">
+                        <div className="font-medium">{file.name}</div>
+                        <div className="text-gray-600">
+                          {file.pages} páginas - R$ {file.value.toFixed(2)}
+                        </div>
+                        {file.requiresManualQuote && (
+                          <span className="text-red-500 text-xs">
+                            (Cotação Manual Necessária)
+                          </span>
+                        )}
+                        {uploadProgress[file.name.replace(/\.[^/.]+$/, "")] ===
+                          -1 && (
+                          <span className="text-red-500 text-xs">
+                            (Erro no Upload)
+                          </span>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+
+                  <div className="mt-4 sm:mt-6 p-4 sm:p-6 bg-gradient-to-r from-green-50 to-emerald-50 rounded-2xl border-2 border-green-200 shadow-lg">
+                    <div className="text-center mb-3 sm:mb-4">
+                      <h4 className="text-lg sm:text-xl font-bold text-gray-800 mb-1 sm:mb-2">
+                        💰 Resumo Financeiro
+                      </h4>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-3 sm:gap-4">
+                      <div className="bg-white/70 backdrop-blur-sm p-3 sm:p-4 rounded-xl border border-white/60">
+                        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 sm:gap-0">
+                          <span className="font-semibold text-gray-700 text-sm sm:text-base">
+                            📄 Total de Páginas:
+                          </span>
+                          <span className="text-lg sm:text-xl font-bold text-gray-900">
+                            {projectData.totalPages}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="bg-white/70 backdrop-blur-sm p-3 sm:p-4 rounded-xl border border-white/60">
+                        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 sm:gap-0">
+                          <span className="font-semibold text-gray-700 text-sm sm:text-base">
+                            💵 Valor por Página:
+                          </span>
+                          <span className="text-lg sm:text-xl font-bold text-blue-600">
+                            R$ {projectData.valuePerPage.toFixed(2)}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="bg-gradient-to-r from-green-100 to-emerald-100 p-3 sm:p-4 rounded-xl border-2 border-green-300">
+                        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 sm:gap-0">
+                          <span className="font-bold text-green-800 text-sm sm:text-base">
+                            🎯 Valor Total Estimado:
+                          </span>
+                          <span className="text-xl sm:text-2xl font-bold text-green-700">
+                            R$ {projectData.totalValue.toFixed(2)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {projectData.hasManualQuoteFiles && (
+                      <div className="mt-3 sm:mt-4 p-3 bg-amber-50 border border-amber-200 rounded-xl">
+                        <p className="text-amber-700 text-xs sm:text-sm font-medium flex items-center">
+                          ⚠️ Este projeto contém arquivos que requerem cotação
+                          manual. O valor final pode ser ajustado.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Botão Salvar Projeto */}
+                  <div className="mt-4 sm:mt-6 text-center">
+                    <button
+                      onClick={() => setShowSaveModal(true)}
+                      className="w-full px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-green-500/20 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none text-sm sm:text-base"
+                      disabled={isSubmitting}
+                    >
+                      {isSubmitting ? "Salvando..." : "Salvar Projeto"}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
-      )}
+      </div>
 
       {/* Modal de Confirmação Salvar Projeto */}
       {showSaveModal && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center">
-          <div className="bg-white p-8 rounded-lg shadow-xl">
-            <h3 className="text-lg font-bold mb-4">Confirmar Salvar Projeto</h3>
-            <p>Deseja salvar este projeto?</p>
-            <div className="flex justify-end mt-6 space-x-4">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm overflow-y-auto h-full w-full flex items-center justify-center z-50">
+          <div className="bg-white/95 backdrop-blur-sm p-8 rounded-2xl shadow-2xl border border-white/20 max-w-md mx-4 transform animate-pulse">
+            <div className="text-center">
+              <div className="w-16 h-16 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                <span className="text-3xl">💾</span>
+              </div>
+              <h3 className="text-xl font-bold mb-4 text-gray-800">
+                Confirmar Salvamento
+              </h3>
+              <p className="text-gray-600 mb-6">
+                Deseja salvar este projeto? Esta ação criará um novo projeto no
+                sistema.
+              </p>
+            </div>
+            <div className="flex justify-center space-x-4">
               <button
                 onClick={() => setShowSaveModal(false)}
-                className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded"
+                className="px-6 py-3 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold rounded-xl transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-gray-500/20"
               >
                 Cancelar
               </button>
               <button
                 onClick={handleSaveAsDraft}
-                className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
+                className="px-8 py-3 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-green-500/20 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
                 disabled={isSubmitting}
               >
-                {isSubmitting ? "Salvando..." : "Salvar"}
+                {isSubmitting ? "Salvando..." : "Confirmar"}
               </button>
             </div>
           </div>

@@ -936,9 +936,14 @@ const MasterProjects = ({ style, isMobile }) => {
         <div
           {...attributes}
           {...listeners}
-          className="flex items-center mr-3 text-gray-400 cursor-grab active:cursor-grabbing"
+          className="flex items-center mr-3 text-gray-400 cursor-grab active:cursor-grabbing touch-none select-none p-1 -m-1 hover:bg-gray-100 rounded transition-colors"
+          style={{ touchAction: "none" }}
         >
-          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 8 8">
+          <svg
+            className="w-5 h-5 sm:w-4 sm:h-4"
+            fill="currentColor"
+            viewBox="0 0 8 8"
+          >
             <circle cx="2" cy="2" r="0.5" />
             <circle cx="6" cy="2" r="0.5" />
             <circle cx="2" cy="4" r="0.5" />
@@ -992,7 +997,14 @@ const MasterProjects = ({ style, isMobile }) => {
   };
 
   const sensors = useSensors(
-    useSensor(PointerSensor),
+    useSensor(PointerSensor, {
+      // Configuração para melhor suporte a dispositivos móveis
+      activationConstraint: {
+        distance: 8, // Distância mínima para ativar o drag
+        delay: 200, // Delay para evitar conflito com scroll
+        tolerance: 5, // Tolerância para movimento acidental
+      },
+    }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
     })
@@ -1077,20 +1089,30 @@ const MasterProjects = ({ style, isMobile }) => {
                 Colunas da tabela
               </h4>
               <div className="text-xs text-gray-500 mb-3">
-                As seguintes colunas estão disponíveis na tabela. Arraste para
-                reordenar.
+                As seguintes colunas estão disponíveis na tabela. Mantenha
+                pressionado o ícone ⋮⋮ e arraste para reordenar.
               </div>
 
               <DndContext
                 sensors={sensors}
                 collisionDetection={closestCenter}
                 onDragEnd={handleDragEnd}
+                autoScroll={{
+                  threshold: {
+                    x: 0.1,
+                    y: 0.1,
+                  },
+                  acceleration: 0.5,
+                }}
               >
                 <SortableContext
                   items={modalColumnOrder}
                   strategy={verticalListSortingStrategy}
                 >
-                  <div className="space-y-2 max-h-80 overflow-y-auto overflow-x-hidden">
+                  <div
+                    className="space-y-2 max-h-80 overflow-y-auto overflow-x-hidden touch-none"
+                    style={{ touchAction: "pan-y" }}
+                  >
                     {orderedColumns.map((column) => (
                       <SortableColumnItem
                         key={column.id}
