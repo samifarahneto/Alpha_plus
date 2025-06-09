@@ -465,7 +465,12 @@ const MasterOnGoing = () => {
   }, [paginatedData, clientTypes]);
 
   return (
-    <div className="w-full px-4 md:px-10">
+    <div className="w-full pt-0 pb-4 md:pb-6 lg:pb-8 space-y-4 md:space-y-6 lg:space-y-8">
+      <div className="text-center mb-6 lg:mb-8">
+        <h1 className="text-xl md:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
+          Em Andamento
+        </h1>
+      </div>
       {!loading && (
         <div className="w-full">
           <div className="w-full overflow-x-auto">

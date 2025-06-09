@@ -52,6 +52,23 @@ module.exports = {
     },
   },
   devServer: {
+    port: 3001,
+    hot: true,
+    liveReload: true,
+    watchFiles: {
+      paths: ["src/**/*", "public/**/*"],
+      options: {
+        usePolling: true,
+        interval: 1000,
+      },
+    },
+    client: {
+      overlay: {
+        errors: true,
+        warnings: false,
+      },
+      progress: true,
+    },
     setupMiddlewares: (middlewares, devServer) => {
       // Substitui onAfterSetupMiddleware
       return middlewares;

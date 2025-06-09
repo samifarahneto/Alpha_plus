@@ -141,20 +141,11 @@ const AppContent = () => {
           />
 
           {/* Rotas do Master */}
-          <Route
-            path="/company/master/dashboard"
-            element={<MasterDashboard />}
-          />
-          <Route
-            path="/company/master/activity-logs"
-            element={<ActivityLog />}
-          />
-          <Route path="/company/master/clients" element={<MasterClient />} />
-          <Route
-            path="/company/master/employees"
-            element={<MasterEmployee />}
-          />
           <Route path="/company/master" element={<MasterLayout />}>
+            <Route path="dashboard" element={<MasterDashboard />} />
+            <Route path="activity-logs" element={<ActivityLog />} />
+            <Route path="clients" element={<MasterClient />} />
+            <Route path="employees" element={<MasterEmployee />} />
             <Route index element={<MasterProjects />} />
             <Route path="projects" element={<MasterProjects />} />
             <Route path="projects-budget" element={<ProjectsBudget />} />

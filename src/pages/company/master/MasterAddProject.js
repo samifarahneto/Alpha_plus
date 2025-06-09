@@ -922,31 +922,31 @@ const MasterAddProject = () => {
 
   return (
     <div className="min-h-screen">
-      <div className="w-full max-w-full p-4 sm:p-6 md:p-8 space-y-4 sm:space-y-6 md:space-y-8 px-4 md:px-10">
-        <div className="text-center mb-4 md:mb-8">
-          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
+      <div className="w-full pt-0 pb-4 md:pb-6 lg:pb-8 space-y-4 md:space-y-6 lg:space-y-8">
+        <div className="text-center mb-6 lg:mb-8">
+          <h1 className="text-xl md:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
             Criar Novo Projeto
           </h1>
-          <p className="text-gray-600 text-sm sm:text-base md:text-lg">
+          <p className="text-gray-600 text-sm md:text-base lg:text-lg">
             Painel Master
           </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 md:gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
           {/* Primeira Div - Dados de Entrada */}
-          <div className="bg-white/80 backdrop-blur-sm p-4 sm:p-6 md:p-8 rounded-2xl shadow-xl border border-white/20 hover:shadow-2xl transition-all duration-300">
-            <div className="flex items-center mb-4 sm:mb-6">
-              <div className="w-2 sm:w-3 h-6 sm:h-8 bg-gradient-to-b from-blue-500 to-purple-500 rounded-full mr-3 sm:mr-4"></div>
-              <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-800">
+          <div className="w-full bg-white/80 backdrop-blur-sm p-4 md:p-6 lg:p-8 rounded-2xl shadow-xl border border-white/20 hover:shadow-2xl transition-all duration-300">
+            <div className="flex items-center mb-4 md:mb-6">
+              <div className="w-2 md:w-3 h-6 md:h-8 bg-gradient-to-b from-blue-500 to-purple-500 rounded-full mr-3 md:mr-4"></div>
+              <h2 className="text-lg md:text-xl lg:text-2xl font-bold text-gray-800">
                 Dados do Projeto
               </h2>
             </div>
 
             {/* Input para o email do usuário com autocompletar */}
-            <div className="mb-4 sm:mb-6 relative">
+            <div className="mb-4 md:mb-6 relative">
               <label
                 htmlFor="userEmail"
-                className="block text-gray-700 text-xs sm:text-sm font-semibold mb-2 sm:mb-3"
+                className="block text-gray-700 text-sm font-semibold mb-2 md:mb-3"
               >
                 Email do Cliente:
               </label>
@@ -955,7 +955,7 @@ const MasterAddProject = () => {
                 id="userEmail"
                 value={userEmail}
                 onChange={handleUserEmailChange}
-                className={`w-full px-3 sm:px-4 py-2 sm:py-3 border-2 rounded-xl bg-white/50 backdrop-blur-sm transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 hover:border-blue-300 text-sm sm:text-base ${
+                className={`w-full px-3 md:px-4 py-2 md:py-3 border-2 rounded-xl bg-white/50 backdrop-blur-sm transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 hover:border-blue-300 text-sm md:text-base ${
                   userEmailError
                     ? "border-red-400 focus:border-red-500 focus:ring-red-500/20"
                     : "border-gray-200"
@@ -988,10 +988,10 @@ const MasterAddProject = () => {
               )}
             </div>
 
-            <div className="mb-4 sm:mb-6">
+            <div className="mb-4 md:mb-6">
               <label
                 htmlFor="projectName"
-                className="block text-gray-700 text-xs sm:text-sm font-semibold mb-2 sm:mb-3"
+                className="block text-gray-700 text-sm font-semibold mb-2 md:mb-3"
               >
                 Nome do Projeto:
               </label>
@@ -1000,16 +1000,16 @@ const MasterAddProject = () => {
                 id="projectName"
                 value={projectName}
                 onChange={handleProjectNameChange}
-                className="w-full px-3 sm:px-4 py-2 sm:py-3 border-2 border-gray-200 rounded-xl bg-white/50 backdrop-blur-sm transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 hover:border-blue-300 text-sm sm:text-base"
+                className="w-full px-3 md:px-4 py-2 md:py-3 border-2 border-gray-200 rounded-xl bg-white/50 backdrop-blur-sm transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 hover:border-blue-300 text-sm md:text-base"
                 placeholder="Ex: Tradução de Documentos Legais"
               />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mb-4 sm:mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-4 md:mb-6">
               <div>
                 <label
                   htmlFor="sourceLanguage"
-                  className="block text-gray-700 text-xs sm:text-sm font-semibold mb-2 sm:mb-3"
+                  className="block text-gray-700 text-sm font-semibold mb-2 md:mb-3"
                 >
                   Idioma de Origem:
                 </label>
@@ -1017,7 +1017,7 @@ const MasterAddProject = () => {
                   id="sourceLanguage"
                   value={sourceLanguage}
                   onChange={handleSourceLanguageChange}
-                  className="w-full px-3 sm:px-4 py-2 sm:py-3 border-2 border-gray-200 rounded-xl bg-white/50 backdrop-blur-sm transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 hover:border-blue-300 text-sm sm:text-base"
+                  className="w-full px-3 md:px-4 py-2 md:py-3 border-2 border-gray-200 rounded-xl bg-white/50 backdrop-blur-sm transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 hover:border-blue-300 text-sm md:text-base"
                 >
                   <option value="">Selecione o idioma de origem</option>
                   <option value="Português (Brasil)">Português (Brasil)</option>
@@ -1031,7 +1031,7 @@ const MasterAddProject = () => {
               <div>
                 <label
                   htmlFor="targetLanguage"
-                  className="block text-gray-700 text-xs sm:text-sm font-semibold mb-2 sm:mb-3"
+                  className="block text-gray-700 text-sm font-semibold mb-2 md:mb-3"
                 >
                   Idioma de Destino:
                 </label>
@@ -1039,7 +1039,7 @@ const MasterAddProject = () => {
                   id="targetLanguage"
                   value={targetLanguage}
                   onChange={handleTargetLanguageChange}
-                  className="w-full px-3 sm:px-4 py-2 sm:py-3 border-2 border-gray-200 rounded-xl bg-white/50 backdrop-blur-sm transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 hover:border-blue-300 text-sm sm:text-base"
+                  className="w-full px-3 md:px-4 py-2 md:py-3 border-2 border-gray-200 rounded-xl bg-white/50 backdrop-blur-sm transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 hover:border-blue-300 text-sm md:text-base"
                 >
                   <option value="">Selecione o idioma de destino</option>
                   <option value="Inglês">Inglês</option>
@@ -1048,11 +1048,11 @@ const MasterAddProject = () => {
               </div>
             </div>
 
-            <div className="mb-4 sm:mb-6">
-              <label className="block text-gray-700 text-xs sm:text-sm font-semibold mb-2 sm:mb-3">
+            <div className="mb-4 md:mb-6">
+              <label className="block text-gray-700 text-sm font-semibold mb-2 md:mb-3">
                 Tipo de Tradução:
               </label>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
                 <label className="relative cursor-pointer group">
                   <input
                     type="radio"
@@ -1062,8 +1062,8 @@ const MasterAddProject = () => {
                     checked={isCertifiedSelected === true}
                     onChange={handleIsCertifiedChange}
                   />
-                  <div className="flex items-center justify-center p-3 sm:p-4 border-2 border-gray-200 rounded-xl bg-white/50 backdrop-blur-sm transition-all duration-300 peer-checked:border-blue-500 peer-checked:bg-blue-50 group-hover:border-blue-300">
-                    <span className="font-medium text-gray-700 peer-checked:text-blue-700 text-sm sm:text-base">
+                  <div className="flex items-center justify-center p-3 md:p-4 border-2 border-gray-200 rounded-xl bg-white/50 backdrop-blur-sm transition-all duration-300 peer-checked:border-blue-500 peer-checked:bg-blue-50 group-hover:border-blue-300">
+                    <span className="font-medium text-gray-700 peer-checked:text-blue-700 text-sm md:text-base">
                       Certificada
                     </span>
                   </div>
@@ -1077,8 +1077,8 @@ const MasterAddProject = () => {
                     checked={isCertifiedSelected === false}
                     onChange={handleIsCertifiedChange}
                   />
-                  <div className="flex items-center justify-center p-3 sm:p-4 border-2 border-gray-200 rounded-xl bg-white/50 backdrop-blur-sm transition-all duration-300 peer-checked:border-blue-500 peer-checked:bg-blue-50 group-hover:border-blue-300">
-                    <span className="font-medium text-gray-700 peer-checked:text-blue-700 text-sm sm:text-base">
+                  <div className="flex items-center justify-center p-3 md:p-4 border-2 border-gray-200 rounded-xl bg-white/50 backdrop-blur-sm transition-all duration-300 peer-checked:border-blue-500 peer-checked:bg-blue-50 group-hover:border-blue-300">
+                    <span className="font-medium text-gray-700 peer-checked:text-blue-700 text-sm md:text-base">
                       Não Certificada
                     </span>
                   </div>
@@ -1086,9 +1086,9 @@ const MasterAddProject = () => {
               </div>
             </div>
 
-            <div className="mb-4 sm:mb-6">
+            <div className="mb-4 md:mb-6">
               <div
-                className={`relative p-3 sm:p-4 border-2 rounded-xl bg-white/50 backdrop-blur-sm transition-all duration-300 hover:border-purple-300 ${
+                className={`relative p-3 md:p-4 border-2 rounded-xl bg-white/50 backdrop-blur-sm transition-all duration-300 hover:border-purple-300 ${
                   isPriority
                     ? "border-purple-500 bg-purple-50"
                     : "border-gray-200"
@@ -1097,21 +1097,21 @@ const MasterAddProject = () => {
                 <label className="cursor-pointer group inline-flex items-center w-full">
                   <input
                     type="checkbox"
-                    className="w-4 sm:w-5 h-4 sm:h-5 text-purple-600 border-2 border-gray-300 rounded focus:ring-purple-500 focus:ring-2 checked:bg-purple-600 checked:border-purple-600"
+                    className="w-4 md:w-5 h-4 md:h-5 text-purple-600 border-2 border-gray-300 rounded focus:ring-purple-500 focus:ring-2 checked:bg-purple-600 checked:border-purple-600"
                     checked={isPriority}
                     onChange={handleIsPriorityChange}
                   />
-                  <span className="ml-2 sm:ml-3 font-medium text-gray-700 text-sm sm:text-base">
+                  <span className="ml-2 md:ml-3 font-medium text-gray-700 text-sm md:text-base">
                     Prioritário (entrega mais rápida, custo adicional)
                   </span>
                 </label>
               </div>
             </div>
 
-            <div className="mb-4 sm:mb-6">
+            <div className="mb-4 md:mb-6">
               <label
                 htmlFor="fileInput"
-                className="block text-gray-700 text-xs sm:text-sm font-semibold mb-2 sm:mb-3"
+                className="block text-gray-700 text-sm font-semibold mb-2 md:mb-3"
               >
                 Anexar Arquivos:
               </label>
@@ -1125,11 +1125,11 @@ const MasterAddProject = () => {
                 />
                 <label
                   htmlFor="fileInput"
-                  className="flex flex-col items-center justify-center w-full h-24 sm:h-32 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer bg-white/50 backdrop-blur-sm hover:bg-blue-50 hover:border-blue-400 transition-all duration-300"
+                  className="flex flex-col items-center justify-center w-full h-24 md:h-32 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer bg-white/50 backdrop-blur-sm hover:bg-blue-50 hover:border-blue-400 transition-all duration-300"
                 >
-                  <div className="flex flex-col items-center justify-center pt-3 sm:pt-5 pb-4 sm:pb-6">
+                  <div className="flex flex-col items-center justify-center pt-3 md:pt-5 pb-4 md:pb-6">
                     <svg
-                      className="w-6 sm:w-8 h-6 sm:h-8 mb-2 sm:mb-4 text-gray-500"
+                      className="w-6 md:w-8 h-6 md:h-8 mb-2 md:mb-4 text-gray-500"
                       aria-hidden="true"
                       xmlns="http://www.w3.org/2000/svg"
                       fill="none"
@@ -1143,7 +1143,7 @@ const MasterAddProject = () => {
                         d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"
                       />
                     </svg>
-                    <p className="mb-1 sm:mb-2 text-xs sm:text-sm text-gray-500">
+                    <p className="mb-1 md:mb-2 text-xs md:text-sm text-gray-500">
                       <span className="font-semibold">Clique para enviar</span>{" "}
                       ou arraste e solte
                     </p>
@@ -1156,32 +1156,32 @@ const MasterAddProject = () => {
             </div>
 
             {files.length > 0 && (
-              <div className="mb-4 sm:mb-6">
-                <h3 className="text-base sm:text-lg font-semibold mb-2 sm:mb-3 text-gray-700">
+              <div className="mb-4 md:mb-6">
+                <h3 className="text-base md:text-lg font-semibold mb-2 md:mb-3 text-gray-700">
                   Arquivos Selecionados:
                 </h3>
                 <div className="space-y-2">
                   {files.map((file, index) => (
                     <div
                       key={index}
-                      className="flex items-center justify-between bg-gradient-to-r from-blue-50 to-purple-50 p-3 sm:p-4 rounded-xl border border-blue-100 hover:shadow-md transition-all duration-300"
+                      className="flex items-center justify-between bg-gradient-to-r from-blue-50 to-purple-50 p-3 md:p-4 rounded-xl border border-blue-100 hover:shadow-md transition-all duration-300"
                     >
                       <div className="flex items-center min-w-0 flex-1">
                         <FontAwesomeIcon
                           icon={renderFileIcon(file.type)}
-                          className="mr-2 sm:mr-3 text-blue-600 text-base sm:text-lg flex-shrink-0"
+                          className="mr-2 md:mr-3 text-blue-600 text-base md:text-lg flex-shrink-0"
                         />
-                        <span className="font-medium text-gray-700 text-sm sm:text-base truncate">
+                        <span className="font-medium text-gray-700 text-sm md:text-base truncate">
                           {file.name}
                         </span>
                       </div>
                       <button
                         onClick={() => handleRemoveFile(index)}
-                        className="p-1 sm:p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-all duration-300 flex-shrink-0 ml-2"
+                        className="p-1 md:p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-all duration-300 flex-shrink-0 ml-2"
                       >
                         <FontAwesomeIcon
                           icon={faTrash}
-                          className="text-sm sm:text-base"
+                          className="text-sm md:text-base"
                         />
                       </button>
                     </div>
@@ -1190,17 +1190,17 @@ const MasterAddProject = () => {
               </div>
             )}
 
-            <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mt-6 sm:mt-8 pt-4 sm:pt-6 border-t border-gray-200">
+            <div className="flex flex-col md:flex-row justify-between items-center gap-4 mt-6 md:mt-8 pt-4 md:pt-6 border-t border-gray-200">
               <button
                 onClick={handleResetForm}
-                className="w-full sm:w-auto px-4 sm:px-6 py-2 sm:py-3 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-red-500/20 text-sm sm:text-base"
+                className="w-full md:w-auto px-4 md:px-6 py-2 md:py-3 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-red-500/20 text-sm md:text-base"
               >
                 Resetar
               </button>
               {currentStep === 1 && (
                 <button
                   onClick={convertFilesToPDF}
-                  className="w-full sm:w-auto px-6 sm:px-8 py-2 sm:py-3 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500/20 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none text-sm sm:text-base"
+                  className="w-full md:w-auto px-6 md:px-8 py-2 md:py-3 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500/20 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none text-sm md:text-base"
                   disabled={
                     isAnalyzing ||
                     files.length === 0 ||
@@ -1217,26 +1217,26 @@ const MasterAddProject = () => {
           </div>
 
           {/* Segunda Div - Resumo do Projeto */}
-          <div className="bg-gradient-to-br from-purple-50 to-pink-50 backdrop-blur-sm p-4 sm:p-6 md:p-8 rounded-2xl shadow-xl border border-purple-100 lg:sticky lg:top-6">
-            <div className="flex items-center mb-4 sm:mb-6">
-              <div className="w-2 sm:w-3 h-6 sm:h-8 bg-gradient-to-b from-purple-500 to-pink-500 rounded-full mr-3 sm:mr-4"></div>
-              <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-800">
+          <div className="w-full bg-gradient-to-br from-purple-50 to-pink-50 backdrop-blur-sm p-4 md:p-6 lg:p-8 rounded-2xl shadow-xl border border-purple-100 lg:sticky lg:top-6">
+            <div className="flex items-center mb-4 md:mb-6">
+              <div className="w-2 md:w-3 h-6 md:h-8 bg-gradient-to-b from-purple-500 to-pink-500 rounded-full mr-3 md:mr-4"></div>
+              <h2 className="text-lg md:text-xl lg:text-2xl font-bold text-gray-800">
                 Resumo do Projeto
               </h2>
             </div>
 
             <div>
-              <div className="space-y-3 sm:space-y-4 mb-4 sm:mb-6">
-                <div className="bg-white/60 backdrop-blur-sm p-3 sm:p-4 rounded-xl border border-white/40">
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-0">
-                    <span className="font-semibold text-gray-700 text-sm sm:text-base">
+              <div className="space-y-3 md:space-y-4 mb-4 md:mb-6">
+                <div className="bg-white/60 backdrop-blur-sm p-3 md:p-4 rounded-xl border border-white/40">
+                  <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-1 md:gap-0">
+                    <span className="font-semibold text-gray-700 text-sm md:text-base">
                       📧 Email do Cliente:
                     </span>
                     <span
                       className={
                         userEmail
-                          ? "text-gray-900 font-medium text-sm sm:text-base"
-                          : "text-gray-500 italic text-sm sm:text-base"
+                          ? "text-gray-900 font-medium text-sm md:text-base"
+                          : "text-gray-500 italic text-sm md:text-base"
                       }
                     >
                       {userEmail || "Não informado"}
@@ -1244,16 +1244,16 @@ const MasterAddProject = () => {
                   </div>
                 </div>
 
-                <div className="bg-white/60 backdrop-blur-sm p-3 sm:p-4 rounded-xl border border-white/40">
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-0">
-                    <span className="font-semibold text-gray-700 text-sm sm:text-base">
+                <div className="bg-white/60 backdrop-blur-sm p-3 md:p-4 rounded-xl border border-white/40">
+                  <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-1 md:gap-0">
+                    <span className="font-semibold text-gray-700 text-sm md:text-base">
                       📝 Nome do Projeto:
                     </span>
                     <span
                       className={
                         projectName
-                          ? "text-gray-900 font-medium text-sm sm:text-base"
-                          : "text-gray-500 italic text-sm sm:text-base"
+                          ? "text-gray-900 font-medium text-sm md:text-base"
+                          : "text-gray-500 italic text-sm md:text-base"
                       }
                     >
                       {projectName || "Não informado"}
@@ -1261,17 +1261,17 @@ const MasterAddProject = () => {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 gap-3 sm:gap-4">
-                  <div className="bg-white/60 backdrop-blur-sm p-3 sm:p-4 rounded-xl border border-white/40">
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-0">
-                      <span className="font-semibold text-gray-700 text-sm sm:text-base">
+                <div className="grid grid-cols-1 gap-3 md:gap-4">
+                  <div className="bg-white/60 backdrop-blur-sm p-3 md:p-4 rounded-xl border border-white/40">
+                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-1 md:gap-0">
+                      <span className="font-semibold text-gray-700 text-sm md:text-base">
                         🌐 Origem:
                       </span>
                       <span
                         className={
                           sourceLanguage
-                            ? "text-gray-900 font-medium text-sm sm:text-base"
-                            : "text-gray-500 italic text-sm sm:text-base"
+                            ? "text-gray-900 font-medium text-sm md:text-base"
+                            : "text-gray-500 italic text-sm md:text-base"
                         }
                       >
                         {sourceLanguage || "Não selecionado"}
@@ -1279,16 +1279,16 @@ const MasterAddProject = () => {
                     </div>
                   </div>
 
-                  <div className="bg-white/60 backdrop-blur-sm p-3 sm:p-4 rounded-xl border border-white/40">
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-0">
-                      <span className="font-semibold text-gray-700 text-sm sm:text-base">
+                  <div className="bg-white/60 backdrop-blur-sm p-3 md:p-4 rounded-xl border border-white/40">
+                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-1 md:gap-0">
+                      <span className="font-semibold text-gray-700 text-sm md:text-base">
                         🎯 Destino:
                       </span>
                       <span
                         className={
                           targetLanguage
-                            ? "text-gray-900 font-medium text-sm sm:text-base"
-                            : "text-gray-500 italic text-sm sm:text-base"
+                            ? "text-gray-900 font-medium text-sm md:text-base"
+                            : "text-gray-500 italic text-sm md:text-base"
                         }
                       >
                         {targetLanguage || "Não selecionado"}
@@ -1297,14 +1297,14 @@ const MasterAddProject = () => {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 gap-3 sm:gap-4">
-                  <div className="bg-white/60 backdrop-blur-sm p-3 sm:p-4 rounded-xl border border-white/40">
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-0">
-                      <span className="font-semibold text-gray-700 text-sm sm:text-base">
+                <div className="grid grid-cols-1 gap-3 md:gap-4">
+                  <div className="bg-white/60 backdrop-blur-sm p-3 md:p-4 rounded-xl border border-white/40">
+                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-1 md:gap-0">
+                      <span className="font-semibold text-gray-700 text-sm md:text-base">
                         📜 Certificada:
                       </span>
                       <span
-                        className={`inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium ${
+                        className={`inline-flex items-center px-2 md:px-3 py-1 rounded-full text-xs md:text-sm font-medium ${
                           isCertifiedSelected
                             ? "bg-green-100 text-green-800"
                             : "bg-gray-100 text-gray-800"
@@ -1315,13 +1315,13 @@ const MasterAddProject = () => {
                     </div>
                   </div>
 
-                  <div className="bg-white/60 backdrop-blur-sm p-3 sm:p-4 rounded-xl border border-white/40">
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-0">
-                      <span className="font-semibold text-gray-700 text-sm sm:text-base">
+                  <div className="bg-white/60 backdrop-blur-sm p-3 md:p-4 rounded-xl border border-white/40">
+                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-1 md:gap-0">
+                      <span className="font-semibold text-gray-700 text-sm md:text-base">
                         ⚡ Prioritário:
                       </span>
                       <span
-                        className={`inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium ${
+                        className={`inline-flex items-center px-2 md:px-3 py-1 rounded-full text-xs md:text-sm font-medium ${
                           isPriority
                             ? "bg-purple-100 text-purple-800"
                             : "bg-gray-100 text-gray-800"
@@ -1351,9 +1351,9 @@ const MasterAddProject = () => {
                         >
                           <FontAwesomeIcon
                             icon={renderFileIcon(file.type)}
-                            className="mr-2 sm:mr-3 text-blue-600 text-sm sm:text-base flex-shrink-0"
+                            className="mr-2 md:mr-3 text-blue-600 text-sm md:text-base flex-shrink-0"
                           />
-                          <span className="text-xs sm:text-sm font-medium text-gray-700 truncate">
+                          <span className="text-xs md:text-sm font-medium text-gray-700 truncate">
                             {file.name}
                           </span>
                         </div>
@@ -1470,8 +1470,8 @@ const MasterAddProject = () => {
 
       {/* Modal de Confirmação Salvar Projeto */}
       {showSaveModal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm overflow-y-auto h-full w-full flex items-center justify-center z-50">
-          <div className="bg-white/95 backdrop-blur-sm p-8 rounded-2xl shadow-2xl border border-white/20 max-w-md mx-4 transform animate-pulse">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm overflow-y-auto h-full w-full flex items-center justify-center z-50 p-4">
+          <div className="bg-white/95 backdrop-blur-sm p-6 md:p-8 rounded-2xl shadow-2xl border border-white/20 w-full max-w-md transform animate-pulse">
             <div className="text-center">
               <div className="w-16 h-16 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full flex items-center justify-center mx-auto mb-4">
                 <span className="text-3xl">💾</span>

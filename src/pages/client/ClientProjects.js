@@ -1304,11 +1304,7 @@ const ClientProjects = () => {
     {
       id: "projectNumber",
       label: "Nº",
-      render: (value) => (
-        <span className="text-sm font-medium text-gray-900">
-          {value || "N/A"}
-        </span>
-      ),
+      render: (value) => <span>{value || "N/A"}</span>,
     },
     {
       id: "projectOwner",
@@ -1521,18 +1517,46 @@ const ClientProjects = () => {
 
   return (
     <ClientLayout>
-      {!loading && (
-        <>
-          <div className="flex flex-col md:flex-row items-end gap-2.5 mb-8">
-            {/* Versão Mobile - Aba Expansível */}
-            <div className="w-full lg:hidden">
-              <button
-                onClick={() => setIsFiltersExpanded(!isFiltersExpanded)}
-                className="w-full flex items-center justify-between px-4 py-3 bg-gray-100 hover:bg-gray-200 transition-colors mb-4 shadow-sm"
-              >
-                <div className="flex items-center gap-2">
+      <div className="w-full pt-0 pb-4 md:pb-6 lg:pb-8 space-y-4 md:space-y-6 lg:space-y-8">
+        <div className="text-center mb-6 lg:mb-8">
+          <h1 className="text-xl md:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
+            Todos Projetos
+          </h1>
+        </div>
+        {!loading && (
+          <>
+            <div className="flex flex-col md:flex-row items-end gap-2.5 mb-8">
+              {/* Versão Mobile - Aba Expansível */}
+              <div className="w-full lg:hidden">
+                <button
+                  onClick={() => setIsFiltersExpanded(!isFiltersExpanded)}
+                  className="w-full flex items-center justify-between px-4 py-3 bg-gray-100 hover:bg-gray-200 transition-colors mb-4 shadow-sm"
+                >
+                  <div className="flex items-center gap-2">
+                    <svg
+                      className="w-5 h-5 text-gray-600"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
+                      />
+                    </svg>
+                    <span className="font-medium">Filtros</span>
+                    {isFiltersExpanded && (
+                      <span className="text-sm text-gray-500">
+                        (Clique para recolher)
+                      </span>
+                    )}
+                  </div>
                   <svg
-                    className="w-5 h-5 text-gray-600"
+                    className={`w-5 h-5 transform transition-transform duration-200 ${
+                      isFiltersExpanded ? "rotate-180" : ""
+                    }`}
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -1541,232 +1565,215 @@ const ClientProjects = () => {
                       strokeLinecap="round"
                       strokeLinejoin="round"
                       strokeWidth="2"
-                      d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
+                      d="M19 9l-7 7-7-7"
                     />
                   </svg>
-                  <span className="font-medium">Filtros</span>
-                  {isFiltersExpanded && (
-                    <span className="text-sm text-gray-500">
-                      (Clique para recolher)
+                </button>
+
+                {/* Conteúdo dos Filtros Mobile */}
+                <div
+                  className={`grid grid-cols-1 gap-4 transition-all duration-300 ease-in-out ${
+                    isFiltersExpanded
+                      ? "opacity-100 max-h-[500px] overflow-y-auto"
+                      : "opacity-0 max-h-0 overflow-hidden"
+                  }`}
+                >
+                  {renderFilterBar()}
+                </div>
+
+                {/* Botões Mobile */}
+                <div className="flex flex-wrap gap-2 mt-4">
+                  <button
+                    onClick={() =>
+                      navigate("/client/projects/clientaddproject")
+                    }
+                    className="flex-1 h-[38px] px-4 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg text-sm font-medium transition-colors duration-200"
+                  >
+                    Novo Projeto
+                  </button>
+
+                  <button
+                    onClick={handlePaymentClick}
+                    disabled={selectedProjects.length === 0}
+                    className={`flex-1 h-[38px] px-4 rounded-lg text-sm font-medium transition-colors duration-200 ${
+                      selectedProjects.length > 0
+                        ? "bg-green-50 hover:bg-green-100 text-green-700"
+                        : "bg-gray-50 text-gray-400 cursor-not-allowed"
+                    }`}
+                  >
+                    Pagar Projetos
+                  </button>
+
+                  <button
+                    onClick={() => setShowColumnSelector(true)}
+                    className="flex-1 h-[38px] px-4 bg-gray-50 hover:bg-gray-100 text-gray-700 rounded-lg text-sm font-medium transition-colors duration-200 flex items-center justify-center gap-2"
+                  >
+                    <IoMdSettings className="w-4 h-4" />
+                    <span>Personalizar Colunas</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Versão Desktop */}
+              <div className="hidden lg:flex w-full items-end gap-2.5">
+                <div className="flex-1">{renderFilterBar()}</div>
+
+                <div className="flex gap-2">
+                  <button
+                    onClick={() =>
+                      navigate("/client/projects/clientaddproject")
+                    }
+                    className="h-[38px] px-4 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg text-sm font-medium transition-colors duration-200"
+                  >
+                    Novo Projeto
+                  </button>
+
+                  <button
+                    onClick={handlePaymentClick}
+                    disabled={selectedProjects.length === 0}
+                    className={`h-[38px] px-4 rounded-lg text-sm font-medium transition-colors duration-200 ${
+                      selectedProjects.length > 0
+                        ? "bg-green-50 hover:bg-green-100 text-green-700"
+                        : "bg-gray-50 text-gray-400 cursor-not-allowed"
+                    }`}
+                  >
+                    Pagar Projetos
+                  </button>
+
+                  <button
+                    onClick={() => setShowColumnSelector(true)}
+                    className="h-[38px] px-4 bg-gray-50 hover:bg-gray-100 text-gray-700 rounded-lg text-sm font-medium transition-colors duration-200 flex items-center justify-center gap-2"
+                  >
+                    <IoMdSettings className="w-4 h-4" />
+                    <span>Personalizar Colunas</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {error && (
+              <div className="text-center p-4 md:p-5 bg-red-50 text-red-600 rounded-lg shadow-sm my-4 md:my-5">
+                <p>Erro ao carregar os projetos: {error}</p>
+              </div>
+            )}
+
+            {loading ? (
+              <div className="text-center p-4 md:p-8">
+                <div className="animate-spin rounded-full h-12 md:h-16 w-12 md:w-16 border-t-2 border-b-2 border-blue-500 mx-auto"></div>
+                <p className="text-gray-600 mt-4">Carregando projetos...</p>
+              </div>
+            ) : (
+              <>
+                <div className="w-full overflow-x-auto">
+                  <div className="w-full shadow-lg rounded-lg">
+                    <DataTable
+                      columns={visibleColumnsData}
+                      data={projects}
+                      initialSortConfig={sortConfig}
+                      currentPage={currentPage}
+                      rowsPerPage={rowsPerPage}
+                      initialColumnOrder={columnOrder}
+                      fixedColumns={fixedColumns}
+                      onRowClick={(row) =>
+                        handleProjectClick(row.id, row.collection)
+                      }
+                      getRowClassName={(row) =>
+                        "hover:bg-blue-50/50 cursor-pointer transition-all duration-200"
+                      }
+                    />
+                  </div>
+                </div>
+
+                {/* Paginação */}
+                <div className="flex flex-col md:flex-row items-center justify-between gap-4 mt-4 p-4">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-gray-600">
+                      Projetos por página:
                     </span>
-                  )}
-                </div>
-                <svg
-                  className={`w-5 h-5 transform transition-transform duration-200 ${
-                    isFiltersExpanded ? "rotate-180" : ""
-                  }`}
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M19 9l-7 7-7-7"
-                  />
-                </svg>
-              </button>
-
-              {/* Conteúdo dos Filtros Mobile */}
-              <div
-                className={`grid grid-cols-1 gap-4 transition-all duration-300 ease-in-out ${
-                  isFiltersExpanded
-                    ? "opacity-100 max-h-[500px] overflow-y-auto"
-                    : "opacity-0 max-h-0 overflow-hidden"
-                }`}
-              >
-                {renderFilterBar()}
-              </div>
-
-              {/* Botões Mobile */}
-              <div className="flex flex-wrap gap-2 mt-4">
-                <button
-                  onClick={() => navigate("/client/projects/clientaddproject")}
-                  className="flex-1 h-[38px] px-4 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg text-sm font-medium transition-colors duration-200"
-                >
-                  Novo Projeto
-                </button>
-
-                <button
-                  onClick={handlePaymentClick}
-                  disabled={selectedProjects.length === 0}
-                  className={`flex-1 h-[38px] px-4 rounded-lg text-sm font-medium transition-colors duration-200 ${
-                    selectedProjects.length > 0
-                      ? "bg-green-50 hover:bg-green-100 text-green-700"
-                      : "bg-gray-50 text-gray-400 cursor-not-allowed"
-                  }`}
-                >
-                  Pagar Projetos
-                </button>
-
-                <button
-                  onClick={() => setShowColumnSelector(true)}
-                  className="flex-1 h-[38px] px-4 bg-gray-50 hover:bg-gray-100 text-gray-700 rounded-lg text-sm font-medium transition-colors duration-200 flex items-center justify-center gap-2"
-                >
-                  <IoMdSettings className="w-4 h-4" />
-                  <span>Personalizar Colunas</span>
-                </button>
-              </div>
-            </div>
-
-            {/* Versão Desktop */}
-            <div className="hidden lg:flex w-full items-end gap-2.5">
-              <div className="flex-1">{renderFilterBar()}</div>
-
-              <div className="flex gap-2">
-                <button
-                  onClick={() => navigate("/client/projects/clientaddproject")}
-                  className="h-[38px] px-4 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg text-sm font-medium transition-colors duration-200"
-                >
-                  Novo Projeto
-                </button>
-
-                <button
-                  onClick={handlePaymentClick}
-                  disabled={selectedProjects.length === 0}
-                  className={`h-[38px] px-4 rounded-lg text-sm font-medium transition-colors duration-200 ${
-                    selectedProjects.length > 0
-                      ? "bg-green-50 hover:bg-green-100 text-green-700"
-                      : "bg-gray-50 text-gray-400 cursor-not-allowed"
-                  }`}
-                >
-                  Pagar Projetos
-                </button>
-
-                <button
-                  onClick={() => setShowColumnSelector(true)}
-                  className="h-[38px] px-4 bg-gray-50 hover:bg-gray-100 text-gray-700 rounded-lg text-sm font-medium transition-colors duration-200 flex items-center justify-center gap-2"
-                >
-                  <IoMdSettings className="w-4 h-4" />
-                  <span>Personalizar Colunas</span>
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {error && (
-            <div className="text-center p-4 md:p-5 bg-red-50 text-red-600 rounded-lg shadow-sm my-4 md:my-5">
-              <p>Erro ao carregar os projetos: {error}</p>
-            </div>
-          )}
-
-          {loading ? (
-            <div className="text-center p-4 md:p-8">
-              <div className="animate-spin rounded-full h-12 md:h-16 w-12 md:w-16 border-t-2 border-b-2 border-blue-500 mx-auto"></div>
-              <p className="text-gray-600 mt-4">Carregando projetos...</p>
-            </div>
-          ) : (
-            <>
-              <div className="w-full overflow-x-auto">
-                <div className="w-full shadow-lg rounded-lg">
-                  <DataTable
-                    columns={visibleColumnsData}
-                    data={projects}
-                    initialSortConfig={sortConfig}
-                    currentPage={currentPage}
-                    rowsPerPage={rowsPerPage}
-                    initialColumnOrder={columnOrder}
-                    fixedColumns={fixedColumns}
-                    onRowClick={(row) =>
-                      handleProjectClick(row.id, row.collection)
-                    }
-                    getRowClassName={(row) =>
-                      "hover:bg-blue-50/50 cursor-pointer transition-all duration-200"
-                    }
-                  />
-                </div>
-              </div>
-
-              {/* Paginação */}
-              <div className="flex flex-col md:flex-row items-center justify-between gap-4 mt-4 p-4">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-gray-600">
-                    Projetos por página:
-                  </span>
-                  <div className="relative">
-                    <button
-                      id="rows-button"
-                      onClick={() => setShowRowsDropdown(!showRowsDropdown)}
-                      className="flex items-center gap-2 px-3 py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-50"
-                    >
-                      {rowsPerPage}
-                      <svg
-                        className="w-4 h-4 text-gray-500"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
+                    <div className="relative">
+                      <button
+                        id="rows-button"
+                        onClick={() => setShowRowsDropdown(!showRowsDropdown)}
+                        className="flex items-center gap-2 px-3 py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-50"
                       >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth="2"
-                          d="M19 9l-7 7-7-7"
-                        />
-                      </svg>
-                    </button>
-                    {showRowsDropdown && (
-                      <div
-                        id="rows-dropdown"
-                        className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg"
-                      >
-                        <div className="py-1">
-                          {[10, 25, 50, 100].map((value) => (
-                            <button
-                              key={value}
-                              onClick={() => handleRowsPerPageChange(value)}
-                              className="w-full px-4 py-2 text-sm text-left hover:bg-gray-50"
-                            >
-                              {value}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => paginate(currentPage - 1)}
-                    disabled={currentPage === 1}
-                    className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-                  >
-                    Anterior
-                  </button>
-                  <div className="flex items-center gap-1">
-                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(
-                      (page) => (
-                        <button
-                          key={page}
-                          onClick={() => paginate(page)}
-                          className={`w-8 h-8 text-sm border rounded-lg ${
-                            currentPage === page
-                              ? "bg-blue-500 text-white border-blue-500"
-                              : "border-gray-300 hover:bg-gray-50"
-                          }`}
+                        {rowsPerPage}
+                        <svg
+                          className="w-4 h-4 text-gray-500"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
                         >
-                          {page}
-                        </button>
-                      )
-                    )}
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M19 9l-7 7-7-7"
+                          />
+                        </svg>
+                      </button>
+                      {showRowsDropdown && (
+                        <div
+                          id="rows-dropdown"
+                          className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg"
+                        >
+                          <div className="py-1">
+                            {[10, 25, 50, 100].map((value) => (
+                              <button
+                                key={value}
+                                onClick={() => handleRowsPerPageChange(value)}
+                                className="w-full px-4 py-2 text-sm text-left hover:bg-gray-50"
+                              >
+                                {value}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                  <button
-                    onClick={() => paginate(currentPage + 1)}
-                    disabled={currentPage === totalPages}
-                    className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-                  >
-                    Próximo
-                  </button>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => paginate(currentPage - 1)}
+                      disabled={currentPage === 1}
+                      className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                    >
+                      Anterior
+                    </button>
+                    <div className="flex items-center gap-1">
+                      {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                        (page) => (
+                          <button
+                            key={page}
+                            onClick={() => paginate(page)}
+                            className={`w-8 h-8 text-sm border rounded-lg ${
+                              currentPage === page
+                                ? "bg-blue-500 text-white border-blue-500"
+                                : "border-gray-300 hover:bg-gray-50"
+                            }`}
+                          >
+                            {page}
+                          </button>
+                        )
+                      )}
+                    </div>
+                    <button
+                      onClick={() => paginate(currentPage + 1)}
+                      disabled={currentPage === totalPages}
+                      className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                    >
+                      Próximo
+                    </button>
+                  </div>
                 </div>
-              </div>
-            </>
-          )}
-        </>
-      )}
-      {renderFilesModal()}
-      {renderColumnSelector()}
-      {renderApprovalModal()}
+              </>
+            )}
+            {renderFilesModal()}
+            {renderColumnSelector()}
+            {renderApprovalModal()}
+          </>
+        )}
+      </div>
     </ClientLayout>
   );
 };

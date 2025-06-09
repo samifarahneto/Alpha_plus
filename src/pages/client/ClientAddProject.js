@@ -1400,15 +1400,15 @@ const ClientAddProject = () => {
 
   const renderContent = () => {
     return (
-      <div className="w-full max-w-full p-8">
-        <div className="glass-card">
-          <h1 className="text-3xl font-bold text-center mb-8 bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
-            {currentStep === 1 ? "Criar Projeto" : "Resumo do Projeto"}
-          </h1>
+      <div className="w-full pt-0 pb-4 md:pb-6 lg:pb-8 space-y-4 md:space-y-6 lg:space-y-8 px-4 md:px-6 lg:px-8">
+        <h1 className="text-3xl font-bold text-center mb-6 lg:mb-8 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+          {currentStep === 1 ? "Criar Projeto" : "Resumo do Projeto"}
+        </h1>
 
-          <div className="flex justify-center items-start gap-[20px]">
+        <div className="glass-card p-6">
+          <div className="flex items-start gap-4 w-full overflow-x-auto">
             {/* Step 1 - Tipos de Arquivos */}
-            <div className="w-[300px] p-5 shadow-lg rounded-lg bg-white h-[750px] flex flex-col">
+            <div className="flex-shrink-0 w-80 p-5 shadow-lg rounded-lg bg-white h-[750px] flex flex-col">
               <div className="flex items-center gap-2 mb-6 flex items-center justify-center">
                 <div>
                   <FontAwesomeIcon
@@ -1552,7 +1552,7 @@ const ClientAddProject = () => {
             </div>
 
             {/* Step 2 - Formulário de Criação */}
-            <div className="w-[500px] p-5 shadow-lg rounded-lg bg-white h-[750px] flex flex-col">
+            <div className="flex-1 min-w-0 p-5 shadow-lg rounded-lg bg-white h-[750px] flex flex-col">
               <div className="flex items-center gap-2 mb-6">
                 <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold">
                   1
@@ -1782,7 +1782,7 @@ const ClientAddProject = () => {
             </div>
 
             {/* Step 3 - Resumo do Projeto */}
-            <div className="w-[700px] p-5 shadow-lg rounded-lg bg-white h-[750px] flex flex-col">
+            <div className="flex-1 min-w-0 p-5 shadow-lg rounded-lg bg-white h-[750px] flex flex-col">
               <div className="flex items-center gap-2 mb-6">
                 <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold">
                   2

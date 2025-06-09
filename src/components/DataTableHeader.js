@@ -21,7 +21,9 @@ const HeaderItem = ({ column, sortConfig, onSort, width, onWidthChange }) => {
       e.preventDefault();
       const diff = e.clientX - startX;
       const minWidth = parseInt(column.minWidth) || 30;
-      const maxWidth = parseInt(column.maxWidth) || 400;
+      // Permitir redimensionamento além do maxWidth original quando o usuário estiver redimensionando
+      // Usar um limite máximo muito maior (600px) para dar flexibilidade ao usuário
+      const maxWidth = 600;
       const newWidth = Math.max(
         minWidth,
         Math.min(maxWidth, startWidth + diff)
@@ -62,7 +64,6 @@ const HeaderItem = ({ column, sortConfig, onSort, width, onWidthChange }) => {
     startWidth,
     column.id,
     column.minWidth,
-    column.maxWidth,
     onWidthChange,
   ]);
 
@@ -73,7 +74,7 @@ const HeaderItem = ({ column, sortConfig, onSort, width, onWidthChange }) => {
       style={{
         width: width ? `${width}px` : "auto",
         minWidth: column.minWidth || "30px",
-        maxWidth: column.maxWidth || "400px",
+        maxWidth: width ? "none" : column.maxWidth || "400px",
       }}
     >
       <span className="flex items-center justify-center gap-1 h-6">

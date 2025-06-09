@@ -458,7 +458,9 @@ const DataTable = ({
                           ? `${columnWidths[columnId]}px`
                           : "auto",
                         minWidth: column.minWidth || "30px",
-                        maxWidth: column.maxWidth || "400px",
+                        maxWidth: columnWidths[columnId]
+                          ? "none"
+                          : column.maxWidth || "400px",
                       }}
                     >
                       {column.render

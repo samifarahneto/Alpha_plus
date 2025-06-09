@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
+import { useMediaQuery } from "react-responsive";
 import logo from "../assets/logo.png";
 import {
   FaBars,
@@ -44,6 +45,7 @@ const Header = () => {
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isProjectsMenuOpen, setIsProjectsMenuOpen] = useState(true);
+  const isMobile = useMediaQuery({ maxWidth: 1023 });
 
   const handleLogout = async () => {
     try {
@@ -100,6 +102,9 @@ const Header = () => {
       "/company/master/projects-approved": (
         <FaCheck className="w-4 h-4 text-gray-500" />
       ),
+      "/company/master/projects-in-analysis": (
+        <FaSearch className="w-4 h-4 text-gray-500" />
+      ),
       "/company/master/ongoing": <FaPlay className="w-4 h-4 text-gray-500" />,
       "/company/master/projects-done": (
         <FaCheckDouble className="w-4 h-4 text-gray-500" />
@@ -146,11 +151,22 @@ const Header = () => {
     return iconMap[path] || <FaBox className="w-5 h-5 text-gray-600" />;
   };
 
-  // Fechar dropdown quando clicar fora
+  // Fechar dropdown e sidebar quando clicar fora
   useEffect(() => {
     const handleClickOutside = (event) => {
+      // Fechar user menu quando clicar fora
       if (isUserMenuOpen && !event.target.closest(".user-menu-container")) {
         setIsUserMenuOpen(false);
+      }
+
+      // Fechar sidebar quando clicar fora (apenas em desktop e quando expandido)
+      if (
+        !isMobile &&
+        isSidebarExpanded &&
+        !event.target.closest(".sidebar-container") &&
+        !event.target.closest(".sidebar-toggle-btn")
+      ) {
+        setIsSidebarExpanded(false);
       }
     };
 
@@ -158,7 +174,7 @@ const Header = () => {
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, [isUserMenuOpen]);
+  }, [isUserMenuOpen, isSidebarExpanded, isMobile]);
 
   // Links específicos por tipo de usuário para o menu "Projetos"
   const getProjectLinks = () => {
@@ -176,6 +192,7 @@ const Header = () => {
           label: "Aguardando Aprovação",
         },
         { to: "/company/master/projects-approved", label: "Aprovados" },
+        { to: "/company/master/projects-in-analysis", label: "Em Análise" },
         { to: "/company/master/ongoing", label: "Em Andamento" },
         { to: "/company/master/projects-done", label: "Projetos Concluídos" },
         { to: "/company/master/projects-paid", label: "Projetos Pagos" },
@@ -297,7 +314,7 @@ const Header = () => {
             <div className="lg:hidden">
               <button
                 onClick={toggleSidebar}
-                className="text-gray-700 hover:text-primary p-2"
+                className="text-gray-700 hover:text-primary p-2 sidebar-toggle-btn"
               >
                 <FaBars className="w-6 h-6" />
               </button>
@@ -362,7 +379,7 @@ const Header = () => {
             <div className="flex items-center">
               <button
                 onClick={toggleSidebar}
-                className="text-gray-700 hover:text-primary p-2 mr-2"
+                className="text-gray-700 hover:text-primary p-2 mr-2 sidebar-toggle-btn"
               >
                 <FaBars className="w-6 h-6" />
               </button>
@@ -417,85 +434,89 @@ const Header = () => {
       </header>
 
       {/* Sidebar */}
-      <aside
-        className={`fixed top-[70px] left-0 bottom-0 bg-white shadow-lg z-40 transition-all duration-300 ${
-          isSidebarExpanded ? "w-64" : "w-[70px]"
-        }`}
-      >
-        <div className="flex flex-col h-full">
-          <nav className="flex-1 py-4">
-            <div className="px-2 space-y-2">
-              {/* Links Principais */}
-              {mainLinks.map((link) => (
-                <Link
-                  key={link.to}
-                  to={link.to}
-                  className={`flex items-center ${
-                    isSidebarExpanded ? "px-3" : "justify-center"
-                  } py-3 text-gray-700 hover:bg-gray-100 rounded-md transition-colors duration-200 ${
-                    isActive(link.to)
-                      ? "text-primary bg-blue-50 font-medium"
-                      : ""
-                  }`}
-                  title={!isSidebarExpanded ? link.label : ""}
-                >
-                  {getIconForPath(link.to)}
-                  {isSidebarExpanded && (
-                    <span className="ml-3 text-sm font-medium">
-                      {link.label}
-                    </span>
-                  )}
-                </Link>
-              ))}
+      {(!isMobile || isSidebarExpanded) && (
+        <aside
+          className={`sidebar-container fixed top-[70px] left-0 bottom-0 bg-white shadow-lg z-40 transition-all duration-300 ${
+            isSidebarExpanded ? "w-64" : isMobile ? "w-64" : "w-[70px]"
+          }`}
+        >
+          <div className="flex flex-col h-full">
+            <nav className="flex-1 py-4">
+              <div className="px-2 space-y-2">
+                {/* Links Principais */}
+                {mainLinks.map((link) => (
+                  <Link
+                    key={link.to}
+                    to={link.to}
+                    className={`flex items-center ${
+                      isSidebarExpanded || isMobile ? "px-3" : "justify-center"
+                    } py-3 text-gray-700 hover:bg-gray-100 rounded-md transition-colors duration-200 ${
+                      isActive(link.to)
+                        ? "text-primary bg-blue-50 font-medium"
+                        : ""
+                    }`}
+                    title={!isSidebarExpanded && !isMobile ? link.label : ""}
+                  >
+                    {getIconForPath(link.to)}
+                    {(isSidebarExpanded || isMobile) && (
+                      <span className="ml-3 text-sm font-medium">
+                        {link.label}
+                      </span>
+                    )}
+                  </Link>
+                ))}
 
-              {/* Menu Projetos */}
-              <button
-                onClick={toggleProjectsMenu}
-                className={`w-full flex items-center ${
-                  isSidebarExpanded ? "justify-between px-3" : "justify-center"
-                } py-3 text-gray-700 hover:bg-gray-100 rounded-md transition-colors duration-200`}
-                title={!isSidebarExpanded ? "Projetos" : ""}
-              >
-                <div className="flex items-center">
-                  <FaBox className="w-5 h-5 text-gray-600" />
-                  {isSidebarExpanded && (
-                    <span className="ml-3 text-sm font-medium">Projetos</span>
-                  )}
-                </div>
-                {isSidebarExpanded && (
-                  <div className="transform transition-transform duration-200">
-                    {isProjectsMenuOpen ? (
-                      <FaChevronDown className="w-4 h-4 text-gray-400" />
-                    ) : (
-                      <FaChevronRight className="w-4 h-4 text-gray-400" />
+                {/* Menu Projetos */}
+                <button
+                  onClick={toggleProjectsMenu}
+                  className={`w-full flex items-center ${
+                    isSidebarExpanded || isMobile
+                      ? "justify-between px-3"
+                      : "justify-center"
+                  } py-3 text-gray-700 hover:bg-gray-100 rounded-md transition-colors duration-200`}
+                  title={!isSidebarExpanded && !isMobile ? "Projetos" : ""}
+                >
+                  <div className="flex items-center">
+                    <FaBox className="w-5 h-5 text-gray-600" />
+                    {(isSidebarExpanded || isMobile) && (
+                      <span className="ml-3 text-sm font-medium">Projetos</span>
                     )}
                   </div>
-                )}
-              </button>
+                  {(isSidebarExpanded || isMobile) && (
+                    <div className="transform transition-transform duration-200">
+                      {isProjectsMenuOpen ? (
+                        <FaChevronDown className="w-4 h-4 text-gray-400" />
+                      ) : (
+                        <FaChevronRight className="w-4 h-4 text-gray-400" />
+                      )}
+                    </div>
+                  )}
+                </button>
 
-              {/* Sublinks dos Projetos */}
-              {isProjectsMenuOpen && isSidebarExpanded && (
-                <div className="ml-4 mt-2 space-y-1 border-l border-gray-200 pl-4">
-                  {projectLinks.map((link) => (
-                    <Link
-                      key={link.to}
-                      to={link.to}
-                      className={`flex items-center px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors duration-200 ${
-                        isActive(link.to)
-                          ? "text-primary bg-blue-50 font-medium"
-                          : ""
-                      }`}
-                    >
-                      {getIconForPath(link.to)}
-                      <span className="ml-2">{link.label}</span>
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </div>
-          </nav>
-        </div>
-      </aside>
+                {/* Sublinks dos Projetos */}
+                {isProjectsMenuOpen && (isSidebarExpanded || isMobile) && (
+                  <div className="ml-4 mt-2 space-y-1 border-l border-gray-200 pl-4">
+                    {projectLinks.map((link) => (
+                      <Link
+                        key={link.to}
+                        to={link.to}
+                        className={`flex items-center px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors duration-200 ${
+                          isActive(link.to)
+                            ? "text-primary bg-blue-50 font-medium"
+                            : ""
+                        }`}
+                      >
+                        {getIconForPath(link.to)}
+                        <span className="ml-2">{link.label}</span>
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </nav>
+          </div>
+        </aside>
+      )}
 
       {/* Overlay para mobile */}
       {isSidebarExpanded && (
@@ -507,8 +528,12 @@ const Header = () => {
 
       {/* Ajuste do conteúdo principal */}
       <div
-        className={`transition-all duration-300 pt-[70px] ${
-          isSidebarExpanded ? "lg:ml-64" : "lg:ml-[70px]"
+        className={`transition-all duration-300 ${
+          !isMobile && isSidebarExpanded
+            ? "lg:ml-64"
+            : !isMobile
+            ? "lg:ml-[70px]"
+            : ""
         }`}
       >
         {/* Conteúdo será renderizado aqui */}

@@ -156,96 +156,218 @@ const MasterProjects = ({ style, isMobile }) => {
       id: "projectNumber",
       label: "Nº",
       fixed: true,
-      minWidth: "30px",
-      maxWidth: "80px",
+      minWidth: "50px",
+      maxWidth: "50px",
+      render: (value, row) => <span>{row.projectNumber || "N/A"}</span>,
     },
     {
       id: "client",
       label: "Cliente",
       fixed: true,
-      minWidth: "50px",
-      maxWidth: "200px",
+      minWidth: "100px",
+      render: (value, row) => (
+        <span>
+          {clientTypes[row.userEmail]?.registeredBy || row.userEmail || "N/A"}
+        </span>
+      ),
     },
     {
       id: "projectName",
       label: "Nome do Projeto",
       fixed: true,
-      minWidth: "60px",
-      maxWidth: "300px",
+      minWidth: "150px",
+      render: (value, row) => (
+        <span className="font-medium">
+          {row.projectName && row.projectName.length > 20
+            ? `${row.projectName.slice(0, 20)}...`
+            : row.projectName || "Sem Nome"}
+        </span>
+      ),
     },
     {
       id: "createdAt",
       label: "Data",
-      minWidth: "40px",
-      maxWidth: "120px",
+      minWidth: "80px",
+      render: (value, row) => (
+        <span>
+          {new Date(row.createdAt.seconds * 1000).toLocaleDateString("pt-BR")}
+        </span>
+      ),
     },
     {
       id: "monthYear",
       label: "Mês/Ano",
-      minWidth: "40px",
-      maxWidth: "100px",
+      minWidth: "70px",
+      render: (value, row) => (
+        <span>
+          {row.createdAt
+            ? new Date(row.createdAt.seconds * 1000).toLocaleDateString(
+                "pt-BR",
+                {
+                  month: "2-digit",
+                  year: "2-digit",
+                }
+              )
+            : "Sem Data"}
+        </span>
+      ),
     },
     {
       id: "sourceLanguage",
       label: "Origem",
-      minWidth: "40px",
-      maxWidth: "150px",
+      minWidth: "80px",
+      render: (value, row) => <span>{row.sourceLanguage || "N/A"}</span>,
     },
     {
       id: "targetLanguage",
       label: "Destino",
-      minWidth: "40px",
-      maxWidth: "150px",
+      minWidth: "80px",
+      render: (value, row) => <span>{row.targetLanguage || "N/A"}</span>,
     },
     {
       id: "pages",
       label: "Pgs.",
-      minWidth: "30px",
-      maxWidth: "80px",
+      minWidth: "50px",
+      maxWidth: "50px",
+      render: (value, row) => (
+        <span>{calculateTotalPages(row.files) || "0"}</span>
+      ),
     },
     {
       id: "filesDisplay",
       label: "Arq.",
-      minWidth: "30px",
-      maxWidth: "80px",
+      minWidth: "50px",
+      render: (value, row) => (
+        <div className="flex items-center justify-center gap-1">
+          <span>{row.files.length || "0"}</span>
+          <FaDownload
+            className="text-blue-600 hover:text-blue-800 cursor-pointer"
+            onClick={(e) => {
+              e.stopPropagation();
+              setSelectedFiles(row.files);
+              setShowFilesModal(true);
+            }}
+            size={14}
+          />
+        </div>
+      ),
     },
     {
       id: "totalValue",
       label: "Valor (U$)",
-      minWidth: "50px",
-      maxWidth: "150px",
+      minWidth: "90px",
+      render: (value, row) => (
+        <span>
+          U${" "}
+          {Number(
+            row.totalProjectValue ||
+              row.totalValue ||
+              calculateTotalValue(row.files)
+          ).toFixed(2)}
+        </span>
+      ),
     },
     {
       id: "paymentStatus",
       label: "Status Pgto",
-      minWidth: "50px",
-      maxWidth: "150px",
+      minWidth: "100px",
+      render: (value, row) =>
+        renderPaymentStatusBadge(
+          typeof row.payment_status === "object"
+            ? row.payment_status.status || "N/A"
+            : row.payment_status || "N/A"
+        ),
     },
     {
       id: "deadline",
       label: "Prazo",
-      minWidth: "40px",
-      maxWidth: "120px",
+      minWidth: "80px",
+      render: (value, row) => (
+        <span className={row.deadlineDate ? "font-medium" : "text-gray-500"}>
+          {formatDeadline(row.deadline, row.deadlineDate)}
+        </span>
+      ),
     },
     {
       id: "clientType",
       label: "Tipo",
-      minWidth: "30px",
-      maxWidth: "100px",
+      minWidth: "60px",
+      render: (value, row) => {
+        const userInfo = clientTypes[row.userEmail];
+        if (!userInfo) return <span>N/A</span>;
+
+        if (userInfo.userType === "colaborator" && userInfo.registeredBy) {
+          const registeredByInfo = clientTypes[userInfo.registeredBy];
+          if (registeredByInfo && registeredByInfo.userType === "b2b") {
+            return <span>B2B</span>;
+          } else if (
+            registeredByInfo &&
+            (registeredByInfo.clientType === "Cliente" ||
+              registeredByInfo.clientType === "Colab")
+          ) {
+            return <span>B2C</span>;
+          }
+        } else if (
+          userInfo.clientType === "Colab" ||
+          userInfo.clientType === "Cliente"
+        ) {
+          return <span>B2C</span>;
+        }
+        return <span>{userInfo.clientType || "N/A"}</span>;
+      },
     },
     {
       id: "projectStatus",
       label: "Status do Projeto",
       fixed: true,
-      minWidth: "60px",
-      maxWidth: "200px",
+      minWidth: "120px",
+      render: (value, row) =>
+        renderProjectStatusBadge(row.project_status || "N/A"),
     },
     {
       id: "translationStatus",
       label: "Status de Tradução",
       fixed: true,
-      minWidth: "80px",
-      maxWidth: "250px",
+      minWidth: "140px",
+      render: (value, row) => (
+        <select
+          value={row.translation_status || "N/A"}
+          onChange={(e) => {
+            e.stopPropagation();
+            updateProjectStatus(row.id, e.target.value);
+          }}
+          onClick={(e) => e.stopPropagation()}
+          disabled={row.collection === "b2bdocprojects"}
+          className={`input-default w-36 !h-6 !py-0 !text-sm rounded-lg ${
+            row.translation_status === "Finalizado"
+              ? "text-green-600"
+              : row.translation_status === "Em Andamento"
+              ? "text-blue-600"
+              : row.translation_status === "Em Revisão"
+              ? "text-yellow-600"
+              : row.translation_status === "Em Certificação"
+              ? "text-orange-600"
+              : row.translation_status === "Cancelado"
+              ? "text-gray-600"
+              : row.translation_status === "N/A"
+              ? "text-gray-600"
+              : "text-blue-600"
+          }`}
+        >
+          {row.collection === "b2bdocprojects" ? (
+            <option value="Ag. Orçamento">Ag. Orçamento</option>
+          ) : (
+            <>
+              <option value="N/A">N/A</option>
+              <option value="Em Andamento">Em Andamento</option>
+              <option value="Em Revisão">Em Revisão</option>
+              <option value="Em Certificação">Em Certificação</option>
+              <option value="Finalizado">Finalizado</option>
+              <option value="Cancelado">Cancelado</option>
+            </>
+          )}
+        </select>
+      ),
     },
   ];
 
@@ -1228,7 +1350,6 @@ const MasterProjects = ({ style, isMobile }) => {
   };
 
   // Usar filteredUploads diretamente, deixando a ordenação para o DataTable
-  const totalPages = Math.ceil(filteredUploads.length / rowsPerPage);
 
   // Função para mudar página
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
@@ -1392,6 +1513,11 @@ const MasterProjects = ({ style, isMobile }) => {
     <div className="w-full">
       {!loading && (
         <div className="w-full">
+          <div className="text-center mb-6 lg:mb-8">
+            <h1 className="text-xl md:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
+              Todos Projetos
+            </h1>
+          </div>
           <div className="flex flex-col md:flex-row items-end gap-2.5 mb-8 px-2 md:px-10">
             {/* Versão Mobile - Aba Expansível */}
             <div className="w-full lg:hidden">
@@ -1491,7 +1617,7 @@ const MasterProjects = ({ style, isMobile }) => {
                     value={sourceLanguageFilter}
                     onChange={handleSourceLanguageFilterChange}
                     options={sourceLanguageOptions}
-                    placeholder="Selecione as línguas..."
+                    placeholder="Selecione"
                     className="text-sm w-full"
                     labelClassName="text-center lg:text-center"
                     containerClassName="flex flex-col items-center gap-1"
@@ -1533,7 +1659,7 @@ const MasterProjects = ({ style, isMobile }) => {
                     value={projectStatusFilter}
                     onChange={handleProjectStatusFilterChange}
                     options={projectStatusOptions}
-                    placeholder="Selecione os status..."
+                    placeholder="Selecione"
                     className="text-sm w-full"
                     labelClassName="text-center lg:text-center"
                     containerClassName="flex flex-col items-center gap-1"
@@ -1547,7 +1673,7 @@ const MasterProjects = ({ style, isMobile }) => {
                     value={translationStatusFilter}
                     onChange={handleTranslationStatusFilterChange}
                     options={translationStatusOptions}
-                    placeholder="Selecione os status..."
+                    placeholder="Selecione"
                     className="text-sm w-full"
                     labelClassName="text-center lg:text-center"
                     containerClassName="flex flex-col items-center gap-1"
@@ -1632,7 +1758,7 @@ const MasterProjects = ({ style, isMobile }) => {
                   value={sourceLanguageFilter}
                   onChange={handleSourceLanguageFilterChange}
                   options={sourceLanguageOptions}
-                  placeholder="Selecione as línguas..."
+                  placeholder="Selecione"
                   className="text-sm w-full"
                   labelClassName="text-center"
                 />
@@ -1671,7 +1797,7 @@ const MasterProjects = ({ style, isMobile }) => {
                   value={projectStatusFilter}
                   onChange={handleProjectStatusFilterChange}
                   options={projectStatusOptions}
-                  placeholder="Selecione os status..."
+                  placeholder="Selecione"
                   className="text-sm w-full"
                   labelClassName="text-center"
                 />
@@ -1684,7 +1810,7 @@ const MasterProjects = ({ style, isMobile }) => {
                   value={translationStatusFilter}
                   onChange={handleTranslationStatusFilterChange}
                   options={translationStatusOptions}
-                  placeholder="Selecione os status..."
+                  placeholder="Selecione"
                   className="text-sm w-full"
                   labelClassName="text-center"
                 />
@@ -1724,12 +1850,9 @@ const MasterProjects = ({ style, isMobile }) => {
           <div className="w-full">
             <div className="w-full shadow-lg rounded-lg overflow-hidden">
               <DataTable
-                columns={columnOrder
-                  .map((colId) => columns.find((col) => col.id === colId))
-                  .filter(
-                    (col) =>
-                      col && (col.fixed || visibleColumns.includes(col.id))
-                  )}
+                columns={columns.filter(
+                  (col) => col.fixed || visibleColumns.includes(col.id)
+                )}
                 initialSortConfig={sortConfig}
                 initialColumnOrder={columnOrder.filter((colId) => {
                   const col = columns.find((c) => c.id === colId);
@@ -1737,138 +1860,7 @@ const MasterProjects = ({ style, isMobile }) => {
                 })}
                 currentPage={currentPage}
                 rowsPerPage={rowsPerPage}
-                data={filteredUploads.map((row) => ({
-                  ...row,
-                  projectNumber: row.projectNumber || "N/A",
-                  client:
-                    clientTypes[row.userEmail]?.registeredBy ||
-                    row.userEmail ||
-                    "N/A",
-                  projectName:
-                    row.projectName && row.projectName.length > 20
-                      ? `${row.projectName.slice(0, 20)}...`
-                      : row.projectName || "Sem Nome",
-                  createdAt: new Date(
-                    row.createdAt.seconds * 1000
-                  ).toLocaleDateString("pt-BR"),
-                  monthYear: row.createdAt
-                    ? new Date(row.createdAt.seconds * 1000).toLocaleDateString(
-                        "pt-BR",
-                        {
-                          month: "2-digit",
-                          year: "2-digit",
-                        }
-                      )
-                    : "Sem Data",
-                  pages: calculateTotalPages(row.files, row) || "0",
-                  filesDisplay: (
-                    <div className="flex items-center justify-center gap-1">
-                      <span className="text-xs font-medium">
-                        {row.files?.length || "0"}
-                      </span>
-                      <FaDownload
-                        className="text-blue-600 hover:text-blue-800 cursor-pointer"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSelectedFiles(row.files);
-                          setShowFilesModal(true);
-                        }}
-                        size={14}
-                      />
-                    </div>
-                  ),
-                  totalValue: (
-                    <span className="text-xs font-medium">
-                      {`U$ ${calculateTotalValue(row.files, row)}`}
-                    </span>
-                  ),
-                  paymentStatus: renderPaymentStatusBadge(
-                    typeof row.payment_status === "object"
-                      ? row.payment_status.status || "N/A"
-                      : row.payment_status || "N/A"
-                  ),
-                  deadline: (
-                    <span className="text-xs font-medium">
-                      {formatDeadline(row.deadline, row.deadlineDate)}
-                    </span>
-                  ),
-                  clientType: (
-                    <span className="text-xs font-medium">
-                      {(() => {
-                        const userInfo = clientTypes[row.userEmail];
-                        if (!userInfo) return "N/A";
-                        if (
-                          userInfo.userType === "colaborator" &&
-                          userInfo.registeredBy
-                        ) {
-                          const registeredByInfo =
-                            clientTypes[userInfo.registeredBy];
-                          if (
-                            registeredByInfo &&
-                            registeredByInfo.userType === "b2b"
-                          )
-                            return "B2B";
-                          if (
-                            registeredByInfo &&
-                            (registeredByInfo.clientType === "Cliente" ||
-                              registeredByInfo.clientType === "Colab")
-                          )
-                            return "B2C";
-                        } else if (
-                          userInfo.clientType === "Colab" ||
-                          userInfo.clientType === "Cliente"
-                        ) {
-                          return "B2C";
-                        }
-                        return userInfo.clientType || "N/A";
-                      })()}
-                    </span>
-                  ),
-                  projectStatus: renderProjectStatusBadge(
-                    row.project_status || "N/A"
-                  ),
-                  translationStatus: (
-                    <select
-                      value={row.translation_status || "N/A"}
-                      onChange={(e) => {
-                        e.stopPropagation();
-                        updateProjectStatus(row.id, e.target.value);
-                      }}
-                      onClick={(e) => e.stopPropagation()}
-                      disabled={row.collection === "b2bdocprojects"}
-                      className={`w-full !h-6 !py-0 !text-xs font-medium rounded-full text-center ${
-                        row.translation_status === "Finalizado"
-                          ? "bg-green-50 text-green-700 border border-green-200"
-                          : row.translation_status === "Em Tradução"
-                          ? "bg-blue-50 text-blue-700 border border-blue-200"
-                          : row.translation_status === "Em Revisão"
-                          ? "bg-yellow-50 text-yellow-700 border border-yellow-200"
-                          : row.translation_status === "Em Certificação"
-                          ? "bg-orange-50 text-orange-700 border border-orange-200"
-                          : row.translation_status === "Cancelado"
-                          ? "bg-red-50 text-red-700 border border-red-200"
-                          : row.translation_status === "N/A"
-                          ? "bg-gray-50 text-gray-700 border border-gray-200"
-                          : "bg-blue-50 text-blue-700 border border-blue-200"
-                      }`}
-                    >
-                      {row.collection === "b2bdocprojects" ? (
-                        <option value="Ag. Orçamento">Ag. Orçamento</option>
-                      ) : (
-                        <>
-                          <option value="N/A">N/A</option>
-                          <option value="Em Tradução">Em Tradução</option>
-                          <option value="Em Revisão">Em Revisão</option>
-                          <option value="Em Certificação">
-                            Em Certificação
-                          </option>
-                          <option value="Finalizado">Finalizado</option>
-                          <option value="Cancelado">Cancelado</option>
-                        </>
-                      )}
-                    </select>
-                  ),
-                }))}
+                data={filteredUploads}
                 fixedColumns={fixedColumns}
                 onRowClick={handleRowClick}
                 getRowClassName={getRowClassName}
@@ -1878,7 +1870,7 @@ const MasterProjects = ({ style, isMobile }) => {
 
           <Pagination
             currentPage={currentPage}
-            totalPages={totalPages}
+            totalPages={Math.ceil(filteredUploads.length / rowsPerPage)}
             onPageChange={paginate}
             rowsPerPage={rowsPerPage}
             onRowsPerPageChange={handleRowsPerPageChange}
