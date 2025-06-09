@@ -275,11 +275,27 @@ const Header = () => {
     }
   };
 
+  // Função melhorada para verificar link ativo - apenas rota exata
   const isActive = (path) => {
-    return (
-      location.pathname === path ||
-      location.pathname.includes(path.split("/").pop() || "")
-    );
+    // Para rotas dinâmicas como /client/projects/:projectId
+    if (
+      path === "/client/projects" &&
+      location.pathname.startsWith("/client/projects/") &&
+      location.pathname !== "/client/projects/clientaddproject"
+    ) {
+      return true;
+    }
+
+    // Para rotas com parâmetros como /company/master/project/:id
+    if (
+      path === "/company/master/projects" &&
+      location.pathname.startsWith("/company/master/project/")
+    ) {
+      return true;
+    }
+
+    // Verificação exata da rota
+    return location.pathname === path;
   };
 
   // Determinar se o sidebar deve mostrar texto
