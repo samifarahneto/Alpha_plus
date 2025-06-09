@@ -404,8 +404,19 @@ const CheckoutPage = () => {
               ? divergenceValue
               : calculateTotalValue(projects),
             status: "falhou",
-            projeto:
-              projects.length > 0 ? projects[0].projectName : "Não informado",
+            projeto: {
+              nome:
+                projects.length > 0 ? projects[0].projectName : "Não informado",
+              email:
+                projects[0]?.userEmail ||
+                paymentDetails.email ||
+                "Não informado",
+            },
+            erro: paymentResult.error.message,
+            totalProjetos: projects.length,
+            tipoPagamento: isDivergencePayment
+              ? "Divergência"
+              : "Pagamento Inicial",
           },
         };
 
@@ -437,8 +448,18 @@ const CheckoutPage = () => {
               ? divergenceValue
               : calculateTotalValue(projects),
             status: "sucesso",
-            projeto:
-              projects.length > 0 ? projects[0].projectName : "Não informado",
+            projeto: {
+              nome:
+                projects.length > 0 ? projects[0].projectName : "Não informado",
+              email:
+                projects[0]?.userEmail ||
+                paymentDetails.email ||
+                "Não informado",
+            },
+            totalProjetos: projects.length,
+            tipoPagamento: isDivergencePayment
+              ? "Divergência"
+              : "Pagamento Inicial",
           },
         };
 

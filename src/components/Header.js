@@ -74,6 +74,28 @@ const Header = () => {
     setIsProjectsMenuOpen(!isProjectsMenuOpen);
   };
 
+  // Função para lidar com cliques nos links do sidebar
+  const handleLinkClick = (event, path) => {
+    // Se o sidebar não está mostrando texto (está minimizado), apenas expandir
+    if (!shouldShowText()) {
+      event.preventDefault();
+      setIsSidebarExpanded(true);
+      return;
+    }
+    // Se está mostrando texto, permitir navegação normal
+  };
+
+  // Função para lidar com cliques no botão "Projetos"
+  const handleProjectsClick = () => {
+    // Se o sidebar não está mostrando texto (está minimizado), apenas expandir
+    if (!shouldShowText()) {
+      setIsSidebarExpanded(true);
+      return;
+    }
+    // Se está mostrando texto, fazer toggle do menu projetos
+    toggleProjectsMenu();
+  };
+
   // Função para mapear ícones baseado na URL específica
   const getIconForPath = (path) => {
     const iconMap = {
@@ -502,6 +524,7 @@ const Header = () => {
                   <Link
                     key={link.to}
                     to={link.to}
+                    onClick={(e) => handleLinkClick(e, link.to)}
                     className={`flex items-center ${
                       shouldShowText() ? "px-2 sm:px-3" : "justify-center px-2"
                     } py-2 sm:py-3 text-gray-700 hover:bg-gray-100 rounded-md transition-colors duration-200 ${
@@ -522,7 +545,7 @@ const Header = () => {
 
                 {/* Menu Projetos */}
                 <button
-                  onClick={toggleProjectsMenu}
+                  onClick={handleProjectsClick}
                   className={`w-full flex items-center ${
                     shouldShowText()
                       ? "justify-between px-2 sm:px-3"
@@ -556,6 +579,7 @@ const Header = () => {
                       <Link
                         key={link.to}
                         to={link.to}
+                        onClick={(e) => handleLinkClick(e, link.to)}
                         className={`flex items-center px-2 sm:px-3 py-1 sm:py-2 text-xs sm:text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors duration-200 ${
                           isActive(link.to)
                             ? "text-primary bg-blue-50 font-medium"

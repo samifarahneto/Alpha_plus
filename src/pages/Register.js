@@ -128,15 +128,16 @@ const Register = () => {
                 emailConvidado: email,
                 status: "enviado",
                 colaborador: {
-                  nome: nomeCompleto,
+                  nome: nomeCompleto || email.split("@")[0],
                   email: email,
-                  tipo: userType,
-                  status: "ativo",
+                  tipo: userType === "b2b" ? "B2B" : "B2C",
+                  status: "Ativo",
                   canTest: canTest,
                 },
                 dataConvite:
                   emailCheckData.createdAt?.toDate().toLocaleString("pt-BR") ||
                   new Date().toLocaleString("pt-BR"),
+                convidadoPor: emailCheckResult.registeredBy,
               },
             };
             await addDoc(collection(db, "activity_logs"), logData);

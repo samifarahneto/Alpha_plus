@@ -6,6 +6,48 @@ const ActivityLog = () => {
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // Função auxiliar para extrair nome do projeto
+  const getProjectName = (details) => {
+    if (!details) return "Não informado";
+
+    // Se details.projeto é uma string
+    if (typeof details.projeto === "string") {
+      return details.projeto || "Não informado";
+    }
+
+    // Se details.projeto é um objeto
+    if (typeof details.projeto === "object" && details.projeto !== null) {
+      return details.projeto.nome || details.projeto.name || "Não informado";
+    }
+
+    return "Não informado";
+  };
+
+  // Função auxiliar para extrair dados do colaborador
+  const getCollaboratorInfo = (details, field) => {
+    if (!details?.colaborador) return "Não informado";
+
+    const colaborador = details.colaborador;
+
+    switch (field) {
+      case "nome":
+        return (
+          colaborador.nome ||
+          colaborador.name ||
+          colaborador.email?.split("@")[0] ||
+          "Não informado"
+        );
+      case "email":
+        return colaborador.email || "Não informado";
+      case "tipo":
+        return colaborador.tipo || colaborador.userType || "B2C";
+      case "status":
+        return colaborador.status || "Pendente";
+      default:
+        return "Não informado";
+    }
+  };
+
   useEffect(() => {
     const logsRef = collection(db, "activity_logs");
     const q = query(logsRef, orderBy("timestamp", "desc"));
@@ -137,9 +179,7 @@ const ActivityLog = () => {
                               <span className="font-medium text-gray-700">
                                 Projeto:
                               </span>
-                              <span>
-                                {log.details?.projeto || "Não informado"}
-                              </span>
+                              <span>{getProjectName(log.details)}</span>
                             </div>
                             <div className="flex items-center gap-1">
                               <span className="font-medium text-gray-700">
@@ -158,9 +198,67 @@ const ActivityLog = () => {
                               </span>
                             </div>
                           </div>
+                          {log.details?.tipoPagamento && (
+                            <div className="flex items-center gap-1">
+                              <span className="font-medium text-gray-700">
+                                Tipo:
+                              </span>
+                              <span className="text-blue-600">
+                                {log.details.tipoPagamento}
+                              </span>
+                            </div>
+                          )}
                         </div>
                       )}
-                      {log.action === "criação de projeto" && (
+                      {log.action === "erro no pagamento" && (
+                        <div className="flex flex-col gap-2">
+                          <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-1">
+                              <span className="font-medium text-gray-700">
+                                Projeto:
+                              </span>
+                              <span>{getProjectName(log.details)}</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <span className="font-medium text-gray-700">
+                                Valor:
+                              </span>
+                              <span className="text-red-600">
+                                R$ {log.details?.valor || "0.00"}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <span className="font-medium text-gray-700">
+                                Status:
+                              </span>
+                              <span className="text-red-600">
+                                {log.details?.status || "falhou"}
+                              </span>
+                            </div>
+                          </div>
+                          {log.details?.erro && (
+                            <div className="flex items-center gap-1">
+                              <span className="font-medium text-gray-700">
+                                Erro:
+                              </span>
+                              <span className="text-red-600 text-xs">
+                                {log.details.erro}
+                              </span>
+                            </div>
+                          )}
+                          {log.details?.tipoPagamento && (
+                            <div className="flex items-center gap-1">
+                              <span className="font-medium text-gray-700">
+                                Tipo:
+                              </span>
+                              <span className="text-blue-600">
+                                {log.details.tipoPagamento}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                      {log.action === "criação de projeto pelo master" && (
                         <div className="flex flex-col gap-2">
                           <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4">
                             <div className="flex items-center gap-1">
@@ -170,6 +268,235 @@ const ActivityLog = () => {
                               <span>
                                 {log.details?.projeto || "Não informado"}
                               </span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <span className="font-medium text-gray-700">
+                                N° Projeto:
+                              </span>
+                              <span>
+                                {log.details?.numeroProject || "Não informado"}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4">
+                            <div className="flex items-center gap-1">
+                              <span className="font-medium text-gray-700">
+                                Cliente:
+                              </span>
+                              <span>
+                                {log.details?.clienteEmail || "Não informado"}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <span className="font-medium text-gray-700">
+                                Tipo:
+                              </span>
+                              <span>
+                                {log.details?.tipoArquivo || "Não informado"}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4">
+                            <div className="flex items-center gap-1">
+                              <span className="font-medium text-gray-700">
+                                Páginas:
+                              </span>
+                              <span>
+                                {log.details?.quantidadePaginas ||
+                                  "Não informado"}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <span className="font-medium text-gray-700">
+                                Valor:
+                              </span>
+                              <span className="text-green-600">
+                                R$ {log.details?.valorTotal || "0.00"}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4">
+                            <div className="flex items-center gap-1">
+                              <span className="font-medium text-gray-700">
+                                Origem:
+                              </span>
+                              <span>
+                                {log.details?.idiomaOrigem || "Não informado"}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <span className="font-medium text-gray-700">
+                                Destino:
+                              </span>
+                              <span>
+                                {log.details?.idiomaDestino || "Não informado"}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      {log.action === "criação de projeto aprovado" && (
+                        <div className="flex flex-col gap-2">
+                          <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4">
+                            <div className="flex items-center gap-1">
+                              <span className="font-medium text-gray-700">
+                                Projeto:
+                              </span>
+                              <span>
+                                {log.details?.projeto || "Não informado"}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <span className="font-medium text-gray-700">
+                                N° Projeto:
+                              </span>
+                              <span>
+                                {log.details?.numeroProject || "Não informado"}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4">
+                            <div className="flex items-center gap-1">
+                              <span className="font-medium text-gray-700">
+                                Tipo:
+                              </span>
+                              <span>
+                                {log.details?.tipoArquivo || "Não informado"}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <span className="font-medium text-gray-700">
+                                Páginas:
+                              </span>
+                              <span>
+                                {log.details?.quantidadePaginas ||
+                                  "Não informado"}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4">
+                            <div className="flex items-center gap-1">
+                              <span className="font-medium text-gray-700">
+                                Valor:
+                              </span>
+                              <span className="text-green-600">
+                                R$ {log.details?.valorTotal || "0.00"}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <span className="font-medium text-gray-700">
+                                Status:
+                              </span>
+                              <span className="px-2 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800">
+                                Aprovado
+                              </span>
+                            </div>
+                          </div>
+                          <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4">
+                            <div className="flex items-center gap-1">
+                              <span className="font-medium text-gray-700">
+                                Origem:
+                              </span>
+                              <span>
+                                {log.details?.idiomaOrigem || "Não informado"}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <span className="font-medium text-gray-700">
+                                Destino:
+                              </span>
+                              <span>
+                                {log.details?.idiomaDestino || "Não informado"}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      {log.action === "criação de projeto com checkout" && (
+                        <div className="flex flex-col gap-2">
+                          <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4">
+                            <div className="flex items-center gap-1">
+                              <span className="font-medium text-gray-700">
+                                Projeto:
+                              </span>
+                              <span>
+                                {log.details?.projeto || "Não informado"}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <span className="font-medium text-gray-700">
+                                N° Projeto:
+                              </span>
+                              <span>
+                                {log.details?.numeroProject || "Não informado"}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4">
+                            <div className="flex items-center gap-1">
+                              <span className="font-medium text-gray-700">
+                                Tipo:
+                              </span>
+                              <span>
+                                {log.details?.tipoArquivo || "Não informado"}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <span className="font-medium text-gray-700">
+                                Páginas:
+                              </span>
+                              <span>
+                                {log.details?.quantidadePaginas ||
+                                  "Não informado"}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4">
+                            <div className="flex items-center gap-1">
+                              <span className="font-medium text-gray-700">
+                                Valor:
+                              </span>
+                              <span className="text-green-600">
+                                R$ {log.details?.valorTotal || "0.00"}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <span className="font-medium text-gray-700">
+                                Status:
+                              </span>
+                              <span className="px-2 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800">
+                                Com Checkout
+                              </span>
+                            </div>
+                          </div>
+                          <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4">
+                            <div className="flex items-center gap-1">
+                              <span className="font-medium text-gray-700">
+                                Origem:
+                              </span>
+                              <span>
+                                {log.details?.idiomaOrigem || "Não informado"}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <span className="font-medium text-gray-700">
+                                Destino:
+                              </span>
+                              <span>
+                                {log.details?.idiomaDestino || "Não informado"}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      {log.action === "criação de projeto" && (
+                        <div className="flex flex-col gap-2">
+                          <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4">
+                            <div className="flex items-center gap-1">
+                              <span className="font-medium text-gray-700">
+                                Projeto:
+                              </span>
+                              <span>{getProjectName(log.details)}</span>
                             </div>
                             <div className="flex items-center gap-1">
                               <span className="font-medium text-gray-700">
@@ -226,9 +553,7 @@ const ActivityLog = () => {
                               <span className="font-medium text-gray-700">
                                 Projeto:
                               </span>
-                              <span>
-                                {log.details?.projeto?.nome || "Não informado"}
-                              </span>
+                              <span>{getProjectName(log.details)}</span>
                             </div>
                           </div>
                           <div className="flex items-center gap-4">
@@ -343,9 +668,7 @@ const ActivityLog = () => {
                               <span className="font-medium text-gray-700">
                                 Projeto:
                               </span>
-                              <span>
-                                {log.details?.projeto?.nome || "Não informado"}
-                              </span>
+                              <span>{getProjectName(log.details)}</span>
                             </div>
                           </div>
                           <div className="flex items-center gap-4">
@@ -397,9 +720,7 @@ const ActivityLog = () => {
                               <span className="font-medium text-gray-700">
                                 Projeto:
                               </span>
-                              <span>
-                                {log.details?.projeto?.nome || "Não informado"}
-                              </span>
+                              <span>{getProjectName(log.details)}</span>
                             </div>
                           </div>
                           <div className="flex items-center gap-4">
@@ -429,9 +750,7 @@ const ActivityLog = () => {
                               <span className="font-medium text-gray-700">
                                 Projeto:
                               </span>
-                              <span>
-                                {log.details?.projeto?.nome || "Não informado"}
-                              </span>
+                              <span>{getProjectName(log.details)}</span>
                             </div>
                           </div>
                           <div className="flex items-center gap-4">
@@ -471,9 +790,7 @@ const ActivityLog = () => {
                               <span className="font-medium text-gray-700">
                                 Projeto:
                               </span>
-                              <span>
-                                {log.details?.projeto?.nome || "Não informado"}
-                              </span>
+                              <span>{getProjectName(log.details)}</span>
                             </div>
                           </div>
                           <div className="flex items-center gap-4">
@@ -503,9 +820,7 @@ const ActivityLog = () => {
                               <span className="font-medium text-gray-700">
                                 Projeto:
                               </span>
-                              <span>
-                                {log.details?.projeto || "Não informado"}
-                              </span>
+                              <span>{getProjectName(log.details)}</span>
                             </div>
                             <div className="flex items-center gap-1">
                               <span className="font-medium text-gray-700">
@@ -527,20 +842,27 @@ const ActivityLog = () => {
                       {log.action === "botão de aprovação desabilitado" && (
                         <div className="space-y-1">
                           <div className="flex flex-wrap gap-x-2">
-                            <span className="font-medium">Usuário:</span>
-                            <span>
-                              {log.details?.usuario?.nome ||
-                                log.details?.usuario?.email?.split("@")[0] ||
-                                log.details?.email?.split("@")[0] ||
-                                "Não informado"}
+                            <span className="font-medium text-gray-700">
+                              Usuário:
+                            </span>
+                            <span className="text-red-600">
+                              {log.details?.usuario?.nome || "Não informado"}
                             </span>
                           </div>
                           <div className="flex flex-wrap gap-x-2">
-                            <span className="font-medium">Email:</span>
-                            <span>
-                              {log.details?.usuario?.email ||
-                                log.details?.email ||
-                                "Não informado"}
+                            <span className="font-medium text-gray-700">
+                              Email:
+                            </span>
+                            <span className="text-red-600">
+                              {log.details?.usuario?.email || "Não informado"}
+                            </span>
+                          </div>
+                          <div className="flex flex-wrap gap-x-2">
+                            <span className="font-medium text-gray-700">
+                              Status:
+                            </span>
+                            <span className="px-2 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-800">
+                              Desabilitado
                             </span>
                           </div>
                         </div>
@@ -548,20 +870,27 @@ const ActivityLog = () => {
                       {log.action === "botão de aprovação habilitado" && (
                         <div className="space-y-1">
                           <div className="flex flex-wrap gap-x-2">
-                            <span className="font-medium">Usuário:</span>
-                            <span>
-                              {log.details?.usuario?.nome ||
-                                log.details?.usuario?.email?.split("@")[0] ||
-                                log.details?.email?.split("@")[0] ||
-                                "Não informado"}
+                            <span className="font-medium text-gray-700">
+                              Usuário:
+                            </span>
+                            <span className="text-green-600">
+                              {log.details?.usuario?.nome || "Não informado"}
                             </span>
                           </div>
                           <div className="flex flex-wrap gap-x-2">
-                            <span className="font-medium">Email:</span>
-                            <span>
-                              {log.details?.usuario?.email ||
-                                log.details?.email ||
-                                "Não informado"}
+                            <span className="font-medium text-gray-700">
+                              Email:
+                            </span>
+                            <span className="text-green-600">
+                              {log.details?.usuario?.email || "Não informado"}
+                            </span>
+                          </div>
+                          <div className="flex flex-wrap gap-x-2">
+                            <span className="font-medium text-gray-700">
+                              Status:
+                            </span>
+                            <span className="px-2 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800">
+                              Habilitado
                             </span>
                           </div>
                         </div>
@@ -655,9 +984,7 @@ const ActivityLog = () => {
                         <div className="space-y-1">
                           <div className="flex flex-wrap gap-x-2">
                             <span className="font-medium">Projeto:</span>
-                            <span>
-                              {log.details?.projeto?.nome || "Não informado"}
-                            </span>
+                            <span>{getProjectName(log.details)}</span>
                           </div>
                           <div className="flex flex-wrap gap-x-2">
                             <span className="font-medium">Link Anterior:</span>
@@ -678,9 +1005,7 @@ const ActivityLog = () => {
                               <span className="font-medium text-gray-700">
                                 Projeto:
                               </span>
-                              <span>
-                                {log.details?.projeto?.nome || "Não informado"}
-                              </span>
+                              <span>{getProjectName(log.details)}</span>
                             </div>
                           </div>
                           <div className="flex items-center gap-4">
@@ -710,9 +1035,7 @@ const ActivityLog = () => {
                               <span className="font-medium text-gray-700">
                                 Projeto:
                               </span>
-                              <span>
-                                {log.details?.projeto?.nome || "Não informado"}
-                              </span>
+                              <span>{getProjectName(log.details)}</span>
                             </div>
                           </div>
                           <div className="flex items-center gap-4">
@@ -746,9 +1069,7 @@ const ActivityLog = () => {
                               <span className="font-medium text-gray-700">
                                 Projeto:
                               </span>
-                              <span>
-                                {log.details?.projeto?.nome || "Não informado"}
-                              </span>
+                              <span>{getProjectName(log.details)}</span>
                             </div>
                           </div>
                           <div className="flex items-center gap-4">
@@ -794,9 +1115,7 @@ const ActivityLog = () => {
                               <span className="font-medium text-gray-700">
                                 Projeto:
                               </span>
-                              <span>
-                                {log.details?.projeto?.nome || "Não informado"}
-                              </span>
+                              <span>{getProjectName(log.details)}</span>
                             </div>
                           </div>
                           <div className="flex items-center gap-4">
@@ -880,8 +1199,7 @@ const ActivityLog = () => {
                                 Colaborador:
                               </span>
                               <span>
-                                {log.details?.colaborador?.nome ||
-                                  "Não informado"}
+                                {getCollaboratorInfo(log.details, "nome")}
                               </span>
                             </div>
                             <div className="flex items-center gap-1">
@@ -889,8 +1207,7 @@ const ActivityLog = () => {
                                 Email:
                               </span>
                               <span>
-                                {log.details?.colaborador?.email ||
-                                  "Não informado"}
+                                {getCollaboratorInfo(log.details, "email")}
                               </span>
                             </div>
                           </div>
@@ -940,7 +1257,287 @@ const ActivityLog = () => {
                           </div>
                         </div>
                       )}
-                      {log.action === "alteração de status de pagamento" && (
+                      {log.action === "remoção de colaborador pendente" && (
+                        <div className="flex flex-col gap-2">
+                          <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-1">
+                              <span className="font-medium text-gray-700">
+                                Email Removido:
+                              </span>
+                              <span className="text-red-600">
+                                {log.details?.emailRemovido || "Não informado"}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <span className="font-medium text-gray-700">
+                                Status:
+                              </span>
+                              <span className="px-2 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-800">
+                                {log.details?.status || "removido"}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      {log.action === "remoção de colaborador" && (
+                        <div className="flex flex-col gap-2">
+                          <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-1">
+                              <span className="font-medium text-gray-700">
+                                Email Removido:
+                              </span>
+                              <span className="text-red-600">
+                                {log.details?.emailRemovido || "Não informado"}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <span className="font-medium text-gray-700">
+                                Status:
+                              </span>
+                              <span className="px-2 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-800">
+                                {log.details?.status || "removido"}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      {log.action === "registro de divergência" && (
+                        <div className="flex flex-col gap-2">
+                          <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-1">
+                              <span className="font-medium text-gray-700">
+                                Projeto:
+                              </span>
+                              <span>{getProjectName(log.details)}</span>
+                            </div>
+                          </div>
+                          <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4">
+                            <div className="flex items-center gap-1">
+                              <span className="font-medium text-gray-700">
+                                Páginas Divergentes:
+                              </span>
+                              <span className="text-orange-600">
+                                {log.details?.divergencia?.paginas ||
+                                  log.details?.pages ||
+                                  log.details?.paginasDivergentes ||
+                                  "Não informado"}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <span className="font-medium text-gray-700">
+                                Valor Adicional:
+                              </span>
+                              <span className="text-orange-600">
+                                R${" "}
+                                {log.details?.divergencia?.valor ||
+                                  log.details?.valor ||
+                                  log.details?.valorDivergencia ||
+                                  "0.00"}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-1">
+                              <span className="font-medium text-gray-700">
+                                Motivo:
+                              </span>
+                              <span className="text-gray-800">
+                                {log.details?.divergencia?.motivo ||
+                                  log.details?.motivo ||
+                                  log.details?.motivoDivergencia ||
+                                  "Não informado"}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <span className="font-medium text-gray-700">
+                              Status:
+                            </span>
+                            <span className="px-2 py-1 rounded-full text-xs font-semibold bg-orange-100 text-orange-800">
+                              Divergência Registrada
+                            </span>
+                          </div>
+                        </div>
+                      )}
+                      {log.action === "atualização de permissões" && (
+                        <div className="flex flex-col gap-2">
+                          <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-1">
+                              <span className="font-medium text-gray-700">
+                                Colaborador:
+                              </span>
+                              <span className="text-blue-600">
+                                {log.details?.colaborador || "Não informado"}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="flex flex-col gap-2">
+                            <span className="font-medium text-gray-700">
+                              Permissões de Visualização:
+                            </span>
+                            <div className="flex flex-wrap gap-1">
+                              {log.details?.permissões &&
+                              Array.isArray(log.details.permissões) ? (
+                                log.details.permissões.map((email, index) => (
+                                  <span
+                                    key={index}
+                                    className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full font-medium"
+                                  >
+                                    {email}
+                                  </span>
+                                ))
+                              ) : (
+                                <span className="text-gray-500 text-sm">
+                                  Nenhuma permissão definida
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      {log.action === "registro de divergência" && (
+                        <div className="flex flex-col gap-2">
+                          <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-1">
+                              <span className="font-medium text-gray-700">
+                                Projeto:
+                              </span>
+                              <span>{getProjectName(log.details)}</span>
+                            </div>
+                          </div>
+                          <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4">
+                            <div className="flex items-center gap-1">
+                              <span className="font-medium text-gray-700">
+                                Páginas Divergentes:
+                              </span>
+                              <span className="text-orange-600">
+                                {log.details?.divergencia?.paginas ||
+                                  log.details?.pages ||
+                                  log.details?.paginasDivergentes ||
+                                  "Não informado"}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <span className="font-medium text-gray-700">
+                                Valor Adicional:
+                              </span>
+                              <span className="text-orange-600">
+                                R${" "}
+                                {log.details?.divergencia?.valor ||
+                                  log.details?.valor ||
+                                  log.details?.valorDivergencia ||
+                                  "0.00"}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-1">
+                              <span className="font-medium text-gray-700">
+                                Motivo:
+                              </span>
+                              <span className="text-gray-800">
+                                {log.details?.divergencia?.motivo ||
+                                  log.details?.motivo ||
+                                  log.details?.motivoDivergencia ||
+                                  "Não informado"}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <span className="font-medium text-gray-700">
+                              Status:
+                            </span>
+                            <span className="px-2 py-1 rounded-full text-xs font-semibold bg-orange-100 text-orange-800">
+                              Divergência Registrada
+                            </span>
+                          </div>
+                        </div>
+                      )}
+                      {log.action === "alteração de tipo de cliente" && (
+                        <div className="flex flex-col gap-2">
+                          <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-1">
+                              <span className="font-medium text-gray-700">
+                                Cliente:
+                              </span>
+                              <span className="text-blue-600">
+                                {log.details?.cliente?.nome ||
+                                  log.details?.clienteNome ||
+                                  log.details?.nome ||
+                                  "Alteração realizada"}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <span className="font-medium text-gray-700">
+                                Email:
+                              </span>
+                              <span className="text-blue-600">
+                                {log.details?.cliente?.email ||
+                                  log.details?.clienteEmail ||
+                                  log.details?.email ||
+                                  "Não informado"}
+                              </span>
+                            </div>
+                          </div>
+                          {log.details?.tipoAnterior ||
+                          log.details?.tipoNovo ||
+                          log.details?.userTypeAnterior ||
+                          log.details?.userTypeNovo ? (
+                            <>
+                              <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4">
+                                <div className="flex items-center gap-1">
+                                  <span className="font-medium text-gray-700">
+                                    Tipo Anterior:
+                                  </span>
+                                  <span className="px-2 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800">
+                                    {log.details?.tipoAnterior || "N/A"}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <span className="font-medium text-gray-700">
+                                    Tipo Novo:
+                                  </span>
+                                  <span className="px-2 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800">
+                                    {log.details?.tipoNovo || "N/A"}
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4">
+                                <div className="flex items-center gap-1">
+                                  <span className="font-medium text-gray-700">
+                                    User Type Anterior:
+                                  </span>
+                                  <span className="px-2 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800">
+                                    {log.details?.userTypeAnterior || "N/A"}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <span className="font-medium text-gray-700">
+                                    User Type Novo:
+                                  </span>
+                                  <span className="px-2 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800">
+                                    {log.details?.userTypeNovo || "N/A"}
+                                  </span>
+                                </div>
+                              </div>
+                            </>
+                          ) : (
+                            <div className="text-gray-500 text-sm italic">
+                              Detalhes específicos não disponíveis para este log
+                              antigo
+                            </div>
+                          )}
+                          <div className="flex items-center gap-1">
+                            <span className="font-medium text-gray-700">
+                              Status:
+                            </span>
+                            <span className="px-2 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800">
+                              Tipo de Cliente Alterado
+                            </span>
+                          </div>
+                        </div>
+                      )}
+                      {log.action === "edição de projeto" && (
                         <div className="flex flex-col gap-2">
                           <div className="flex items-center gap-4">
                             <div className="flex items-center gap-1">
@@ -948,8 +1545,88 @@ const ActivityLog = () => {
                                 Projeto:
                               </span>
                               <span>
-                                {log.details?.projeto?.nome || "Não informado"}
+                                {getProjectName(log.details) ||
+                                  log.details?.projeto?.nome ||
+                                  log.details?.projectName ||
+                                  log.details?.nomeProject ||
+                                  "Projeto editado"}
                               </span>
+                            </div>
+                          </div>
+                          {log.details?.camposEditados &&
+                          Array.isArray(log.details.camposEditados) ? (
+                            <div className="flex flex-col gap-1">
+                              <span className="font-medium text-gray-700">
+                                Campos Editados:
+                              </span>
+                              <div className="flex flex-wrap gap-1">
+                                {log.details.camposEditados.map(
+                                  (campo, index) => (
+                                    <span
+                                      key={index}
+                                      className="px-2 py-1 bg-indigo-100 text-indigo-800 text-xs rounded-full font-medium"
+                                    >
+                                      {campo}
+                                    </span>
+                                  )
+                                )}
+                              </div>
+                            </div>
+                          ) : log.details &&
+                            Object.keys(log.details).length > 0 ? (
+                            <div className="flex flex-col gap-1">
+                              <span className="font-medium text-gray-700">
+                                Alterações Detectadas:
+                              </span>
+                              <div className="flex flex-wrap gap-1">
+                                {Object.keys(log.details)
+                                  .filter(
+                                    (key) =>
+                                      ![
+                                        "projeto",
+                                        "projectName",
+                                        "nomeProject",
+                                      ].includes(key)
+                                  )
+                                  .map((key, index) => (
+                                    <span
+                                      key={index}
+                                      className="px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded-full font-medium"
+                                    >
+                                      {key}:{" "}
+                                      {JSON.stringify(log.details[key]).slice(
+                                        0,
+                                        20
+                                      )}
+                                      ...
+                                    </span>
+                                  ))}
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="text-gray-500 text-sm italic">
+                              Detalhes específicos não disponíveis para este log
+                              antigo
+                            </div>
+                          )}
+                          <div className="flex items-center gap-1">
+                            <span className="font-medium text-gray-700">
+                              Status:
+                            </span>
+                            <span className="px-2 py-1 rounded-full text-xs font-semibold bg-indigo-100 text-indigo-800">
+                              Projeto Editado
+                            </span>
+                          </div>
+                        </div>
+                      )}
+                      {log.action === "alteração de status de pagamento" && (
+                        <div className="flex flex-col gap-2">
+                          <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-1">
+                              <span className="font-medium text-gray-700">
+                                Projeto:
+                              </span>
+                              <span>{getProjectName(log.details)}</span>
                             </div>
                           </div>
                           <div className="flex items-center gap-4">
@@ -1011,9 +1688,7 @@ const ActivityLog = () => {
                               <span className="font-medium text-gray-700">
                                 Projeto:
                               </span>
-                              <span>
-                                {log.details?.projeto?.nome || "Não informado"}
-                              </span>
+                              <span>{getProjectName(log.details)}</span>
                             </div>
                           </div>
                           <div className="flex items-center gap-4">
@@ -1022,7 +1697,9 @@ const ActivityLog = () => {
                                 Total de Páginas:
                               </span>
                               <span>
-                                {log.details?.totalPaginas || "Não informado"}
+                                {log.details?.totalPaginas ||
+                                  log.details?.quantidadePaginas ||
+                                  "Não informado"}
                               </span>
                             </div>
                             <div className="flex items-center gap-1">
@@ -1031,7 +1708,10 @@ const ActivityLog = () => {
                               </span>
                               <span className="text-green-600">
                                 U${" "}
-                                {log.details?.totalValor?.toFixed(2) || "0.00"}
+                                {(
+                                  log.details?.totalValor ||
+                                  log.details?.valorTotal
+                                )?.toFixed(2) || "0.00"}
                               </span>
                             </div>
                           </div>
@@ -1044,6 +1724,17 @@ const ActivityLog = () => {
                                 {log.details?.prazo || "Não informado"}
                               </span>
                             </div>
+                            {log.details?.idiomaOrigem && (
+                              <div className="flex items-center gap-1">
+                                <span className="font-medium text-gray-700">
+                                  Idiomas:
+                                </span>
+                                <span>
+                                  {log.details.idiomaOrigem} →{" "}
+                                  {log.details.idiomaDestino}
+                                </span>
+                              </div>
+                            )}
                           </div>
                         </div>
                       )}

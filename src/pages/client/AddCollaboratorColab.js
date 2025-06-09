@@ -197,11 +197,13 @@ const AddCollaboratorColab = () => {
           colaborador: {
             nome: sanitizedEmail.split("@")[0],
             email: sanitizedEmail,
-            tipo: "colab",
-            status: "pendente",
+            tipo: "B2C",
+            status: "Pendente",
             canTest: userData.canTest || false,
           },
           dataConvite: new Date().toLocaleString("pt-BR"),
+          emailConvidado: sanitizedEmail,
+          convidadoPor: registeredBy,
         },
       };
       await addDoc(collection(firestore, "activity_logs"), logData);

@@ -359,15 +359,18 @@ const ClienteProjectDetails = () => {
         userEmail: project.userEmail,
         action: "aprovação de projeto",
         details: {
-          projeto: project.projectName || "Sem Nome",
-          valorTotal:
+          projeto: {
+            nome: project.projectName || "Sem Nome",
+            email: project.userEmail || "Não informado",
+          },
+          totalPaginas:
+            project.totalPages || calculateTotalPages(project.files),
+          totalValor:
             project.totalProjectValue || calculateTotalValue(project.files),
           prazo: deadlineDays,
           dataPrazo: deadlineDate,
           idiomaOrigem: project.sourceLanguage,
           idiomaDestino: project.targetLanguage,
-          quantidadePaginas:
-            project.totalPages || calculateTotalPages(project.files),
           status: "aprovado",
         },
       };
