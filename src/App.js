@@ -49,7 +49,7 @@ import ProjectsApproved from "./pages/company/master/ProjectsApproved";
 import ProjectsInAnalysis from "./pages/company/master/ProjectsInAnalysis";
 import MasterDashboard from "./pages/company/master/MasterDashboard";
 import ActivityLog from "./pages/company/master/ActivityLog";
-import MasterAddProject from "./pages/company/master/MasterAddProject"; // Nova importação
+import MasterAddProject from "./pages/company/master/MasterAddProject";
 
 // Outras configurações
 import { getFirestore, collection, onSnapshot } from "firebase/firestore";
@@ -91,46 +91,151 @@ const AppContent = () => {
           <Route path="/register" element={<Register />} />
           <Route path="/login" element={<Login />} />
 
-          {/* Rotas do Cliente */}
-          <Route path="/client" element={<ClientProjects />} />
-          <Route path="/client/projects" element={<ClientProjects />} />
-          <Route path="/client/dashboard" element={<ClientDashboard />} />
-          <Route path="/client/profile" element={<ClientProfile />} />
-          <Route path="/client/projects-budget" element={<ClientBudget />} />
+          {/* Rotas do Cliente - Todas Protegidas */}
+          <Route
+            path="/client"
+            element={
+              <ProtectedRoute allowedUserTypes={["b2b", "b2c", "colab"]}>
+                <ClientProjects />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/client/projects"
+            element={
+              <ProtectedRoute allowedUserTypes={["b2b", "b2c", "colab"]}>
+                <ClientProjects />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/client/dashboard"
+            element={
+              <ProtectedRoute allowedUserTypes={["b2b", "b2c", "colab"]}>
+                <ClientDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/client/profile"
+            element={
+              <ProtectedRoute allowedUserTypes={["b2b", "b2c", "colab"]}>
+                <ClientProfile />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/client/projects-budget"
+            element={
+              <ProtectedRoute allowedUserTypes={["b2b", "b2c", "colab"]}>
+                <ClientBudget />
+              </ProtectedRoute>
+            }
+          />
           <Route
             path="/client/projects-budget-received"
-            element={<ClientBudgetReady />}
+            element={
+              <ProtectedRoute allowedUserTypes={["b2b", "b2c", "colab"]}>
+                <ClientBudgetReady />
+              </ProtectedRoute>
+            }
           />
           <Route
             path="/client/projects-analysis"
-            element={<ClientAnalysis />}
+            element={
+              <ProtectedRoute allowedUserTypes={["b2b", "b2c", "colab"]}>
+                <ClientAnalysis />
+              </ProtectedRoute>
+            }
           />
           <Route
             path="/client/projects-done"
-            element={<ClientProjectsDone />}
+            element={
+              <ProtectedRoute allowedUserTypes={["b2b", "b2c", "colab"]}>
+                <ClientProjectsDone />
+              </ProtectedRoute>
+            }
           />
           <Route
             path="/client/projects-paid"
-            element={<ClientProjectsPaid />}
+            element={
+              <ProtectedRoute allowedUserTypes={["b2b", "b2c", "colab"]}>
+                <ClientProjectsPaid />
+              </ProtectedRoute>
+            }
           />
-          <Route path="/client/payments" element={<ClientPayments />} />
-          <Route path="/client/going-on" element={<ClientGoingOn />} />
-          <Route path="/client/projects-refund" element={<ClientRefund />} />
+          <Route
+            path="/client/payments"
+            element={
+              <ProtectedRoute allowedUserTypes={["b2b", "b2c", "colab"]}>
+                <ClientPayments />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/client/going-on"
+            element={
+              <ProtectedRoute allowedUserTypes={["b2b", "b2c", "colab"]}>
+                <ClientGoingOn />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/client/projects-refund"
+            element={
+              <ProtectedRoute allowedUserTypes={["b2b", "b2c", "colab"]}>
+                <ClientRefund />
+              </ProtectedRoute>
+            }
+          />
           <Route
             path="/client/projects-divergence"
-            element={<ClientDivergence />}
+            element={
+              <ProtectedRoute allowedUserTypes={["b2b", "b2c", "colab"]}>
+                <ClientDivergence />
+              </ProtectedRoute>
+            }
           />
           <Route
             path="/client/projects/clientaddproject"
-            element={<ClientAddProject />}
+            element={
+              <ProtectedRoute allowedUserTypes={["b2b", "b2c", "colab"]}>
+                <ClientAddProject />
+              </ProtectedRoute>
+            }
           />
           <Route
             path="/client/projects/:projectId"
-            element={<ClienteProjectDetails />}
+            element={
+              <ProtectedRoute allowedUserTypes={["b2b", "b2c", "colab"]}>
+                <ClienteProjectDetails />
+              </ProtectedRoute>
+            }
           />
-          <Route path="/client/checkout" element={<CheckoutPage />} />
-          <Route path="/client/payment-success" element={<PaymentSuccess />} />
-          <Route path="/client/payment-error" element={<PaymentError />} />
+          <Route
+            path="/client/checkout"
+            element={
+              <ProtectedRoute allowedUserTypes={["b2b", "b2c", "colab"]}>
+                <CheckoutPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/client/payment-success"
+            element={
+              <ProtectedRoute allowedUserTypes={["b2b", "b2c", "colab"]}>
+                <PaymentSuccess />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/client/payment-error"
+            element={
+              <ProtectedRoute allowedUserTypes={["b2b", "b2c", "colab"]}>
+                <PaymentError />
+              </ProtectedRoute>
+            }
+          />
           <Route
             path="/client/add-collaborator"
             element={
@@ -140,35 +245,154 @@ const AppContent = () => {
             }
           />
 
-          {/* Rotas do Master */}
-          <Route path="/company/master" element={<MasterLayout />}>
-            <Route path="dashboard" element={<MasterDashboard />} />
-            <Route path="activity-logs" element={<ActivityLog />} />
-            <Route path="clients" element={<MasterClient />} />
-            <Route path="employees" element={<MasterEmployee />} />
-            <Route index element={<MasterProjects />} />
-            <Route path="projects" element={<MasterProjects />} />
-            <Route path="projects-budget" element={<ProjectsBudget />} />
-            <Route path="projects-approval" element={<ProjectsApproval />} />
-            <Route path="projects-approved" element={<ProjectsApproved />} />
+          {/* Rotas do Master - Todas Protegidas */}
+          <Route
+            path="/company/master"
+            element={
+              <ProtectedRoute allowedUserTypes={["master"]}>
+                <MasterLayout />
+              </ProtectedRoute>
+            }
+          >
+            <Route
+              path="dashboard"
+              element={
+                <ProtectedRoute allowedUserTypes={["master"]}>
+                  <MasterDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="activity-logs"
+              element={
+                <ProtectedRoute allowedUserTypes={["master"]}>
+                  <ActivityLog />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="clients"
+              element={
+                <ProtectedRoute allowedUserTypes={["master"]}>
+                  <MasterClient />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="employees"
+              element={
+                <ProtectedRoute allowedUserTypes={["master"]}>
+                  <MasterEmployee />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              index
+              element={
+                <ProtectedRoute allowedUserTypes={["master"]}>
+                  <MasterProjects />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="projects"
+              element={
+                <ProtectedRoute allowedUserTypes={["master"]}>
+                  <MasterProjects />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="projects-budget"
+              element={
+                <ProtectedRoute allowedUserTypes={["master"]}>
+                  <ProjectsBudget />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="projects-approval"
+              element={
+                <ProtectedRoute allowedUserTypes={["master"]}>
+                  <ProjectsApproval />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="projects-approved"
+              element={
+                <ProtectedRoute allowedUserTypes={["master"]}>
+                  <ProjectsApproved />
+                </ProtectedRoute>
+              }
+            />
             <Route
               path="projects-in-analysis"
-              element={<ProjectsInAnalysis />}
+              element={
+                <ProtectedRoute allowedUserTypes={["master"]}>
+                  <ProjectsInAnalysis />
+                </ProtectedRoute>
+              }
             />
-            <Route path="ongoing" element={<MasterOnGoing />} />
-            <Route path="projects-done" element={<ProjectsDone />} />
-            <Route path="projects-paid" element={<ProjectsPaid />} />
-            <Route path="payments" element={<MasterPayments />} />
-            <Route path="add-project" element={<MasterAddProject />} />{" "}
-            {/* Nova rota */}
+            <Route
+              path="ongoing"
+              element={
+                <ProtectedRoute allowedUserTypes={["master"]}>
+                  <MasterOnGoing />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="projects-done"
+              element={
+                <ProtectedRoute allowedUserTypes={["master"]}>
+                  <ProjectsDone />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="projects-paid"
+              element={
+                <ProtectedRoute allowedUserTypes={["master"]}>
+                  <ProjectsPaid />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="payments"
+              element={
+                <ProtectedRoute allowedUserTypes={["master"]}>
+                  <MasterPayments />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="add-project"
+              element={
+                <ProtectedRoute allowedUserTypes={["master"]}>
+                  <MasterAddProject />
+                </ProtectedRoute>
+              }
+            />
           </Route>
           <Route
             path="/company/master/project/:id"
-            element={<ProjectDetails />}
+            element={
+              <ProtectedRoute allowedUserTypes={["master"]}>
+                <ProjectDetails />
+              </ProtectedRoute>
+            }
           />
 
-          {/* Rota de Pagamento */}
-          <Route path="/payment" element={<PaymentPage />} />
+          {/* Rota de Pagamento - Protegida */}
+          <Route
+            path="/payment"
+            element={
+              <ProtectedRoute>
+                <PaymentPage />
+              </ProtectedRoute>
+            }
+          />
         </Routes>
       </main>
     </div>
