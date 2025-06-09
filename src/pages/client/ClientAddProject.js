@@ -1400,23 +1400,23 @@ const ClientAddProject = () => {
 
   const renderContent = () => {
     return (
-      <div className="w-full pt-0 pb-4 md:pb-6 lg:pb-8 space-y-4 md:space-y-6 lg:space-y-8 px-4 md:px-6 lg:px-8">
-        <h1 className="text-3xl font-bold text-center mb-6 lg:mb-8 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+      <div className="w-full pt-0 pb-4 md:pb-6 lg:pb-8 space-y-4 md:space-y-6 lg:space-y-8 px-4 sm:px-6 md:px-8">
+        <h1 className="text-2xl sm:text-3xl font-bold text-center mb-4 sm:mb-6 lg:mb-8 text-blue-600 sm:bg-gradient-to-r sm:from-blue-600 sm:to-purple-600 sm:bg-clip-text sm:text-transparent">
           {currentStep === 1 ? "Criar Projeto" : "Resumo do Projeto"}
         </h1>
 
-        <div className="glass-card p-6">
-          <div className="flex items-start gap-4 w-full overflow-x-auto">
+        <div className="glass-card p-4 sm:p-6">
+          <div className="flex flex-col lg:flex-row lg:items-start gap-4 lg:gap-6 w-full">
             {/* Step 1 - Tipos de Arquivos */}
-            <div className="flex-shrink-0 w-80 p-5 shadow-lg rounded-lg bg-white h-[750px] flex flex-col">
-              <div className="flex items-center gap-2 mb-6 flex items-center justify-center">
+            <div className="w-full lg:flex-shrink-0 lg:w-80 p-4 sm:p-5 shadow-lg rounded-lg bg-white h-auto lg:h-[750px] flex flex-col">
+              <div className="flex items-center gap-2 mb-4 md:mb-6 flex items-center justify-center">
                 <div>
                   <FontAwesomeIcon
                     icon={faLightbulb}
                     className="text-yellow-500 flex items-center justify-center"
                   />
                 </div>
-                <h2 className="text-xl font-semibold text-gray-800">
+                <h2 className="text-lg md:text-xl font-semibold text-gray-800">
                   Tipos de Arquivos
                 </h2>
               </div>
@@ -1552,12 +1552,12 @@ const ClientAddProject = () => {
             </div>
 
             {/* Step 2 - Formulário de Criação */}
-            <div className="flex-1 min-w-0 p-5 shadow-lg rounded-lg bg-white h-[750px] flex flex-col">
-              <div className="flex items-center gap-2 mb-6">
+            <div className="w-full lg:flex-1 lg:min-w-0 p-4 sm:p-5 shadow-lg rounded-lg bg-white h-auto lg:h-[750px] flex flex-col">
+              <div className="flex items-center gap-2 mb-4 md:mb-6">
                 <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold">
                   1
                 </div>
-                <h2 className="text-xl font-semibold text-gray-800">
+                <h2 className="text-lg md:text-xl font-semibold text-gray-800">
                   Informações do Projeto
                 </h2>
               </div>
@@ -1782,12 +1782,12 @@ const ClientAddProject = () => {
             </div>
 
             {/* Step 3 - Resumo do Projeto */}
-            <div className="flex-1 min-w-0 p-5 shadow-lg rounded-lg bg-white h-[750px] flex flex-col">
-              <div className="flex items-center gap-2 mb-6">
+            <div className="w-full lg:flex-1 lg:min-w-0 p-4 sm:p-5 shadow-lg rounded-lg bg-white h-auto lg:h-[750px] flex flex-col">
+              <div className="flex items-center gap-2 mb-4 md:mb-6">
                 <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold">
                   2
                 </div>
-                <h2 className="text-xl font-semibold text-gray-800">
+                <h2 className="text-lg md:text-xl font-semibold text-gray-800">
                   Resumo do Projeto
                 </h2>
               </div>
@@ -1987,11 +1987,11 @@ const ClientAddProject = () => {
               {/* Botões de Ação - Agora fixos no bottom */}
               {convertedFiles.length > 0 && (
                 <div className="mt-auto pt-4 border-t border-gray-100">
-                  <div className="flex gap-3">
+                  <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
                     <button
                       type="button"
                       onClick={resetForm}
-                      className="flex-1 px-4 py-2 text-xs font-medium text-gray-700 bg-gray-50 hover:bg-gray-100 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md border border-gray-200 flex items-center justify-center gap-2"
+                      className="flex-1 px-3 sm:px-4 py-2 text-xs font-medium text-gray-700 bg-gray-50 hover:bg-gray-100 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md border border-gray-200 flex items-center justify-center gap-2"
                     >
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
@@ -2017,7 +2017,7 @@ const ClientAddProject = () => {
                             handleSubmit(null, false);
                           }}
                           disabled={isSubmitting && !isApproval}
-                          className="flex-1 px-4 py-2 text-xs font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md flex items-center justify-center gap-2"
+                          className="flex-1 px-3 sm:px-4 py-2 text-xs font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md flex items-center justify-center gap-2"
                         >
                           <svg
                             xmlns="http://www.w3.org/2000/svg"
@@ -2042,7 +2042,7 @@ const ClientAddProject = () => {
                             setIsApproval(true);
                             handleSubmit(null, true);
                           }}
-                          className="flex-1 px-4 py-2 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md flex items-center justify-center gap-2"
+                          className="flex-1 px-3 sm:px-4 py-2 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md flex items-center justify-center gap-2"
                         >
                           <svg
                             xmlns="http://www.w3.org/2000/svg"

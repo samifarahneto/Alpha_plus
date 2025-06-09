@@ -565,145 +565,153 @@ const ClientPayments = () => {
 
   return (
     <ClientLayout>
-      {error && (
-        <div className="text-center p-4 md:p-5 bg-red-50 text-red-600 rounded-lg shadow-sm my-4 md:my-5">
-          <p>Erro ao carregar os projetos: {error}</p>
-        </div>
-      )}
+      <div className="w-full pt-0 pb-4 md:pb-6 lg:pb-8 space-y-4 md:space-y-6 lg:space-y-8 px-4 sm:px-6">
+        <h1 className="text-2xl sm:text-3xl font-bold text-center mb-4 sm:mb-6 lg:mb-8 text-blue-600 sm:bg-gradient-to-r sm:from-blue-600 sm:to-purple-600 sm:bg-clip-text sm:text-transparent">
+          Pagamentos Pendentes
+        </h1>
 
-      {loading ? (
-        <div className="text-center p-4 md:p-8">
-          <div className="animate-spin rounded-full h-12 md:h-16 w-12 md:w-16 border-t-2 border-b-2 border-blue-500 mx-auto"></div>
-          <p className="text-gray-600 mt-4">Carregando projetos...</p>
-        </div>
-      ) : (
-        <>
-          {/* Botão Pagar */}
-          <div className="flex justify-end mb-4">
-            <button
-              onClick={handlePayment}
-              style={{
-                padding: "5px 10px",
-                backgroundColor:
-                  selectedProjects.length > 0 ? "#E0F7FA" : "#fff",
-                border: "1px solid grey",
-                borderRadius: "20px",
-                fontSize: "14px",
-                cursor: selectedProjects.length > 0 ? "pointer" : "not-allowed",
-                color: "#333",
-                whiteSpace: "nowrap",
-                width: "auto",
-                boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
-                transition: "background-color 0.3s ease, box-shadow 0.3s ease",
-              }}
-              disabled={selectedProjects.length === 0}
-            >
-              Pagar Projetos
-            </button>
+        {error && (
+          <div className="text-center p-4 md:p-5 bg-red-50 text-red-600 rounded-lg shadow-sm my-4 md:my-5">
+            <p>Erro ao carregar os projetos: {error}</p>
           </div>
+        )}
 
-          <div className="w-full overflow-x-auto">
-            <div className="w-full shadow-lg rounded-lg">
-              <DataTable
-                columns={columns}
-                data={currentRows}
-                initialColumnOrder={columnOrder}
-                fixedColumns={fixedColumns}
-                onRowClick={(row) => handleProjectClick(row.id)}
-                getRowClassName={(row) =>
-                  "hover:bg-blue-50/50 cursor-pointer transition-all duration-200"
-                }
-                selectable={true}
-                onSelectAll={handleSelectAll}
-                selectedRows={selectedProjects}
-              />
+        {loading ? (
+          <div className="text-center p-4 md:p-8">
+            <div className="animate-spin rounded-full h-12 md:h-16 w-12 md:w-16 border-t-2 border-b-2 border-blue-500 mx-auto"></div>
+            <p className="text-gray-600 mt-4">Carregando projetos...</p>
+          </div>
+        ) : (
+          <>
+            {/* Botão Pagar */}
+            <div className="flex justify-end mb-4">
+              <button
+                onClick={handlePayment}
+                style={{
+                  padding: "5px 10px",
+                  backgroundColor:
+                    selectedProjects.length > 0 ? "#E0F7FA" : "#fff",
+                  border: "1px solid grey",
+                  borderRadius: "20px",
+                  fontSize: "14px",
+                  cursor:
+                    selectedProjects.length > 0 ? "pointer" : "not-allowed",
+                  color: "#333",
+                  whiteSpace: "nowrap",
+                  width: "auto",
+                  boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
+                  transition:
+                    "background-color 0.3s ease, box-shadow 0.3s ease",
+                }}
+                disabled={selectedProjects.length === 0}
+              >
+                Pagar Projetos
+              </button>
             </div>
-          </div>
 
-          {/* Paginação */}
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4 mt-4 p-4">
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-600">
-                Projetos por página:
-              </span>
-              <div className="relative">
-                <button
-                  id="rows-button"
-                  onClick={() => setShowRowsDropdown(!showRowsDropdown)}
-                  className="flex items-center gap-2 px-3 py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-50"
-                >
-                  {rowsPerPage}
-                  <svg
-                    className="w-4 h-4 text-gray-500"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M19 9l-7 7-7-7"
-                    />
-                  </svg>
-                </button>
-                {showRowsDropdown && (
-                  <div
-                    id="rows-dropdown"
-                    className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg"
-                  >
-                    <div className="py-1">
-                      {[10, 25, 50, 100].map((value) => (
-                        <button
-                          key={value}
-                          onClick={() => handleRowsPerPageChange(value)}
-                          className="w-full px-4 py-2 text-sm text-left hover:bg-gray-50"
-                        >
-                          {value}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
+            <div className="w-full overflow-x-auto">
+              <div className="w-full shadow-lg rounded-lg">
+                <DataTable
+                  columns={columns}
+                  data={currentRows}
+                  initialColumnOrder={columnOrder}
+                  fixedColumns={fixedColumns}
+                  onRowClick={(row) => handleProjectClick(row.id)}
+                  getRowClassName={(row) =>
+                    "hover:bg-blue-50/50 cursor-pointer transition-all duration-200"
+                  }
+                  selectable={true}
+                  onSelectAll={handleSelectAll}
+                  selectedRows={selectedProjects}
+                />
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => paginate(currentPage - 1)}
-                disabled={currentPage === 1}
-                className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-              >
-                Anterior
-              </button>
-              <div className="flex items-center gap-1">
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map(
-                  (page) => (
-                    <button
-                      key={page}
-                      onClick={() => paginate(page)}
-                      className={`w-8 h-8 text-sm border rounded-lg ${
-                        currentPage === page
-                          ? "bg-blue-500 text-white border-blue-500"
-                          : "border-gray-300 hover:bg-gray-50"
-                      }`}
+            {/* Paginação */}
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-4 p-4">
+              <div className="flex items-center gap-2 w-full sm:w-auto justify-center sm:justify-start">
+                <span className="text-sm text-gray-600">
+                  Projetos por página:
+                </span>
+                <div className="relative">
+                  <button
+                    id="rows-button"
+                    onClick={() => setShowRowsDropdown(!showRowsDropdown)}
+                    className="flex items-center gap-2 px-3 py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-50"
+                  >
+                    {rowsPerPage}
+                    <svg
+                      className="w-4 h-4 text-gray-500"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
                     >
-                      {page}
-                    </button>
-                  )
-                )}
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M19 9l-7 7-7-7"
+                      />
+                    </svg>
+                  </button>
+                  {showRowsDropdown && (
+                    <div
+                      id="rows-dropdown"
+                      className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg"
+                    >
+                      <div className="py-1">
+                        {[10, 25, 50, 100].map((value) => (
+                          <button
+                            key={value}
+                            onClick={() => handleRowsPerPageChange(value)}
+                            className="w-full px-4 py-2 text-sm text-left hover:bg-gray-50"
+                          >
+                            {value}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
-              <button
-                onClick={() => paginate(currentPage + 1)}
-                disabled={currentPage === totalPages}
-                className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-              >
-                Próximo
-              </button>
+
+              <div className="flex items-center gap-2 w-full sm:w-auto justify-center">
+                <button
+                  onClick={() => paginate(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                >
+                  Anterior
+                </button>
+                <div className="flex items-center gap-1 overflow-x-auto max-w-[200px] sm:max-w-none">
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                    (page) => (
+                      <button
+                        key={page}
+                        onClick={() => paginate(page)}
+                        className={`w-8 h-8 text-sm border rounded-lg flex-shrink-0 ${
+                          currentPage === page
+                            ? "bg-blue-500 text-white border-blue-500"
+                            : "border-gray-300 hover:bg-gray-50"
+                        }`}
+                      >
+                        {page}
+                      </button>
+                    )
+                  )}
+                </div>
+                <button
+                  onClick={() => paginate(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                  className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                >
+                  Próximo
+                </button>
+              </div>
             </div>
-          </div>
-        </>
-      )}
+          </>
+        )}
+      </div>
     </ClientLayout>
   );
 };

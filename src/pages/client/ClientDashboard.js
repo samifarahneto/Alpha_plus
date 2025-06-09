@@ -7,6 +7,7 @@ import {
   getDocs,
 } from "firebase/firestore";
 import { auth } from "../../firebaseConfig";
+import ClientLayout from "../../components/layouts/ClientLayout";
 import {
   Chart as ChartJS,
   BarElement,
@@ -292,209 +293,213 @@ const ClientDashboard = () => {
   };
 
   return (
-    <div className="w-full max-w-full p-8 space-y-8">
-      <div className="glass-card">
-        <h1 className="text-3xl font-bold text-center mb-8 bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
+    <ClientLayout>
+      <div className="w-full pt-0 pb-4 md:pb-6 lg:pb-8 space-y-4 md:space-y-6 lg:space-y-8 px-4 sm:px-6">
+        <h1 className="text-2xl sm:text-3xl font-bold text-center mb-4 sm:mb-6 lg:mb-8 text-blue-600 sm:bg-gradient-to-r sm:from-blue-600 sm:to-purple-600 sm:bg-clip-text sm:text-transparent">
           Dashboard
         </h1>
 
-        {/* Cards de Estatísticas */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-xl shadow-md p-6 border border-gray-100">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-blue-100 rounded-lg">
-                <FaFileAlt className="w-6 h-6 text-blue-600" />
+        <div className="glass-card">
+          {/* Cards de Estatísticas */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
+            <div className="bg-white rounded-xl shadow-md p-4 sm:p-6 border border-gray-100">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-blue-100 rounded-lg">
+                  <FaFileAlt className="w-6 h-6 text-blue-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Total de Projetos</p>
+                  <p className="text-2xl font-bold text-gray-800">
+                    {totalProjects}
+                  </p>
+                </div>
               </div>
-              <div>
-                <p className="text-sm text-gray-600">Total de Projetos</p>
-                <p className="text-2xl font-bold text-gray-800">
-                  {totalProjects}
-                </p>
+            </div>
+
+            <div className="bg-white rounded-xl shadow-md p-4 sm:p-6 border border-gray-100">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-green-100 rounded-lg">
+                  <FaCheckCircle className="w-6 h-6 text-green-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Projetos Pagos</p>
+                  <p className="text-2xl font-bold text-gray-800">
+                    {statusStats.completed}
+                  </p>
+                  <p className="text-sm text-green-600">
+                    R$ {totalPaid.toFixed(2)}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-xl shadow-md p-4 sm:p-6 border border-gray-100">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-red-100 rounded-lg">
+                  <FaClock className="w-6 h-6 text-red-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">
+                    Pendentes de Pagamento
+                  </p>
+                  <p className="text-2xl font-bold text-gray-800">
+                    {statusStats.pending}
+                  </p>
+                  <p className="text-sm text-red-600">
+                    R$ {totalUnpaid.toFixed(2)}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-xl shadow-md p-4 sm:p-6 border border-gray-100">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-purple-100 rounded-lg">
+                  <FaCalendarAlt className="w-6 h-6 text-purple-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Total de Páginas</p>
+                  <p className="text-2xl font-bold text-gray-800">
+                    {projects.reduce(
+                      (sum, project) => sum + project.totalPages,
+                      0
+                    )}
+                  </p>
+                </div>
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow-md p-6 border border-gray-100">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-green-100 rounded-lg">
-                <FaCheckCircle className="w-6 h-6 text-green-600" />
-              </div>
-              <div>
-                <p className="text-sm text-gray-600">Projetos Pagos</p>
-                <p className="text-2xl font-bold text-gray-800">
-                  {statusStats.completed}
-                </p>
-                <p className="text-sm text-green-600">
-                  R$ {totalPaid.toFixed(2)}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl shadow-md p-6 border border-gray-100">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-red-100 rounded-lg">
-                <FaClock className="w-6 h-6 text-red-600" />
-              </div>
-              <div>
-                <p className="text-sm text-gray-600">Pendentes de Pagamento</p>
-                <p className="text-2xl font-bold text-gray-800">
-                  {statusStats.pending}
-                </p>
-                <p className="text-sm text-red-600">
-                  R$ {totalUnpaid.toFixed(2)}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl shadow-md p-6 border border-gray-100">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-purple-100 rounded-lg">
-                <FaCalendarAlt className="w-6 h-6 text-purple-600" />
-              </div>
-              <div>
-                <p className="text-sm text-gray-600">Total de Páginas</p>
-                <p className="text-2xl font-bold text-gray-800">
-                  {projects.reduce(
-                    (sum, project) => sum + project.totalPages,
-                    0
-                  )}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Gráficos */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-          <div className="bg-white rounded-xl shadow-md p-6 border border-gray-100">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">
-              Projetos por Mês
-            </h3>
-            <div className="h-[200px]">
-              <Bar
-                data={chartData}
-                options={{
-                  responsive: true,
-                  maintainAspectRatio: false,
-                  plugins: {
-                    legend: {
-                      display: false,
-                    },
-                  },
-                  scales: {
-                    y: {
-                      beginAtZero: true,
-                      ticks: {
-                        stepSize: 1,
+          {/* Gráficos */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
+            <div className="bg-white rounded-xl shadow-md p-4 sm:p-6 border border-gray-100">
+              <h3 className="text-lg font-semibold text-gray-800 mb-4">
+                Projetos por Mês
+              </h3>
+              <div className="h-[200px]">
+                <Bar
+                  data={chartData}
+                  options={{
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                      legend: {
+                        display: false,
                       },
                     },
-                  },
-                }}
-              />
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl shadow-md p-6 border border-gray-100">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">
-              Status dos Projetos
-            </h3>
-            <div className="h-[200px] flex items-center justify-center">
-              <Pie
-                data={pieData}
-                options={{
-                  responsive: true,
-                  maintainAspectRatio: false,
-                  plugins: {
-                    legend: {
-                      position: "bottom",
+                    scales: {
+                      y: {
+                        beginAtZero: true,
+                        ticks: {
+                          stepSize: 1,
+                        },
+                      },
                     },
-                  },
-                }}
-              />
+                  }}
+                />
+              </div>
+            </div>
+
+            <div className="bg-white rounded-xl shadow-md p-4 sm:p-6 border border-gray-100">
+              <h3 className="text-lg font-semibold text-gray-800 mb-4">
+                Status dos Projetos
+              </h3>
+              <div className="h-[200px] flex items-center justify-center">
+                <Pie
+                  data={pieData}
+                  options={{
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                      legend: {
+                        position: "bottom",
+                      },
+                    },
+                  }}
+                />
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Lista de Projetos */}
-        <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
-          <h3 className="text-xl font-semibold text-gray-800 mb-6">
-            Projetos Recentes
-          </h3>
-          <div className="overflow-hidden rounded-2xl shadow-lg border border-gray-100">
-            <table className="min-w-full bg-white divide-y divide-gray-200 shadow-sm rounded-lg">
-              <thead className="bg-gradient-to-b from-gray-50 to-gray-100">
-                <tr>
-                  <th className="px-4 py-2 text-xs font-medium text-gray-500 uppercase tracking-wider text-left whitespace-nowrap">
-                    Nome do Projeto
-                  </th>
-                  <th className="px-4 py-2 text-xs font-medium text-gray-500 uppercase tracking-wider text-center whitespace-nowrap">
-                    Autor
-                  </th>
-                  <th className="px-4 py-2 text-xs font-medium text-gray-500 uppercase tracking-wider text-center whitespace-nowrap">
-                    Páginas
-                  </th>
-                  <th className="px-4 py-2 text-xs font-medium text-gray-500 uppercase tracking-wider text-center whitespace-nowrap">
-                    Valor U$
-                  </th>
-                  <th className="px-4 py-2 text-xs font-medium text-gray-500 uppercase tracking-wider text-center whitespace-nowrap">
-                    Data de Criação
-                  </th>
-                  <th className="px-4 py-2 text-xs font-medium text-gray-500 uppercase tracking-wider text-center whitespace-nowrap">
-                    Prazo
-                  </th>
-                  <th className="px-4 py-2 text-xs font-medium text-gray-500 uppercase tracking-wider text-center whitespace-nowrap">
-                    Status
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {projects
-                  .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
-                  .slice(0, 5)
-                  .map((project) => (
-                    <tr
-                      key={project.id}
-                      className="hover:bg-blue-50/50 transition-all duration-200"
-                    >
-                      <td className="px-4 py-1.5 whitespace-nowrap text-sm text-gray-700">
-                        {project.projectName || "Sem Nome"}
-                      </td>
-                      <td className="px-4 py-1.5 whitespace-nowrap text-sm text-gray-700 text-center">
-                        {project.projectOwner || "Não informado"}
-                      </td>
-                      <td className="px-4 py-1.5 whitespace-nowrap text-sm text-gray-700 text-center">
-                        {project.totalPages}
-                      </td>
-                      <td className="px-4 py-1.5 whitespace-nowrap text-sm text-gray-700 text-center font-medium">
-                        U$ {project.totalValue?.toFixed(2) || "0.00"}
-                      </td>
-                      <td className="px-4 py-1.5 whitespace-nowrap text-sm text-gray-700 text-center">
-                        {formatDate(project.createdAt)}
-                      </td>
-                      <td className="px-4 py-1.5 whitespace-nowrap text-sm text-gray-700 text-center">
-                        {formatDate(project.deadlineDate)}
-                      </td>
-                      <td className="px-4 py-1.5 whitespace-nowrap text-sm text-center">
-                        <span
-                          className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                            project.isPaid
-                              ? "bg-emerald-100 text-emerald-700"
-                              : "bg-red-100 text-red-700"
-                          }`}
-                        >
-                          {project.isPaid ? "PAGO" : "PENDENTE"}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-              </tbody>
-            </table>
+          {/* Lista de Projetos */}
+          <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-4 sm:p-6">
+            <h3 className="text-xl font-semibold text-gray-800 mb-6">
+              Projetos Recentes
+            </h3>
+            <div className="overflow-hidden rounded-2xl shadow-lg border border-gray-100">
+              <table className="min-w-full bg-white divide-y divide-gray-200 shadow-sm rounded-lg">
+                <thead className="bg-gradient-to-b from-gray-50 to-gray-100">
+                  <tr>
+                    <th className="px-4 py-2 text-xs font-medium text-gray-500 uppercase tracking-wider text-left whitespace-nowrap">
+                      Nome do Projeto
+                    </th>
+                    <th className="px-4 py-2 text-xs font-medium text-gray-500 uppercase tracking-wider text-center whitespace-nowrap">
+                      Autor
+                    </th>
+                    <th className="px-4 py-2 text-xs font-medium text-gray-500 uppercase tracking-wider text-center whitespace-nowrap">
+                      Páginas
+                    </th>
+                    <th className="px-4 py-2 text-xs font-medium text-gray-500 uppercase tracking-wider text-center whitespace-nowrap">
+                      Valor U$
+                    </th>
+                    <th className="px-4 py-2 text-xs font-medium text-gray-500 uppercase tracking-wider text-center whitespace-nowrap">
+                      Data de Criação
+                    </th>
+                    <th className="px-4 py-2 text-xs font-medium text-gray-500 uppercase tracking-wider text-center whitespace-nowrap">
+                      Prazo
+                    </th>
+                    <th className="px-4 py-2 text-xs font-medium text-gray-500 uppercase tracking-wider text-center whitespace-nowrap">
+                      Status
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {projects
+                    .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
+                    .slice(0, 5)
+                    .map((project) => (
+                      <tr
+                        key={project.id}
+                        className="hover:bg-blue-50/50 transition-all duration-200"
+                      >
+                        <td className="px-4 py-1.5 whitespace-nowrap text-sm text-gray-700">
+                          {project.projectName || "Sem Nome"}
+                        </td>
+                        <td className="px-4 py-1.5 whitespace-nowrap text-sm text-gray-700 text-center">
+                          {project.projectOwner || "Não informado"}
+                        </td>
+                        <td className="px-4 py-1.5 whitespace-nowrap text-sm text-gray-700 text-center">
+                          {project.totalPages}
+                        </td>
+                        <td className="px-4 py-1.5 whitespace-nowrap text-sm text-gray-700 text-center font-medium">
+                          U$ {project.totalValue?.toFixed(2) || "0.00"}
+                        </td>
+                        <td className="px-4 py-1.5 whitespace-nowrap text-sm text-gray-700 text-center">
+                          {formatDate(project.createdAt)}
+                        </td>
+                        <td className="px-4 py-1.5 whitespace-nowrap text-sm text-gray-700 text-center">
+                          {formatDate(project.deadlineDate)}
+                        </td>
+                        <td className="px-4 py-1.5 whitespace-nowrap text-sm text-center">
+                          <span
+                            className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                              project.isPaid
+                                ? "bg-emerald-100 text-emerald-700"
+                                : "bg-red-100 text-red-700"
+                            }`}
+                          >
+                            {project.isPaid ? "PAGO" : "PENDENTE"}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </ClientLayout>
   );
 };
 

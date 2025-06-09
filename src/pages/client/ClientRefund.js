@@ -557,103 +557,109 @@ const ClientRefund = () => {
 
   return (
     <ClientLayout>
-      <div className="space-y-6">
-        {/* Tabela */}
-        <div className="w-full overflow-x-auto">
-          <div className="w-full shadow-lg rounded-lg">
-            <DataTable
-              columns={availableColumns.filter(
-                (col) => col.fixed || visibleColumns.includes(col.id)
-              )}
-              data={currentRows.map((row) => ({
-                ...row,
-                projectNumber: row.projectNumber || "N/A",
-                projectOwner:
-                  row.authorName || row.projectOwner || "Não informado",
-                userEmail: row.userEmail || "N/A",
-                projectName:
-                  row.projectName && row.projectName.length > 20
-                    ? `${row.projectName.slice(0, 20)}...`
-                    : row.projectName || "Sem Nome",
-                createdAt: row.createdAt
-                  ? new Date(row.createdAt.seconds * 1000).toLocaleDateString(
-                      "pt-BR"
-                    )
-                  : "Sem Data",
-                pages: calculateTotalPages(row.files, row) || "0",
-                files: (
-                  <div className="flex items-center justify-center gap-1">
+      <div className="w-full pt-0 pb-4 md:pb-6 lg:pb-8 space-y-4 md:space-y-6 lg:space-y-8 px-4 sm:px-6">
+        <h1 className="text-2xl sm:text-3xl font-bold text-center mb-4 sm:mb-6 lg:mb-8 text-blue-600 sm:bg-gradient-to-r sm:from-blue-600 sm:to-purple-600 sm:bg-clip-text sm:text-transparent">
+          Em Reembolso
+        </h1>
+
+        <div className="space-y-6">
+          {/* Tabela */}
+          <div className="w-full overflow-x-auto">
+            <div className="w-full shadow-lg rounded-lg">
+              <DataTable
+                columns={availableColumns.filter(
+                  (col) => col.fixed || visibleColumns.includes(col.id)
+                )}
+                data={currentRows.map((row) => ({
+                  ...row,
+                  projectNumber: row.projectNumber || "N/A",
+                  projectOwner:
+                    row.authorName || row.projectOwner || "Não informado",
+                  userEmail: row.userEmail || "N/A",
+                  projectName:
+                    row.projectName && row.projectName.length > 20
+                      ? `${row.projectName.slice(0, 20)}...`
+                      : row.projectName || "Sem Nome",
+                  createdAt: row.createdAt
+                    ? new Date(row.createdAt.seconds * 1000).toLocaleDateString(
+                        "pt-BR"
+                      )
+                    : "Sem Data",
+                  pages: calculateTotalPages(row.files, row) || "0",
+                  files: (
+                    <div className="flex items-center justify-center gap-1">
+                      <span className="text-xs font-medium">
+                        {row.files?.length || "0"}
+                      </span>
+                      <FaDownload
+                        className="text-blue-600 hover:text-blue-800 cursor-pointer"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedFiles(row.files);
+                          setShowFilesModal(true);
+                        }}
+                        size={14}
+                      />
+                    </div>
+                  ),
+                  totalValue: (
                     <span className="text-xs font-medium">
-                      {row.files?.length || "0"}
+                      {`U$ ${calculateTotalValue(row.files, row)}`}
                     </span>
-                    <FaDownload
-                      className="text-blue-600 hover:text-blue-800 cursor-pointer"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setSelectedFiles(row.files);
-                        setShowFilesModal(true);
-                      }}
-                      size={14}
-                    />
-                  </div>
-                ),
-                totalValue: (
-                  <span className="text-xs font-medium">
-                    {`U$ ${calculateTotalValue(row.files, row)}`}
-                  </span>
-                ),
-                paymentStatus: renderPaymentStatusBadge(
-                  typeof row.payment_status === "object"
-                    ? row.payment_status.status || "N/A"
-                    : row.payment_status || "N/A"
-                ),
-                deadlineDate: (
-                  <span className="text-xs font-medium">
-                    {row.deadlineDate
-                      ? formatDate(new Date(row.deadlineDate))
-                      : "A definir"}
-                  </span>
-                ),
-                project_status: renderProjectStatusBadge(
-                  row.project_status || "N/A"
-                ),
-                translation_status: (
-                  <span
-                    className={`text-xs font-medium px-2 py-1 rounded-full ${
-                      row.translation_status === "Finalizado"
-                        ? "bg-green-50 text-green-700"
-                        : row.translation_status === "Em Tradução"
-                        ? "bg-blue-50 text-blue-700"
-                        : row.translation_status === "Em Revisão"
-                        ? "bg-yellow-50 text-yellow-700"
-                        : row.translation_status === "Cancelado"
-                        ? "bg-red-50 text-red-700"
-                        : "bg-gray-50 text-gray-700"
-                    }`}
-                  >
-                    {row.translation_status || "N/A"}
-                  </span>
-                ),
-              }))}
-              onRowClick={(row) => handleProjectClick(row.id, row.collection)}
-              fixedColumns={fixedColumns}
-            />
+                  ),
+                  paymentStatus: renderPaymentStatusBadge(
+                    typeof row.payment_status === "object"
+                      ? row.payment_status.status || "N/A"
+                      : row.payment_status || "N/A"
+                  ),
+                  deadlineDate: (
+                    <span className="text-xs font-medium">
+                      {row.deadlineDate
+                        ? formatDate(new Date(row.deadlineDate))
+                        : "A definir"}
+                    </span>
+                  ),
+                  project_status: renderProjectStatusBadge(
+                    row.project_status || "N/A"
+                  ),
+                  translation_status: (
+                    <span
+                      className={`text-xs font-medium px-2 py-1 rounded-full ${
+                        row.translation_status === "Finalizado"
+                          ? "bg-green-50 text-green-700"
+                          : row.translation_status === "Em Tradução"
+                          ? "bg-blue-50 text-blue-700"
+                          : row.translation_status === "Em Revisão"
+                          ? "bg-yellow-50 text-yellow-700"
+                          : row.translation_status === "Cancelado"
+                          ? "bg-red-50 text-red-700"
+                          : "bg-gray-50 text-gray-700"
+                      }`}
+                    >
+                      {row.translation_status || "N/A"}
+                    </span>
+                  ),
+                }))}
+                onRowClick={(row) => handleProjectClick(row.id, row.collection)}
+                fixedColumns={fixedColumns}
+              />
+            </div>
           </div>
+
+          {/* Paginação */}
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={paginate}
+            rowsPerPage={rowsPerPage}
+            onRowsPerPageChange={handleRowsPerPageChange}
+            totalItems={sortedProjects.length}
+          />
+
+          {/* Modais */}
+          {renderFilesModal()}
+          {renderColumnSelector()}
         </div>
-
-        {/* Paginação */}
-        <Pagination
-          currentPage={currentPage}
-          totalPages={totalPages}
-          onPageChange={paginate}
-          rowsPerPage={rowsPerPage}
-          onRowsPerPageChange={handleRowsPerPageChange}
-          totalItems={sortedProjects.length}
-        />
-
-        {/* Modais */}
-        {renderFilesModal()}
-        {renderColumnSelector()}
       </div>
     </ClientLayout>
   );

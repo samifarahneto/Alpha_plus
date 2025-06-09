@@ -10,6 +10,7 @@ import {
   updateDoc,
 } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
+import ClientLayout from "../../components/layouts/ClientLayout";
 
 const AddCollaboratorColab = () => {
   const [email, setEmail] = useState("");
@@ -309,8 +310,8 @@ const AddCollaboratorColab = () => {
     if (!showPermissionsModal || !selectedCollaborator) return null;
 
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-        <div className="w-96 bg-white rounded-lg shadow-xl p-6">
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+        <div className="w-full max-w-sm sm:max-w-md bg-white rounded-lg shadow-xl p-4 sm:p-6">
           <div className="mb-4">
             <h3 className="text-lg font-semibold text-gray-900 text-center">
               Permissões de Visualização
@@ -321,7 +322,7 @@ const AddCollaboratorColab = () => {
             </p>
           </div>
 
-          <div className="space-y-3 max-h-96 overflow-y-auto">
+          <div className="space-y-3 max-h-72 sm:max-h-96 overflow-y-auto">
             {/* Mostra o email do próprio colaborador como fixo */}
             <div className="flex items-center bg-gray-50 p-2 rounded-lg">
               <input
@@ -363,16 +364,16 @@ const AddCollaboratorColab = () => {
             ))}
           </div>
 
-          <div className="mt-6 flex justify-center gap-4">
+          <div className="mt-6 flex flex-col sm:flex-row justify-center gap-2 sm:gap-4">
             <button
               onClick={() => setShowPermissionsModal(false)}
-              className="px-4 py-2 text-sm text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+              className="w-full sm:w-auto px-4 py-2 text-sm text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
             >
               Cancelar
             </button>
             <button
               onClick={handleSavePermissions}
-              className="px-4 py-2 text-sm text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
+              className="w-full sm:w-auto px-4 py-2 text-sm text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
             >
               Salvar
             </button>
@@ -620,87 +621,180 @@ const AddCollaboratorColab = () => {
   };
 
   return (
-    <div className="w-full max-w-full p-4 sm:p-6 md:p-8 space-y-4 sm:space-y-6 md:space-y-8">
-      <h1 className="text-2xl sm:text-3xl font-bold text-center mb-4 sm:mb-8 bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
-        Gerenciamento de Colaboradores
-      </h1>
+    <ClientLayout>
+      <div className="w-full pt-0 pb-4 md:pb-6 lg:pb-8 space-y-4 md:space-y-6 lg:space-y-8">
+        <h1 className="text-2xl sm:text-3xl font-bold text-center mb-4 sm:mb-6 lg:mb-8 text-blue-600 sm:bg-gradient-to-r sm:from-blue-600 sm:to-purple-600 sm:bg-clip-text sm:text-transparent">
+          Gerenciamento de Colaboradores
+        </h1>
 
-      <div className="flex flex-col lg:flex-row gap-4 sm:gap-6 lg:gap-8">
-        {/* Primeira Div - Adicionar e Aguardando Cadastro */}
-        <div className="bg-white rounded-xl shadow-md p-4 sm:p-6 border border-gray-100 flex-1">
-          {/* Seção de Adicionar Colaborador */}
-          <div className="mb-6 sm:mb-8">
-            {successMessage && (
-              <div className="p-3 sm:p-4 bg-emerald-50 text-emerald-700 rounded-lg mb-4">
-                {successMessage}
+        <div className="flex flex-col lg:flex-row gap-4 sm:gap-6 lg:gap-8">
+          {/* Primeira Div - Adicionar e Aguardando Cadastro */}
+          <div className="bg-white rounded-xl shadow-md p-4 sm:p-6 border border-gray-100 flex-1">
+            {/* Seção de Adicionar Colaborador */}
+            <div className="mb-6 sm:mb-8">
+              {successMessage && (
+                <div className="p-3 sm:p-4 bg-emerald-50 text-emerald-700 rounded-lg mb-4 text-sm sm:text-base">
+                  {successMessage}
+                </div>
+              )}
+              {errorMessage && (
+                <div className="p-3 sm:p-4 bg-red-50 text-red-700 rounded-lg mb-4 text-sm sm:text-base">
+                  {errorMessage}
+                </div>
+              )}
+
+              <h3 className="text-lg sm:text-xl font-semibold text-gray-800 mb-3 sm:mb-4">
+                Adicionar Colaborador
+              </h3>
+
+              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 items-stretch sm:items-center">
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="Digite o email do colaborador"
+                  className="flex-1 px-3 sm:px-4 py-2 sm:py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                  disabled={isAddingLoading}
+                />
+                <button
+                  onClick={handleAddCollaborator}
+                  disabled={isAddingLoading}
+                  className={`w-full sm:w-auto px-4 sm:px-6 py-2 sm:py-2.5 rounded-lg text-white text-sm font-medium transition-colors ${
+                    isAddingLoading
+                      ? "bg-gray-400 cursor-not-allowed"
+                      : "bg-blue-500 hover:bg-blue-600"
+                  }`}
+                >
+                  {isAddingLoading ? "Adicionando..." : "Adicionar"}
+                </button>
               </div>
-            )}
-            {errorMessage && (
-              <div className="p-3 sm:p-4 bg-red-50 text-red-700 rounded-lg mb-4">
-                {errorMessage}
+            </div>
+
+            {/* Seção de Colaboradores Aguardando Cadastro */}
+            <div>
+              <h3 className="text-lg sm:text-xl font-semibold text-gray-800 mb-3 sm:mb-4">
+                Colaboradores Aguardando Cadastro
+              </h3>
+              <div className="overflow-x-auto rounded-2xl shadow-lg border border-gray-100">
+                <table className="min-w-full bg-white divide-y divide-gray-200 shadow-sm rounded-lg">
+                  <thead className="bg-gradient-to-b from-gray-50 to-gray-100">
+                    <tr>
+                      <th className="px-3 sm:px-4 py-2 text-xs font-medium text-gray-500 uppercase tracking-wider text-center whitespace-nowrap">
+                        Email
+                      </th>
+                      <th className="w-10" aria-label="Ações"></th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {pendingEmails.map((email, index) => (
+                      <tr
+                        key={index}
+                        className="hover:bg-blue-50/50 transition-all duration-200"
+                      >
+                        <td className="px-3 sm:px-4 py-1.5 whitespace-nowrap text-sm text-gray-700 text-center">
+                          <div className="break-all sm:break-normal">
+                            {email}
+                          </div>
+                        </td>
+                        <td className="px-2 py-1.5 whitespace-nowrap text-center">
+                          <button
+                            onClick={() => handleDeleteEmail(email)}
+                            disabled={isDeletingLoading}
+                            className="text-red-500 hover:text-red-700 transition-colors bg-transparent border-none cursor-pointer p-1"
+                            aria-label="Excluir"
+                          >
+                            🗑️
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
-            )}
-
-            <h3 className="text-lg sm:text-xl font-semibold text-gray-800 mb-3 sm:mb-4">
-              Adicionar Colaborador
-            </h3>
-
-            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 items-stretch sm:items-center">
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="Digite o email do colaborador"
-                className="flex-1 px-3 sm:px-4 py-2 sm:py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
-                disabled={isAddingLoading}
-              />
-              <button
-                onClick={handleAddCollaborator}
-                disabled={isAddingLoading}
-                className={`w-full sm:w-[230px] px-4 sm:px-6 py-2 sm:py-2.5 rounded-lg text-white text-sm font-medium transition-colors ${
-                  isAddingLoading
-                    ? "bg-gray-400 cursor-not-allowed"
-                    : "bg-blue-500 hover:bg-blue-600"
-                }`}
-              >
-                {isAddingLoading ? "Adicionando..." : "Adicionar"}
-              </button>
             </div>
           </div>
 
-          {/* Seção de Colaboradores Aguardando Cadastro */}
-          <div>
+          {/* Segunda Div - Colaboradores Cadastrados */}
+          <div className="bg-white rounded-xl shadow-md p-4 sm:p-6 border border-gray-100 flex-1">
             <h3 className="text-lg sm:text-xl font-semibold text-gray-800 mb-3 sm:mb-4">
-              Colaboradores Aguardando Cadastro
+              Colaboradores Cadastrados
             </h3>
             <div className="overflow-x-auto rounded-2xl shadow-lg border border-gray-100">
               <table className="min-w-full bg-white divide-y divide-gray-200 shadow-sm rounded-lg">
                 <thead className="bg-gradient-to-b from-gray-50 to-gray-100">
                   <tr>
                     <th className="px-3 sm:px-4 py-2 text-xs font-medium text-gray-500 uppercase tracking-wider text-center whitespace-nowrap">
+                      Nome
+                    </th>
+                    <th className="px-3 sm:px-4 py-2 text-xs font-medium text-gray-500 uppercase tracking-wider text-center whitespace-nowrap">
                       Email
                     </th>
-                    <th className="w-10" aria-label="Ações"></th>
+                    <th className="hidden sm:table-cell px-3 sm:px-4 py-2 text-xs font-medium text-gray-500 uppercase tracking-wider text-center whitespace-nowrap">
+                      Data de Cadastro
+                    </th>
+                    <th className="px-3 sm:px-4 py-2 text-xs font-medium text-gray-500 uppercase tracking-wider text-center whitespace-nowrap">
+                      Permissões
+                    </th>
+                    <th className="px-3 sm:px-4 py-2 text-xs font-medium text-gray-500 uppercase tracking-wider text-center whitespace-nowrap">
+                      Ações
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {pendingEmails.map((email, index) => (
+                  {registeredEmails.map((item, index) => (
                     <tr
                       key={index}
                       className="hover:bg-blue-50/50 transition-all duration-200"
                     >
                       <td className="px-3 sm:px-4 py-1.5 whitespace-nowrap text-sm text-gray-700 text-center">
-                        {email}
+                        <div className="break-all sm:break-normal">
+                          {item.nomeCompleto}
+                        </div>
+                      </td>
+                      <td className="px-3 sm:px-4 py-1.5 whitespace-nowrap text-sm text-gray-700 text-center">
+                        <div className="break-all sm:break-normal">
+                          {item.email}
+                        </div>
+                      </td>
+                      <td className="hidden sm:table-cell px-3 sm:px-4 py-1.5 whitespace-nowrap text-sm text-gray-700 text-center">
+                        {item.createdAt}
+                      </td>
+                      <td className="px-3 sm:px-4 py-1.5 text-sm text-gray-700">
+                        <div className="flex items-center justify-center gap-1">
+                          <span
+                            className="text-xs font-medium text-green-600 cursor-help"
+                            title={
+                              item.projectPermissions &&
+                              item.projectPermissions.length > 0
+                                ? item.projectPermissions.join("\n")
+                                : "Sem permissões"
+                            }
+                          >
+                            {item.projectPermissions
+                              ? item.projectPermissions.length
+                              : 0}{" "}
+                            usuários
+                          </span>
+                        </div>
                       </td>
                       <td className="px-2 py-1.5 whitespace-nowrap text-center">
-                        <button
-                          onClick={() => handleDeleteEmail(email)}
-                          disabled={isDeletingLoading}
-                          className="text-red-500 hover:text-red-700 transition-colors bg-transparent border-none cursor-pointer p-0"
-                          aria-label="Excluir"
-                        >
-                          🗑️
-                        </button>
+                        <div className="flex justify-center gap-2">
+                          <button
+                            onClick={() => handleOpenPermissionsModal(item)}
+                            className="text-blue-500 hover:text-blue-700 transition-colors bg-transparent border-none cursor-pointer p-1"
+                            aria-label="Permissões"
+                          >
+                            🔑
+                          </button>
+                          <button
+                            onClick={() => handleDeleteEmail(item.email)}
+                            disabled={isDeletingLoading}
+                            className="text-red-500 hover:text-red-700 transition-colors bg-transparent border-none cursor-pointer p-1"
+                            aria-label="Excluir"
+                          >
+                            🗑️
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -709,94 +803,9 @@ const AddCollaboratorColab = () => {
             </div>
           </div>
         </div>
-
-        {/* Segunda Div - Colaboradores Cadastrados */}
-        <div className="bg-white rounded-xl shadow-md p-4 sm:p-6 border border-gray-100 flex-1">
-          <h3 className="text-lg sm:text-xl font-semibold text-gray-800 mb-3 sm:mb-4">
-            Colaboradores Cadastrados
-          </h3>
-          <div className="overflow-x-auto rounded-2xl shadow-lg border border-gray-100">
-            <table className="min-w-full bg-white divide-y divide-gray-200 shadow-sm rounded-lg">
-              <thead className="bg-gradient-to-b from-gray-50 to-gray-100">
-                <tr>
-                  <th className="px-3 sm:px-4 py-2 text-xs font-medium text-gray-500 uppercase tracking-wider text-center whitespace-nowrap">
-                    Nome
-                  </th>
-                  <th className="px-3 sm:px-4 py-2 text-xs font-medium text-gray-500 uppercase tracking-wider text-center whitespace-nowrap">
-                    Email
-                  </th>
-                  <th className="hidden sm:table-cell px-3 sm:px-4 py-2 text-xs font-medium text-gray-500 uppercase tracking-wider text-center whitespace-nowrap">
-                    Data de Cadastro
-                  </th>
-                  <th className="px-3 sm:px-4 py-2 text-xs font-medium text-gray-500 uppercase tracking-wider text-center whitespace-nowrap">
-                    Permissões
-                  </th>
-                  <th className="px-3 sm:px-4 py-2 text-xs font-medium text-gray-500 uppercase tracking-wider text-center whitespace-nowrap">
-                    Ações
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {registeredEmails.map((item, index) => (
-                  <tr
-                    key={index}
-                    className="hover:bg-blue-50/50 transition-all duration-200"
-                  >
-                    <td className="px-3 sm:px-4 py-1.5 whitespace-nowrap text-sm text-gray-700 text-center">
-                      {item.nomeCompleto}
-                    </td>
-                    <td className="px-3 sm:px-4 py-1.5 whitespace-nowrap text-sm text-gray-700 text-center">
-                      {item.email}
-                    </td>
-                    <td className="hidden sm:table-cell px-3 sm:px-4 py-1.5 whitespace-nowrap text-sm text-gray-700 text-center">
-                      {item.createdAt}
-                    </td>
-                    <td className="px-3 sm:px-4 py-1.5 text-sm text-gray-700">
-                      <div className="flex items-center justify-center gap-1">
-                        <span
-                          className="text-xs font-medium text-green-600 cursor-help"
-                          title={
-                            item.projectPermissions &&
-                            item.projectPermissions.length > 0
-                              ? item.projectPermissions.join("\n")
-                              : "Sem permissões"
-                          }
-                        >
-                          {item.projectPermissions
-                            ? item.projectPermissions.length
-                            : 0}{" "}
-                          usuários
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-2 py-1.5 whitespace-nowrap text-center">
-                      <div className="flex justify-center gap-2">
-                        <button
-                          onClick={() => handleOpenPermissionsModal(item)}
-                          className="text-blue-500 hover:text-blue-700 transition-colors bg-transparent border-none cursor-pointer p-0"
-                          aria-label="Permissões"
-                        >
-                          🔑
-                        </button>
-                        <button
-                          onClick={() => handleDeleteEmail(item.email)}
-                          disabled={isDeletingLoading}
-                          className="text-red-500 hover:text-red-700 transition-colors bg-transparent border-none cursor-pointer p-0"
-                          aria-label="Excluir"
-                        >
-                          🗑️
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
+        {renderPermissionsModal()}
       </div>
-      {renderPermissionsModal()}
-    </div>
+    </ClientLayout>
   );
 };
 

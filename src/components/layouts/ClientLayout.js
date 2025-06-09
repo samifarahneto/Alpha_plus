@@ -2,10 +2,9 @@ import React from "react";
 
 const ClientLayout = ({ children }) => {
   return (
-    <div className="w-full">
-      <div className="w-full">
-        {/* Conteúdo da página */}
-        <div className="content-container">{children}</div>
+    <div className="flex flex-col min-h-screen">
+      <div className="flex-1 mt-0 pt-0 pl-4 pr-4 md:pl-20 md:pr-5">
+        {children}
       </div>
     </div>
   );

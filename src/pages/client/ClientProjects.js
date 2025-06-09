@@ -20,6 +20,7 @@ import ClientLayout from "../../components/layouts/ClientLayout";
 import "../../styles/Navigation.css";
 import DataTable from "../../components/DataTable";
 import "../../styles/Table.css";
+import Pagination from "../../components/Pagination";
 import {
   DndContext,
   closestCenter,
@@ -85,7 +86,7 @@ const ClientProjects = () => {
     const savedRowsPerPage = localStorage.getItem("clientProjectsRowsPerPage");
     return savedRowsPerPage ? parseInt(savedRowsPerPage) : 10;
   });
-  const [showRowsDropdown, setShowRowsDropdown] = useState(false);
+
   const [sortConfig] = useState(() => {
     // Sempre iniciar com ordenação por data decrescente
     return { key: "createdAt", direction: "desc" };
@@ -563,27 +564,6 @@ const ClientProjects = () => {
     }
   }, [allProjects, filters]);
 
-  // Adicionar useEffect para fechar o dropdown quando clicar fora
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      const dropdown = document.getElementById("rows-dropdown");
-      const button = document.getElementById("rows-button");
-      if (
-        dropdown &&
-        button &&
-        !dropdown.contains(event.target) &&
-        !button.contains(event.target)
-      ) {
-        setShowRowsDropdown(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, []);
-
   // useEffect para inicializar a ordem das colunas no modal
   useEffect(() => {
     if (showColumnSelector && modalColumnOrder.length === 0) {
@@ -594,12 +574,8 @@ const ClientProjects = () => {
   const handleRowsPerPageChange = (value) => {
     setRowsPerPage(value);
     setCurrentPage(1);
-    setShowRowsDropdown(false);
     localStorage.setItem("clientProjectsRowsPerPage", value.toString());
   };
-
-  // Calcular total de páginas para a paginação externa
-  const totalPages = Math.ceil(projects.length / rowsPerPage);
 
   // Função para mudar página
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
@@ -799,9 +775,9 @@ const ClientProjects = () => {
     if (!showFilesModal) return null;
 
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-        <div className="w-11/12 max-w-4xl max-h-[90vh] overflow-y-auto bg-white rounded-lg shadow-xl">
-          <div className="p-6">
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+        <div className="w-full max-w-4xl max-h-[90vh] overflow-y-auto bg-white rounded-lg shadow-xl">
+          <div className="p-4 sm:p-6">
             {/* Cabeçalho do Modal */}
             <div className="mb-6">
               <h3 className="text-xl font-semibold text-gray-900 text-center">
@@ -854,11 +830,11 @@ const ClientProjects = () => {
             </div>
 
             {/* Rodapé do Modal */}
-            <div className="flex justify-end mt-6">
+            <div className="flex justify-center mt-6">
               <button
                 type="button"
                 onClick={() => setShowFilesModal(false)}
-                className="px-4 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+                className="w-full sm:w-auto px-4 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
               >
                 Fechar
               </button>
@@ -1517,9 +1493,9 @@ const ClientProjects = () => {
 
   return (
     <ClientLayout>
-      <div className="w-full pt-0 pb-4 md:pb-6 lg:pb-8 space-y-4 md:space-y-6 lg:space-y-8">
-        <div className="text-center mb-6 lg:mb-8">
-          <h1 className="text-xl md:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
+      <div className="w-full pt-0 pb-4 md:pb-6 lg:pb-8 space-y-4 md:space-y-6 lg:space-y-8 px-4 sm:px-6">
+        <div className="text-center mb-4 sm:mb-6 lg:mb-8">
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-blue-600 sm:bg-gradient-to-r sm:from-blue-600 sm:to-purple-600 sm:bg-clip-text sm:text-transparent mb-2">
             Todos Projetos
           </h1>
         </div>
@@ -1684,88 +1660,14 @@ const ClientProjects = () => {
                   </div>
                 </div>
 
-                {/* Paginação */}
-                <div className="flex flex-col md:flex-row items-center justify-between gap-4 mt-4 p-4">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-gray-600">
-                      Projetos por página:
-                    </span>
-                    <div className="relative">
-                      <button
-                        id="rows-button"
-                        onClick={() => setShowRowsDropdown(!showRowsDropdown)}
-                        className="flex items-center gap-2 px-3 py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-50"
-                      >
-                        {rowsPerPage}
-                        <svg
-                          className="w-4 h-4 text-gray-500"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="2"
-                            d="M19 9l-7 7-7-7"
-                          />
-                        </svg>
-                      </button>
-                      {showRowsDropdown && (
-                        <div
-                          id="rows-dropdown"
-                          className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg"
-                        >
-                          <div className="py-1">
-                            {[10, 25, 50, 100].map((value) => (
-                              <button
-                                key={value}
-                                onClick={() => handleRowsPerPageChange(value)}
-                                className="w-full px-4 py-2 text-sm text-left hover:bg-gray-50"
-                              >
-                                {value}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => paginate(currentPage - 1)}
-                      disabled={currentPage === 1}
-                      className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-                    >
-                      Anterior
-                    </button>
-                    <div className="flex items-center gap-1">
-                      {Array.from({ length: totalPages }, (_, i) => i + 1).map(
-                        (page) => (
-                          <button
-                            key={page}
-                            onClick={() => paginate(page)}
-                            className={`w-8 h-8 text-sm border rounded-lg ${
-                              currentPage === page
-                                ? "bg-blue-500 text-white border-blue-500"
-                                : "border-gray-300 hover:bg-gray-50"
-                            }`}
-                          >
-                            {page}
-                          </button>
-                        )
-                      )}
-                    </div>
-                    <button
-                      onClick={() => paginate(currentPage + 1)}
-                      disabled={currentPage === totalPages}
-                      className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-                    >
-                      Próximo
-                    </button>
-                  </div>
-                </div>
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={Math.ceil(projects.length / rowsPerPage)}
+                  onPageChange={paginate}
+                  rowsPerPage={rowsPerPage}
+                  onRowsPerPageChange={handleRowsPerPageChange}
+                  totalItems={projects.length}
+                />
               </>
             )}
             {renderFilesModal()}

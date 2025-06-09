@@ -332,9 +332,9 @@ const ClientDivergence = () => {
     if (!showFilesModal) return null;
 
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-        <div className="w-11/12 max-w-4xl max-h-[90vh] overflow-y-auto bg-white rounded-lg shadow-xl">
-          <div className="p-6">
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+        <div className="w-full max-w-4xl max-h-[90vh] overflow-y-auto bg-white rounded-lg shadow-xl">
+          <div className="p-4 sm:p-6">
             <div className="mb-6">
               <h3 className="text-xl font-semibold text-gray-900 text-center">
                 Visualizar Arquivos
@@ -345,11 +345,11 @@ const ClientDivergence = () => {
               {selectedFiles.map((file, index) => (
                 <div
                   key={index}
-                  className="flex items-center justify-between p-4 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                  className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors gap-3 sm:gap-4"
                 >
                   <div className="flex-1">
                     <div className="flex flex-col">
-                      <span className="text-sm font-medium text-gray-900">
+                      <span className="text-sm font-medium text-gray-900 break-all">
                         {file.name}
                       </span>
                       <span className="text-sm text-gray-500">
@@ -357,7 +357,7 @@ const ClientDivergence = () => {
                       </span>
                     </div>
                   </div>
-                  <div className="ml-4">
+                  <div className="flex-shrink-0">
                     <button
                       type="button"
                       onClick={async (e) => {
@@ -371,7 +371,7 @@ const ClientDivergence = () => {
                           );
                         }
                       }}
-                      className="inline-flex items-center gap-2 px-3 py-1.5 text-sm text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+                      className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-3 py-1.5 text-sm text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
                     >
                       <FaDownload className="w-4 h-4" />
                       Download
@@ -381,11 +381,11 @@ const ClientDivergence = () => {
               ))}
             </div>
 
-            <div className="flex justify-end mt-6">
+            <div className="flex justify-center mt-6">
               <button
                 type="button"
                 onClick={() => setShowFilesModal(false)}
-                className="px-4 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+                className="w-full sm:w-auto px-4 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
               >
                 Fechar
               </button>
@@ -419,8 +419,8 @@ const ClientDivergence = () => {
     if (!showColumnSelector) return null;
 
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-        <div className="w-[90%] max-w-[420px] bg-white rounded-lg shadow-xl p-4">
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+        <div className="w-full max-w-sm sm:max-w-md bg-white rounded-lg shadow-xl p-4">
           <div className="mb-4">
             <h3 className="text-lg font-semibold text-gray-900 text-center">
               Personalizar Colunas
@@ -456,16 +456,16 @@ const ClientDivergence = () => {
             ))}
           </div>
 
-          <div className="mt-6 flex justify-center gap-4">
+          <div className="mt-6 flex flex-col sm:flex-row justify-center gap-2 sm:gap-4">
             <button
               onClick={handleSaveColumns}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              className="w-full sm:w-auto px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
               Salvar
             </button>
             <button
               onClick={() => setShowColumnSelector(false)}
-              className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+              className="w-full sm:w-auto px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
             >
               Fechar
             </button>
@@ -595,7 +595,10 @@ const ClientDivergence = () => {
 
   return (
     <ClientLayout>
-      <div className="space-y-6">
+      <div className="w-full pt-0 pb-4 md:pb-6 lg:pb-8 space-y-4 md:space-y-6 lg:space-y-8 px-4 sm:px-6">
+        <h1 className="text-2xl sm:text-3xl font-bold text-center mb-4 sm:mb-6 lg:mb-8 text-blue-600 sm:bg-gradient-to-r sm:from-blue-600 sm:to-purple-600 sm:bg-clip-text sm:text-transparent">
+          Pagamentos Divergentes
+        </h1>
         {/* Tabela */}
         <div className="w-full overflow-x-auto">
           <div className="w-full shadow-lg rounded-lg">
