@@ -156,21 +156,97 @@ const MasterProjects = ({ style, isMobile }) => {
       id: "projectNumber",
       label: "Nº",
       fixed: true,
+      minWidth: "30px",
+      maxWidth: "80px",
     },
-    { id: "client", label: "Cliente", fixed: true },
-    { id: "projectName", label: "Nome do Projeto", fixed: true },
-    { id: "createdAt", label: "Data" },
-    { id: "monthYear", label: "Mês/Ano" },
-    { id: "sourceLanguage", label: "Origem" },
-    { id: "targetLanguage", label: "Destino" },
-    { id: "pages", label: "Pgs." },
-    { id: "filesDisplay", label: "Arq." },
-    { id: "totalValue", label: "Valor (U$)" },
-    { id: "paymentStatus", label: "Status Pgto" },
-    { id: "deadline", label: "Prazo" },
-    { id: "clientType", label: "Tipo" },
-    { id: "projectStatus", label: "Status do Projeto", fixed: true },
-    { id: "translationStatus", label: "Status de Tradução", fixed: true },
+    {
+      id: "client",
+      label: "Cliente",
+      fixed: true,
+      minWidth: "50px",
+      maxWidth: "200px",
+    },
+    {
+      id: "projectName",
+      label: "Nome do Projeto",
+      fixed: true,
+      minWidth: "60px",
+      maxWidth: "300px",
+    },
+    {
+      id: "createdAt",
+      label: "Data",
+      minWidth: "40px",
+      maxWidth: "120px",
+    },
+    {
+      id: "monthYear",
+      label: "Mês/Ano",
+      minWidth: "40px",
+      maxWidth: "100px",
+    },
+    {
+      id: "sourceLanguage",
+      label: "Origem",
+      minWidth: "40px",
+      maxWidth: "150px",
+    },
+    {
+      id: "targetLanguage",
+      label: "Destino",
+      minWidth: "40px",
+      maxWidth: "150px",
+    },
+    {
+      id: "pages",
+      label: "Pgs.",
+      minWidth: "30px",
+      maxWidth: "80px",
+    },
+    {
+      id: "filesDisplay",
+      label: "Arq.",
+      minWidth: "30px",
+      maxWidth: "80px",
+    },
+    {
+      id: "totalValue",
+      label: "Valor (U$)",
+      minWidth: "50px",
+      maxWidth: "150px",
+    },
+    {
+      id: "paymentStatus",
+      label: "Status Pgto",
+      minWidth: "50px",
+      maxWidth: "150px",
+    },
+    {
+      id: "deadline",
+      label: "Prazo",
+      minWidth: "40px",
+      maxWidth: "120px",
+    },
+    {
+      id: "clientType",
+      label: "Tipo",
+      minWidth: "30px",
+      maxWidth: "100px",
+    },
+    {
+      id: "projectStatus",
+      label: "Status do Projeto",
+      fixed: true,
+      minWidth: "60px",
+      maxWidth: "200px",
+    },
+    {
+      id: "translationStatus",
+      label: "Status de Tradução",
+      fixed: true,
+      minWidth: "80px",
+      maxWidth: "250px",
+    },
   ];
 
   const fixedColumns = columns.filter((col) => col.fixed).map((col) => col.id);
@@ -1313,7 +1389,7 @@ const MasterProjects = ({ style, isMobile }) => {
   };
 
   return (
-    <div className="w-full px-4 md:px-10">
+    <div className="w-full">
       {!loading && (
         <div className="w-full">
           <div className="flex flex-col md:flex-row items-end gap-2.5 mb-8 px-2 md:px-10">
@@ -1645,8 +1721,8 @@ const MasterProjects = ({ style, isMobile }) => {
             </div>
           </div>
 
-          <div className="w-full overflow-x-auto">
-            <div className="w-full shadow-lg rounded-lg">
+          <div className="w-full">
+            <div className="w-full shadow-lg rounded-lg overflow-hidden">
               <DataTable
                 columns={columnOrder
                   .map((colId) => columns.find((col) => col.id === colId))
@@ -1813,6 +1889,52 @@ const MasterProjects = ({ style, isMobile }) => {
           {renderColumnSelector()}
         </div>
       )}
+
+      <style jsx>{`
+        .table-cell {
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+
+        .table-header-cell {
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+          position: relative;
+        }
+
+        .table-wrapper {
+          width: 100%;
+          overflow-x: auto;
+        }
+
+        .table-container {
+          width: 100%;
+          min-width: 100%;
+        }
+
+        /* Garantir que o conteúdo seja truncado corretamente */
+        .table-cell > * {
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+          max-width: 100%;
+        }
+
+        /* Evitar interferência com redimensionamento */
+        .table-header-cell[style*="width"] {
+          width: var(--column-width) !important;
+        }
+
+        /* Responsividade para dispositivos menores */
+        @media (max-width: 768px) {
+          .table-cell {
+            font-size: 0.75rem;
+            padding: 0.25rem;
+          }
+        }
+      `}</style>
     </div>
   );
 };

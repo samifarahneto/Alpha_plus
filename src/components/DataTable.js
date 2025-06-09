@@ -61,6 +61,16 @@ const DataTable = ({
       ...prev,
       [columnId]: width,
     }));
+
+    // Forçar atualização das células do corpo da tabela também
+    setTimeout(() => {
+      const cells = document.querySelectorAll(
+        `td[data-column-id="${columnId}"]`
+      );
+      cells.forEach((cell) => {
+        cell.style.width = `${width}px`;
+      });
+    }, 0);
   };
 
   const filteredAndSortedData = React.useMemo(() => {
@@ -404,9 +414,15 @@ const DataTable = ({
   }
 
   return (
-    <div className="table-wrapper overflow-x-auto firstMobile:overflow-x-scroll">
-      <div className="table-container relative">
-        <table className="w-full">
+    <div className="table-wrapper w-full">
+      <div className="table-container relative w-full">
+        <table
+          className="w-full border-collapse"
+          style={{
+            tableLayout:
+              Object.keys(columnWidths).length > 0 ? "fixed" : "auto",
+          }}
+        >
           <DataTableHeader
             columns={columns}
             columnOrder={columnOrder}
@@ -435,15 +451,14 @@ const DataTable = ({
                   return (
                     <td
                       key={columnId}
-                      className="table-cell !py-0 whitespace-nowrap truncate text-center h-8 text-xs font-medium border-r border-gray-200"
+                      data-column-id={columnId}
+                      className="table-cell !py-1 text-center h-8 text-xs font-medium border-r border-gray-200 overflow-hidden"
                       style={{
                         width: columnWidths[columnId]
                           ? `${columnWidths[columnId]}px`
                           : "auto",
-                        minWidth: "80px",
-                        maxWidth: columnWidths[columnId]
-                          ? `${columnWidths[columnId]}px`
-                          : "150px",
+                        minWidth: column.minWidth || "30px",
+                        maxWidth: column.maxWidth || "400px",
                       }}
                     >
                       {column.render

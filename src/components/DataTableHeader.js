@@ -8,6 +8,7 @@ const HeaderItem = ({ column, sortConfig, onSort, width, onWidthChange }) => {
 
   const handleMouseDown = (e) => {
     e.preventDefault();
+    e.stopPropagation();
     setIsResizing(true);
     setStartX(e.clientX);
     setStartWidth(thRef.current?.offsetWidth || 0);
@@ -17,8 +18,19 @@ const HeaderItem = ({ column, sortConfig, onSort, width, onWidthChange }) => {
     const handleMouseMove = (e) => {
       if (!isResizing) return;
 
+      e.preventDefault();
       const diff = e.clientX - startX;
-      const newWidth = Math.max(80, startWidth + diff); // Largura mínima de 80px
+      const minWidth = parseInt(column.minWidth) || 30;
+      const maxWidth = parseInt(column.maxWidth) || 400;
+      const newWidth = Math.max(
+        minWidth,
+        Math.min(maxWidth, startWidth + diff)
+      );
+
+      // Aplicar largura imediatamente ao elemento
+      if (thRef.current) {
+        thRef.current.style.width = `${newWidth}px`;
+      }
 
       if (onWidthChange) {
         onWidthChange(column.id, newWidth);
@@ -34,6 +46,7 @@ const HeaderItem = ({ column, sortConfig, onSort, width, onWidthChange }) => {
       document.addEventListener("mouseup", handleMouseUp);
       document.body.style.cursor = "col-resize";
       document.body.style.userSelect = "none";
+      document.documentElement.style.cursor = "col-resize";
     }
 
     return () => {
@@ -41,16 +54,26 @@ const HeaderItem = ({ column, sortConfig, onSort, width, onWidthChange }) => {
       document.removeEventListener("mouseup", handleMouseUp);
       document.body.style.cursor = "";
       document.body.style.userSelect = "";
+      document.documentElement.style.cursor = "";
     };
-  }, [isResizing, startX, startWidth, column.id, onWidthChange]);
+  }, [
+    isResizing,
+    startX,
+    startWidth,
+    column.id,
+    column.minWidth,
+    column.maxWidth,
+    onWidthChange,
+  ]);
 
   return (
     <th
       ref={thRef}
-      className="table-header-cell !py-0 whitespace-nowrap truncate text-center bg-white relative border-r border-gray-200"
+      className="table-header-cell !py-1 text-center bg-white relative border-r border-gray-200 overflow-hidden"
       style={{
         width: width ? `${width}px` : "auto",
-        minWidth: "80px",
+        minWidth: column.minWidth || "30px",
+        maxWidth: column.maxWidth || "400px",
       }}
     >
       <span className="flex items-center justify-center gap-1 h-6">
@@ -87,11 +110,16 @@ const HeaderItem = ({ column, sortConfig, onSort, width, onWidthChange }) => {
 
       {/* Resizer Handle */}
       <div
-        className="absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-blue-400 hover:bg-opacity-50 group"
+        className="absolute top-0 right-0 w-1 h-full cursor-col-resize group"
         onMouseDown={handleMouseDown}
-        style={{ zIndex: 10 }}
+        style={{
+          zIndex: 1001,
+          right: "0px",
+          background: "transparent",
+        }}
+        title="Arrastar para redimensionar coluna"
       >
-        <div className="w-full h-full group-hover:bg-blue-400 group-hover:bg-opacity-30" />
+        <div className="w-full h-full bg-gray-300 group-hover:bg-blue-400 transition-all duration-150 opacity-0 hover:opacity-60" />
       </div>
     </th>
   );

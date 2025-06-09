@@ -2,48 +2,48 @@ import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import logo from "../assets/logo.png";
-import { FaBars, FaTimes } from "react-icons/fa";
+import {
+  FaBars,
+  FaTimes,
+  FaCog,
+  FaSignOutAlt,
+  FaBox,
+  FaChevronDown,
+  FaChevronRight,
+  FaHome,
+  FaUsers,
+  FaUserTie,
+  FaClipboardList,
+  FaUser,
+  FaUserPlus,
+  FaClock,
+  FaCheckCircle,
+  FaCheck,
+  FaSpinner,
+  FaCheckDouble,
+  FaMoneyBillWave,
+  FaCreditCard,
+  FaPlus,
+  FaExclamationTriangle,
+  FaUndo,
+  FaFileAlt,
+  FaHourglassHalf,
+  FaHandshake,
+  FaSearch,
+  FaPlay,
+  FaTasks,
+  FaDollarSign,
+  FaReceipt,
+  FaChartLine,
+} from "react-icons/fa";
 
 const Header = () => {
   const { logout, user, loading } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-
-  useEffect(() => {
-    if (!loading && user?.userType) {
-      console.log("Usuário carregado:", user);
-    }
-  }, [loading, user]);
-
-  if (loading) {
-    return (
-      <nav className="bg-white shadow-md fixed w-full top-0 z-40">
-        <div className="w-full mx-auto">
-          <div className="flex justify-between items-end h-[70px] px-4 lg:px-[100px]">
-            <div className="flex items-end">
-              <img
-                src={logo}
-                alt="Logo"
-                className="h-[60px] w-auto object-contain"
-              />
-            </div>
-            <div className="hidden lg:flex items-end space-x-4">
-              <span className="text-gray-500">Carregando...</span>
-            </div>
-          </div>
-        </div>
-      </nav>
-    );
-  }
-
-  const toggleSidebar = () => {
-    setIsSidebarOpen(!isSidebarOpen);
-  };
-
-  const closeSidebar = () => {
-    setIsSidebarOpen(false);
-  };
+  const [isSidebarExpanded, setIsSidebarExpanded] = useState(false);
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const [isProjectsMenuOpen, setIsProjectsMenuOpen] = useState(true);
 
   const handleLogout = async () => {
     try {
@@ -62,178 +62,317 @@ const Header = () => {
     return publicRoutes.includes(location.pathname);
   };
 
-  const isMasterRoute = () => {
-    const isMaster = user?.userType === "master";
-    const isMasterPath = location.pathname.startsWith("/company/master");
-    return isMaster && isMasterPath;
+  const toggleSidebar = () => {
+    setIsSidebarExpanded(!isSidebarExpanded);
   };
 
-  const isB2BRoute = () => {
-    const isB2B = user?.userType === "b2b";
-    const isClientRoute = location.pathname.startsWith("/client");
-    return isB2B && isClientRoute;
+  const toggleProjectsMenu = () => {
+    setIsProjectsMenuOpen(!isProjectsMenuOpen);
   };
 
-  const isB2CRoute = () => {
-    const isB2C = user?.userType === "b2c";
-    const isClientRoute = location.pathname.startsWith("/client");
-    return isB2C && isClientRoute;
+  // Função para mapear ícones baseado na URL específica
+  const getIconForPath = (path) => {
+    // Mapeamento exato de URLs para ícones específicos
+    const iconMap = {
+      // Links principais
+      "/client/dashboard": <FaHome className="w-5 h-5 text-gray-600" />,
+      "/client/profile": <FaUser className="w-5 h-5 text-gray-600" />,
+      "/client/add-collaborator": (
+        <FaUserPlus className="w-5 h-5 text-gray-600" />
+      ),
+      "/company/master/dashboard": <FaHome className="w-5 h-5 text-gray-600" />,
+      "/company/master/clients": <FaUsers className="w-5 h-5 text-gray-600" />,
+      "/company/master/employees": (
+        <FaUserTie className="w-5 h-5 text-gray-600" />
+      ),
+      "/company/master/activity-logs": (
+        <FaClipboardList className="w-5 h-5 text-gray-600" />
+      ),
+
+      // Links de projetos - Master
+      "/company/master/projects": <FaTasks className="w-4 h-4 text-gray-500" />,
+      "/company/master/projects-budget": (
+        <FaClock className="w-4 h-4 text-gray-500" />
+      ),
+      "/company/master/projects-approval": (
+        <FaHandshake className="w-4 h-4 text-gray-500" />
+      ),
+      "/company/master/projects-approved": (
+        <FaCheck className="w-4 h-4 text-gray-500" />
+      ),
+      "/company/master/ongoing": <FaPlay className="w-4 h-4 text-gray-500" />,
+      "/company/master/projects-done": (
+        <FaCheckDouble className="w-4 h-4 text-gray-500" />
+      ),
+      "/company/master/projects-paid": (
+        <FaMoneyBillWave className="w-4 h-4 text-gray-500" />
+      ),
+      "/company/master/payments": (
+        <FaCreditCard className="w-4 h-4 text-gray-500" />
+      ),
+      "/company/master/add-project": (
+        <FaPlus className="w-4 h-4 text-gray-500" />
+      ),
+
+      // Links de projetos - Client
+      "/client/projects": <FaFileAlt className="w-4 h-4 text-gray-500" />,
+      "/client/projects/clientaddproject": (
+        <FaPlus className="w-4 h-4 text-gray-500" />
+      ),
+      "/client/projects-budget": (
+        <FaHourglassHalf className="w-4 h-4 text-gray-500" />
+      ),
+      "/client/projects-budget-received": (
+        <FaReceipt className="w-4 h-4 text-gray-500" />
+      ),
+      "/client/projects-divergence": (
+        <FaExclamationTriangle className="w-4 h-4 text-gray-500" />
+      ),
+      "/client/projects-analysis": (
+        <FaSearch className="w-4 h-4 text-gray-500" />
+      ),
+      "/client/going-on": <FaSpinner className="w-4 h-4 text-gray-500" />,
+      "/client/projects-done": (
+        <FaCheckCircle className="w-4 h-4 text-gray-500" />
+      ),
+      "/client/payments": <FaDollarSign className="w-4 h-4 text-gray-500" />,
+      "/client/projects-paid": (
+        <FaChartLine className="w-4 h-4 text-gray-500" />
+      ),
+      "/client/projects-refund": <FaUndo className="w-4 h-4 text-gray-500" />,
+    };
+
+    // Retorna o ícone específico ou um ícone padrão
+    return iconMap[path] || <FaBox className="w-5 h-5 text-gray-600" />;
   };
 
-  const isColabRoute = () => {
-    const isColab = user?.userType === "colab";
-    const isClientRoute = location.pathname.startsWith("/client");
-    return isColab && isClientRoute;
+  // Fechar dropdown quando clicar fora
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (isUserMenuOpen && !event.target.closest(".user-menu-container")) {
+        setIsUserMenuOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isUserMenuOpen]);
+
+  // Links específicos por tipo de usuário para o menu "Projetos"
+  const getProjectLinks = () => {
+    const userType = user?.userType;
+
+    if (userType === "master") {
+      return [
+        { to: "/company/master/projects", label: "Todos Projetos" },
+        {
+          to: "/company/master/projects-budget",
+          label: "Aguardando Orçamento",
+        },
+        {
+          to: "/company/master/projects-approval",
+          label: "Aguardando Aprovação",
+        },
+        { to: "/company/master/projects-approved", label: "Aprovados" },
+        { to: "/company/master/ongoing", label: "Em Andamento" },
+        { to: "/company/master/projects-done", label: "Projetos Concluídos" },
+        { to: "/company/master/projects-paid", label: "Projetos Pagos" },
+        { to: "/company/master/payments", label: "Pagamentos Pendentes" },
+        { to: "/company/master/add-project", label: "Criar Projeto" },
+      ];
+    } else {
+      // Links para clientes (B2B, B2C, Colab)
+      return [
+        { to: "/client/projects", label: "Todos Projetos" },
+        { to: "/client/projects/clientaddproject", label: "Criar Projetos" },
+        { to: "/client/projects-budget", label: "Aguardando Orçamento" },
+        { to: "/client/projects-budget-received", label: "Orçamento Recebido" },
+        { to: "/client/projects-divergence", label: "Em Divergência" },
+        { to: "/client/projects-analysis", label: "Em Análise" },
+        { to: "/client/going-on", label: "Em Andamento" },
+        { to: "/client/projects-done", label: "Projetos Concluídos" },
+        { to: "/client/payments", label: "Pagamentos Pendentes" },
+        { to: "/client/projects-paid", label: "Projetos Pagos" },
+        { to: "/client/projects-refund", label: "Em Reembolso" },
+      ];
+    }
   };
 
-  const canAccessCollaborators = () => {
-    return user?.userType === "b2b" || user?.userType === "b2c";
+  // Links principais de navegação (não são projetos)
+  const getMainLinks = () => {
+    const userType = user?.userType;
+
+    if (userType === "master") {
+      return [
+        { to: "/company/master/dashboard", label: "Dashboard" },
+        { to: "/company/master/clients", label: "Clientes" },
+        { to: "/company/master/employees", label: "Funcionários" },
+        { to: "/company/master/activity-logs", label: "Log de Atividades" },
+      ];
+    } else {
+      const links = [
+        { to: "/client/dashboard", label: "Dashboard" },
+        { to: "/client/profile", label: "Meu Perfil" },
+      ];
+
+      // Adicionar colaboradores se for b2b ou b2c
+      if (userType === "b2b" || userType === "b2c") {
+        links.splice(1, 0, {
+          to: "/client/add-collaborator",
+          label: "Colaboradores",
+        });
+      }
+
+      return links;
+    }
   };
 
-  const renderPublicHeader = () => {
-    const publicLinks = [
-      { to: "/", label: "Início", activePath: "/" },
-      { to: "/register", label: "Registrar-se", activePath: "/register" },
-      { to: "/login", label: "Login", activePath: "/login" },
-    ];
-
+  const isActive = (path) => {
     return (
-      <>
-        <nav className="bg-white shadow-md fixed w-full top-0 z-40">
-          <div className="w-full mx-auto">
-            <div className="flex items-end h-[70px] px-4 lg:px-[100px]">
-              {/* Menu Button - Mobile/Tablet */}
-              <button
-                onClick={toggleSidebar}
-                className="lg:hidden text-gray-700 hover:text-primary p-2 self-end"
-              >
-                <FaBars className="w-6 h-6" />
-              </button>
+      location.pathname === path ||
+      location.pathname.includes(path.split("/").pop() || "")
+    );
+  };
 
-              {/* Logo - Mobile & Desktop */}
-              <Link
-                to={user ? "/client/dashboard" : "/"}
-                className="flex-1 lg:flex-none flex justify-center lg:justify-start"
-              >
-                <img
-                  src={logo}
-                  alt="Logo"
-                  className="h-[60px] w-auto object-contain"
-                />
-              </Link>
-
-              {/* Navigation Links - Desktop */}
-              <div className="hidden lg:flex items-end space-x-2 xl:space-x-4 ml-auto self-end">
-                {publicLinks.map((link) => (
-                  <Link
-                    key={link.to}
-                    to={link.to}
-                    className={`text-gray-700 hover:text-primary px-2 xl:px-3 py-2 rounded-md text-xs xl:text-sm font-medium ${
-                      location.pathname === link.activePath
-                        ? "text-primary font-bold"
-                        : ""
-                    }`}
-                  >
-                    {link.label}
-                  </Link>
-                ))}
-              </div>
+  if (loading) {
+    return (
+      <header className="fixed top-0 left-0 right-0 bg-white shadow-md z-50">
+        <nav className="w-full px-4 lg:px-[100px]">
+          <div className="flex justify-between items-center h-[70px]">
+            <div className="flex items-center">
+              <img
+                src={logo}
+                alt="Logo"
+                className="h-[60px] w-auto object-contain"
+              />
+            </div>
+            <div className="hidden lg:flex items-center space-x-4">
+              <span className="text-gray-500">Carregando...</span>
             </div>
           </div>
         </nav>
+      </header>
+    );
+  }
 
-        {/* Sidebar Mobile/Tablet */}
-        <div
-          className={`fixed inset-y-0 left-0 transform ${
-            isSidebarOpen ? "translate-x-0" : "-translate-x-full"
-          } w-64 bg-white shadow-lg transition-transform duration-300 ease-in-out z-50`}
-        >
-          <div className="flex justify-between items-center p-4 border-b">
-            <img src={logo} alt="Logo" className="h-8 w-auto" />
-            <button
-              onClick={closeSidebar}
-              className="text-gray-500 hover:text-gray-700"
-            >
-              <FaTimes className="w-5 h-5" />
-            </button>
-          </div>
-          <div className="p-4">
-            <nav className="flex flex-col space-y-2">
+  // Header para rotas públicas
+  if (isPublicRoute()) {
+    const publicLinks = [
+      { to: "/", label: "Início" },
+      { to: "/register", label: "Registrar-se" },
+      { to: "/login", label: "Login" },
+    ];
+
+    return (
+      <header className="fixed top-0 left-0 right-0 bg-white shadow-md z-50">
+        <nav className="w-full px-4 lg:px-[100px]">
+          <div className="flex justify-between items-center h-[70px]">
+            {/* Logo */}
+            <Link to="/" className="flex items-center">
+              <img
+                src={logo}
+                alt="Logo"
+                className="h-[60px] w-auto object-contain"
+              />
+            </Link>
+
+            {/* Navigation Links - Desktop */}
+            <div className="hidden lg:flex items-center space-x-6">
               {publicLinks.map((link) => (
                 <Link
                   key={link.to}
                   to={link.to}
-                  onClick={closeSidebar}
                   className={`text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium ${
-                    location.pathname === link.activePath
-                      ? "text-primary font-bold bg-blue-50"
-                      : ""
+                    isActive(link.to) ? "text-primary font-bold" : ""
                   }`}
                 >
                   {link.label}
                 </Link>
               ))}
-            </nav>
-          </div>
-        </div>
+            </div>
 
-        {/* Overlay para fechar o menu ao clicar fora */}
-        {isSidebarOpen && (
-          <div
-            className="fixed inset-0 bg-black bg-opacity-50 z-40"
-            onClick={closeSidebar}
-          />
-        )}
-      </>
-    );
-  };
-
-  const renderMasterHeader = () => {
-    const masterLinks = [
-      {
-        to: "/company/master/dashboard",
-        label: "Dashboard",
-        activePath: "/dashboard",
-      },
-      {
-        to: "/company/master/clients",
-        label: "Clientes",
-        activePath: "/clients",
-      },
-      {
-        to: "/company/master/employees",
-        label: "Funcionários",
-        activePath: "/employees",
-      },
-      {
-        to: "/company/master/projects",
-        label: "Projetos",
-        activePath: "/projects",
-      },
-      {
-        to: "/company/master/activity-logs",
-        label: "Log de Atividades",
-        activePath: "/activity-logs",
-      },
-    ];
-
-    return (
-      <>
-        <nav className="bg-white shadow-md fixed w-full top-0 z-40">
-          <div className="w-full mx-auto">
-            <div className="flex items-end h-[70px] px-4 lg:px-[100px] relative">
-              {/* Menu Button - Mobile/Tablet */}
+            {/* Menu Mobile */}
+            <div className="lg:hidden">
               <button
                 onClick={toggleSidebar}
-                className="lg:hidden text-gray-700 hover:text-primary p-2 self-end"
+                className="text-gray-700 hover:text-primary p-2"
               >
                 <FaBars className="w-6 h-6" />
               </button>
+            </div>
+          </div>
+        </nav>
 
-              {/* Logo - Mobile & Desktop */}
+        {/* Sidebar Mobile para páginas públicas */}
+        {isSidebarExpanded && (
+          <>
+            <div
+              className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
+              onClick={toggleSidebar}
+            />
+            <div className="fixed top-0 left-0 h-full w-64 bg-white shadow-lg z-50 lg:hidden">
+              <div className="flex justify-between items-center p-4 border-b">
+                <img src={logo} alt="Logo" className="h-8 w-auto" />
+                <button
+                  onClick={toggleSidebar}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  <FaTimes className="w-5 h-5" />
+                </button>
+              </div>
+              <div className="p-4">
+                <nav className="flex flex-col space-y-2">
+                  {publicLinks.map((link) => (
+                    <Link
+                      key={link.to}
+                      to={link.to}
+                      onClick={toggleSidebar}
+                      className={`text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium ${
+                        isActive(link.to)
+                          ? "text-primary font-bold bg-blue-50"
+                          : ""
+                      }`}
+                    >
+                      {link.label}
+                    </Link>
+                  ))}
+                </nav>
+              </div>
+            </div>
+          </>
+        )}
+      </header>
+    );
+  }
+
+  // Header para usuários autenticados
+  const userType = user?.userType;
+  const projectLinks = getProjectLinks();
+  const mainLinks = getMainLinks();
+
+  return (
+    <>
+      {/* Header Fixo */}
+      <header className="fixed top-0 left-0 right-0 bg-white shadow-md z-50">
+        <nav className="w-full px-4 lg:px-[100px]">
+          <div className="flex justify-between items-center h-[70px]">
+            {/* Menu + Logo */}
+            <div className="flex items-center">
+              <button
+                onClick={toggleSidebar}
+                className="text-gray-700 hover:text-primary p-2 mr-2"
+              >
+                <FaBars className="w-6 h-6" />
+              </button>
               <Link
-                to="/company/master/dashboard"
-                className="flex-1 lg:flex-none flex justify-center lg:justify-start"
+                to={
+                  userType === "master"
+                    ? "/company/master/dashboard"
+                    : "/client/dashboard"
+                }
+                className="flex items-center"
               >
                 <img
                   src={logo}
@@ -241,394 +380,141 @@ const Header = () => {
                   className="h-[60px] w-auto object-contain"
                 />
               </Link>
+            </div>
 
-              {/* User Info - Desktop - Apenas em resoluções muito altas */}
-              <div className="hidden 2xl:block absolute left-1/2 transform -translate-x-1/2 text-center self-end">
-                <p className="text-gray-700 text-sm px-3 py-2 whitespace-nowrap">
-                  Olá, {user?.email}
-                </p>
-              </div>
+            {/* User Info - Centro */}
+            <div className="hidden lg:block">
+              <p className="text-gray-700 text-sm">Olá, {user?.email}</p>
+            </div>
 
-              {/* User Info - Desktop - Versão compacta para resoluções intermediárias */}
-              <div className="hidden lg:block 2xl:hidden ml-4 self-end">
-                <p className="text-gray-700 text-xs px-2 py-2 whitespace-nowrap truncate max-w-[120px]">
-                  {user?.email}
-                </p>
-              </div>
+            {/* Menu de Configuração */}
+            <div className="relative user-menu-container">
+              <button
+                onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                className="flex items-center justify-center w-10 h-10 bg-gray-100 hover:bg-gray-200 rounded-full transition-colors duration-200"
+              >
+                <FaCog className="w-5 h-5 text-gray-600" />
+              </button>
 
-              {/* Navigation Links - Desktop */}
-              <div className="hidden lg:flex items-end space-x-1 xl:space-x-2 2xl:ml-auto self-end">
-                {masterLinks.map((link) => (
-                  <Link
-                    key={link.to}
-                    to={link.to}
-                    className={`text-gray-700 hover:text-primary px-1 xl:px-2 py-2 rounded-md text-xs xl:text-sm font-medium whitespace-nowrap ${
-                      location.pathname.includes(link.activePath)
-                        ? "text-primary font-bold"
-                        : ""
-                    }`}
+              {/* Dropdown Menu */}
+              {isUserMenuOpen && (
+                <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 border">
+                  <button
+                    onClick={() => {
+                      setIsUserMenuOpen(false);
+                      handleLogout();
+                    }}
+                    className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                   >
-                    {link.label}
-                  </Link>
-                ))}
-                <button
-                  onClick={handleLogout}
-                  className="text-gray-700 hover:text-primary px-1 xl:px-2 py-2 rounded-md text-xs xl:text-sm font-medium whitespace-nowrap"
-                >
-                  Sair
-                </button>
-              </div>
+                    <FaSignOutAlt className="w-4 h-4 mr-2" />
+                    Sair
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </nav>
+      </header>
 
-        {/* Sidebar Mobile/Tablet */}
-        <div
-          className={`fixed inset-y-0 left-0 transform ${
-            isSidebarOpen ? "translate-x-0" : "-translate-x-full"
-          } w-64 bg-white shadow-lg transition-transform duration-300 ease-in-out z-50`}
-        >
-          <div className="flex justify-between items-center p-4 border-b">
-            <img src={logo} alt="Logo" className="h-8 w-auto" />
-            <button
-              onClick={closeSidebar}
-              className="text-gray-500 hover:text-gray-700"
-            >
-              <FaTimes className="w-5 h-5" />
-            </button>
-          </div>
-          <div className="p-4">
-            <p className="text-gray-700 text-sm mb-4">Olá, {user?.email}</p>
-            <nav className="flex flex-col space-y-2">
-              {masterLinks.map((link) => (
+      {/* Sidebar */}
+      <aside
+        className={`fixed top-[70px] left-0 bottom-0 bg-white shadow-lg z-40 transition-all duration-300 ${
+          isSidebarExpanded ? "w-64" : "w-[70px]"
+        }`}
+      >
+        <div className="flex flex-col h-full">
+          <nav className="flex-1 py-4">
+            <div className="px-2 space-y-2">
+              {/* Links Principais */}
+              {mainLinks.map((link) => (
                 <Link
                   key={link.to}
                   to={link.to}
-                  onClick={closeSidebar}
-                  className={`text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium ${
-                    location.pathname.includes(link.activePath)
-                      ? "text-primary font-bold bg-blue-50"
+                  className={`flex items-center ${
+                    isSidebarExpanded ? "px-3" : "justify-center"
+                  } py-3 text-gray-700 hover:bg-gray-100 rounded-md transition-colors duration-200 ${
+                    isActive(link.to)
+                      ? "text-primary bg-blue-50 font-medium"
                       : ""
                   }`}
+                  title={!isSidebarExpanded ? link.label : ""}
                 >
-                  {link.label}
+                  {getIconForPath(link.to)}
+                  {isSidebarExpanded && (
+                    <span className="ml-3 text-sm font-medium">
+                      {link.label}
+                    </span>
+                  )}
                 </Link>
               ))}
+
+              {/* Menu Projetos */}
               <button
-                onClick={() => {
-                  closeSidebar();
-                  handleLogout();
-                }}
-                className="text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium text-left"
+                onClick={toggleProjectsMenu}
+                className={`w-full flex items-center ${
+                  isSidebarExpanded ? "justify-between px-3" : "justify-center"
+                } py-3 text-gray-700 hover:bg-gray-100 rounded-md transition-colors duration-200`}
+                title={!isSidebarExpanded ? "Projetos" : ""}
               >
-                Sair
-              </button>
-            </nav>
-          </div>
-        </div>
-
-        {/* Overlay para fechar o menu ao clicar fora */}
-        {isSidebarOpen && (
-          <div
-            className="fixed inset-0 bg-black bg-opacity-50 z-40"
-            onClick={closeSidebar}
-          />
-        )}
-      </>
-    );
-  };
-
-  const renderB2BOrB2CHeader = () => {
-    const clientLinks = [
-      { to: "/client/dashboard", label: "Dashboard", activePath: "/dashboard" },
-      {
-        to: "/client/projects/clientaddproject",
-        label: "Criar Projetos",
-        activePath: "/clientaddproject",
-      },
-      { to: "/client/projects", label: "Projetos", activePath: "/projects" },
-      { to: "/client/profile", label: "Meu Perfil", activePath: "/profile" },
-    ];
-
-    if (canAccessCollaborators()) {
-      clientLinks.splice(3, 0, {
-        to: "/client/add-collaborator",
-        label: "Colaboradores",
-        activePath: "/add-collaborator",
-      });
-    }
-
-    return (
-      <>
-        <nav className="bg-white shadow-md fixed w-full top-0 z-40">
-          <div className="w-full mx-auto">
-            <div className="flex items-end h-[70px] px-4 lg:px-[100px] relative">
-              {/* Menu Button - Mobile/Tablet */}
-              <button
-                onClick={toggleSidebar}
-                className="lg:hidden text-gray-700 hover:text-primary p-2 self-end"
-              >
-                <FaBars className="w-6 h-6" />
+                <div className="flex items-center">
+                  <FaBox className="w-5 h-5 text-gray-600" />
+                  {isSidebarExpanded && (
+                    <span className="ml-3 text-sm font-medium">Projetos</span>
+                  )}
+                </div>
+                {isSidebarExpanded && (
+                  <div className="transform transition-transform duration-200">
+                    {isProjectsMenuOpen ? (
+                      <FaChevronDown className="w-4 h-4 text-gray-400" />
+                    ) : (
+                      <FaChevronRight className="w-4 h-4 text-gray-400" />
+                    )}
+                  </div>
+                )}
               </button>
 
-              {/* Logo - Mobile & Desktop */}
-              <Link
-                to="/client/dashboard"
-                className="flex-1 lg:flex-none flex justify-center lg:justify-start"
-              >
-                <img
-                  src={logo}
-                  alt="Logo"
-                  className="h-[60px] w-auto object-contain"
-                />
-              </Link>
-
-              {/* User Info - Desktop - Apenas em resoluções muito altas */}
-              <div className="hidden 2xl:block absolute left-1/2 transform -translate-x-1/2 text-center self-end">
-                <p className="text-gray-700 text-sm px-3 py-2 whitespace-nowrap">
-                  Olá, {user?.email}
-                </p>
-              </div>
-
-              {/* User Info - Desktop - Versão compacta para resoluções intermediárias */}
-              <div className="hidden lg:block 2xl:hidden ml-4 self-end">
-                <p className="text-gray-700 text-xs px-2 py-2 whitespace-nowrap truncate max-w-[120px]">
-                  {user?.email}
-                </p>
-              </div>
-
-              {/* Navigation Links - Desktop */}
-              <div className="hidden lg:flex items-end space-x-1 xl:space-x-2 2xl:ml-auto self-end">
-                {clientLinks.map((link) => (
-                  <Link
-                    key={link.to}
-                    to={link.to}
-                    className={`text-gray-700 hover:text-primary px-1 xl:px-2 py-2 rounded-md text-xs xl:text-sm font-medium whitespace-nowrap ${
-                      location.pathname.includes(link.activePath)
-                        ? "text-primary font-bold"
-                        : ""
-                    }`}
-                  >
-                    {link.label}
-                  </Link>
-                ))}
-                <button
-                  onClick={handleLogout}
-                  className="text-gray-700 hover:text-primary px-1 xl:px-2 py-2 rounded-md text-xs xl:text-sm font-medium whitespace-nowrap"
-                >
-                  Sair
-                </button>
-              </div>
+              {/* Sublinks dos Projetos */}
+              {isProjectsMenuOpen && isSidebarExpanded && (
+                <div className="ml-4 mt-2 space-y-1 border-l border-gray-200 pl-4">
+                  {projectLinks.map((link) => (
+                    <Link
+                      key={link.to}
+                      to={link.to}
+                      className={`flex items-center px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors duration-200 ${
+                        isActive(link.to)
+                          ? "text-primary bg-blue-50 font-medium"
+                          : ""
+                      }`}
+                    >
+                      {getIconForPath(link.to)}
+                      <span className="ml-2">{link.label}</span>
+                    </Link>
+                  ))}
+                </div>
+              )}
             </div>
-          </div>
-        </nav>
-
-        {/* Sidebar Mobile/Tablet */}
-        <div
-          className={`fixed inset-y-0 left-0 transform ${
-            isSidebarOpen ? "translate-x-0" : "-translate-x-full"
-          } w-64 bg-white shadow-lg transition-transform duration-300 ease-in-out z-50`}
-        >
-          <div className="flex justify-between items-center p-4 border-b">
-            <img src={logo} alt="Logo" className="h-8 w-auto" />
-            <button
-              onClick={closeSidebar}
-              className="text-gray-500 hover:text-gray-700"
-            >
-              <FaTimes className="w-5 h-5" />
-            </button>
-          </div>
-          <div className="p-4">
-            <p className="text-gray-700 text-sm mb-4">Olá, {user?.email}</p>
-            <nav className="flex flex-col space-y-2">
-              {clientLinks.map((link) => (
-                <Link
-                  key={link.to}
-                  to={link.to}
-                  onClick={closeSidebar}
-                  className={`text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium ${
-                    location.pathname.includes(link.activePath)
-                      ? "text-primary font-bold bg-blue-50"
-                      : ""
-                  }`}
-                >
-                  {link.label}
-                </Link>
-              ))}
-              <button
-                onClick={() => {
-                  closeSidebar();
-                  handleLogout();
-                }}
-                className="text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium text-left"
-              >
-                Sair
-              </button>
-            </nav>
-          </div>
+          </nav>
         </div>
+      </aside>
 
-        {/* Overlay para fechar o menu ao clicar fora */}
-        {isSidebarOpen && (
-          <div
-            className="fixed inset-0 bg-black bg-opacity-50 z-40"
-            onClick={closeSidebar}
-          />
-        )}
-      </>
-    );
-  };
-
-  const renderColabHeader = () => {
-    const colabLinks = [
-      { to: "/client/dashboard", label: "Dashboard", activePath: "/dashboard" },
-      {
-        to: "/client/projects/clientaddproject",
-        label: "Criar Projetos",
-        activePath: "/clientaddproject",
-      },
-      { to: "/client/projects", label: "Projetos", activePath: "/projects" },
-      { to: "/client/profile", label: "Meu Perfil", activePath: "/profile" },
-    ];
-
-    return (
-      <>
-        <nav className="bg-white shadow-md fixed w-full top-0 z-40">
-          <div className="w-full mx-auto">
-            <div className="flex items-end h-[70px] px-4 lg:px-[100px] relative">
-              {/* Menu Button - Mobile/Tablet */}
-              <button
-                onClick={toggleSidebar}
-                className="lg:hidden text-gray-700 hover:text-primary p-2 self-end"
-              >
-                <FaBars className="w-6 h-6" />
-              </button>
-
-              {/* Logo - Mobile & Desktop */}
-              <Link
-                to="/client/dashboard"
-                className="flex-1 lg:flex-none flex justify-center lg:justify-start"
-              >
-                <img
-                  src={logo}
-                  alt="Logo"
-                  className="h-[60px] w-auto object-contain"
-                />
-              </Link>
-
-              {/* User Info - Desktop - Apenas em resoluções muito altas */}
-              <div className="hidden 2xl:block absolute left-1/2 transform -translate-x-1/2 text-center self-end">
-                <p className="text-gray-700 text-sm px-3 py-2 whitespace-nowrap">
-                  Olá, {user?.email}
-                </p>
-              </div>
-
-              {/* User Info - Desktop - Versão compacta para resoluções intermediárias */}
-              <div className="hidden lg:block 2xl:hidden ml-4 self-end">
-                <p className="text-gray-700 text-xs px-2 py-2 whitespace-nowrap truncate max-w-[120px]">
-                  {user?.email}
-                </p>
-              </div>
-
-              {/* Navigation Links - Desktop */}
-              <div className="hidden lg:flex items-end space-x-1 xl:space-x-2 2xl:ml-auto self-end">
-                {colabLinks.map((link) => (
-                  <Link
-                    key={link.to}
-                    to={link.to}
-                    className={`text-gray-700 hover:text-primary px-1 xl:px-2 py-2 rounded-md text-xs xl:text-sm font-medium whitespace-nowrap ${
-                      location.pathname.includes(link.activePath)
-                        ? "text-primary font-bold"
-                        : ""
-                    }`}
-                  >
-                    {link.label}
-                  </Link>
-                ))}
-                <button
-                  onClick={handleLogout}
-                  className="text-gray-700 hover:text-primary px-1 xl:px-2 py-2 rounded-md text-xs xl:text-sm font-medium whitespace-nowrap"
-                >
-                  Sair
-                </button>
-              </div>
-            </div>
-          </div>
-        </nav>
-
-        {/* Sidebar Mobile/Tablet */}
+      {/* Overlay para mobile */}
+      {isSidebarExpanded && (
         <div
-          className={`fixed inset-y-0 left-0 transform ${
-            isSidebarOpen ? "translate-x-0" : "-translate-x-full"
-          } w-64 bg-white shadow-lg transition-transform duration-300 ease-in-out z-50`}
-        >
-          <div className="flex justify-between items-center p-4 border-b">
-            <img src={logo} alt="Logo" className="h-8 w-auto" />
-            <button
-              onClick={closeSidebar}
-              className="text-gray-500 hover:text-gray-700"
-            >
-              <FaTimes className="w-5 h-5" />
-            </button>
-          </div>
-          <div className="p-4">
-            <p className="text-gray-700 text-sm mb-4">Olá, {user?.email}</p>
-            <nav className="flex flex-col space-y-2">
-              {colabLinks.map((link) => (
-                <Link
-                  key={link.to}
-                  to={link.to}
-                  onClick={closeSidebar}
-                  className={`text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium ${
-                    location.pathname.includes(link.activePath)
-                      ? "text-primary font-bold bg-blue-50"
-                      : ""
-                  }`}
-                >
-                  {link.label}
-                </Link>
-              ))}
-              <button
-                onClick={() => {
-                  closeSidebar();
-                  handleLogout();
-                }}
-                className="text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium text-left"
-              >
-                Sair
-              </button>
-            </nav>
-          </div>
-        </div>
+          className="fixed inset-0 bg-black bg-opacity-50 z-30 lg:hidden"
+          onClick={toggleSidebar}
+        />
+      )}
 
-        {/* Overlay para fechar o menu ao clicar fora */}
-        {isSidebarOpen && (
-          <div
-            className="fixed inset-0 bg-black bg-opacity-50 z-40"
-            onClick={closeSidebar}
-          />
-        )}
-      </>
-    );
-  };
-
-  if (isPublicRoute()) {
-    return renderPublicHeader();
-  }
-
-  if (isMasterRoute()) {
-    return renderMasterHeader();
-  }
-
-  if (isB2BRoute() || isB2CRoute()) {
-    return renderB2BOrB2CHeader();
-  }
-
-  if (isColabRoute()) {
-    return renderColabHeader();
-  }
-
-  return renderPublicHeader();
+      {/* Ajuste do conteúdo principal */}
+      <div
+        className={`transition-all duration-300 pt-[70px] ${
+          isSidebarExpanded ? "lg:ml-64" : "lg:ml-[70px]"
+        }`}
+      >
+        {/* Conteúdo será renderizado aqui */}
+      </div>
+    </>
+  );
 };
 
 export default Header;

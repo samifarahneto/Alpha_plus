@@ -1504,8 +1504,8 @@ const ClientProjects = () => {
               <span className="text-xs text-red-500">
                 {row.collection === "b2bdocsaved" ||
                 row.collection === "b2cdocsaved"
-                  ? "Solicitar Orçamento"
-                  : "Aguardando Orçamento"}
+                  ? "Sol. Orçamento"
+                  : "Ag, Orçamento"}
               </span>
             )}
           </div>
@@ -1523,7 +1523,7 @@ const ClientProjects = () => {
     <ClientLayout>
       {!loading && (
         <>
-          <div className="flex flex-col md:flex-row items-end gap-2.5 mb-8 px-2 md:px-10">
+          <div className="flex flex-col md:flex-row items-end gap-2.5 mb-8">
             {/* Versão Mobile - Aba Expansível */}
             <div className="w-full lg:hidden">
               <button
