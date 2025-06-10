@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { useNotifications } from "../contexts/NotificationContext";
+import { useClientNotifications } from "../hooks/useClientNotifications";
 import { useMediaQuery } from "react-responsive";
 import logo from "../assets/logo.png";
 import {
@@ -48,7 +49,17 @@ const Header = () => {
     approvedCount,
     inAnalysisCount,
     onGoingCount,
+    clientUnreadCount,
+    clientBudgetCount,
+    clientBudgetReadyCount,
+    clientDivergenceCount,
+    clientAnalysisCount,
+    clientGoingOnCount,
+    clientPaymentsCount,
   } = useNotifications();
+
+  // Hook centralizado para carregar notificações do cliente
+  useClientNotifications();
   const location = useLocation();
   const navigate = useNavigate();
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(false);
@@ -280,15 +291,43 @@ const Header = () => {
     } else {
       // Links para clientes (B2B, B2C, Colab)
       return [
-        { to: "/client/projects", label: "Todos Projetos" },
+        {
+          to: "/client/projects",
+          label: "Todos Projetos",
+          notificationCount: clientUnreadCount,
+        },
         { to: "/client/projects/clientaddproject", label: "Criar Projetos" },
-        { to: "/client/projects-budget", label: "Aguardando Orçamento" },
-        { to: "/client/projects-budget-received", label: "Orçamento Recebido" },
-        { to: "/client/projects-divergence", label: "Em Divergência" },
-        { to: "/client/projects-analysis", label: "Em Análise" },
-        { to: "/client/going-on", label: "Em Andamento" },
+        {
+          to: "/client/projects-budget",
+          label: "Aguardando Orçamento",
+          notificationCount: clientBudgetCount,
+        },
+        {
+          to: "/client/projects-budget-received",
+          label: "Orçamento Recebido",
+          notificationCount: clientBudgetReadyCount,
+        },
+        {
+          to: "/client/projects-divergence",
+          label: "Em Divergência",
+          notificationCount: clientDivergenceCount,
+        },
+        {
+          to: "/client/projects-analysis",
+          label: "Em Análise",
+          notificationCount: clientAnalysisCount,
+        },
+        {
+          to: "/client/going-on",
+          label: "Em Andamento",
+          notificationCount: clientGoingOnCount,
+        },
         { to: "/client/projects-done", label: "Projetos Concluídos" },
-        { to: "/client/payments", label: "Pagamentos Pendentes" },
+        {
+          to: "/client/payments",
+          label: "Pagamentos Pendentes",
+          notificationCount: clientPaymentsCount,
+        },
         { to: "/client/projects-paid", label: "Projetos Pagos" },
         { to: "/client/projects-refund", label: "Em Reembolso" },
       ];
@@ -610,6 +649,38 @@ const Header = () => {
                                 onGoingCount}
                           </span>
                         )}
+                      {/* Badge de notificação para clientes quando sidebar está minimizado */}
+                      {!shouldShowText() &&
+                        (userType === "b2b" ||
+                          userType === "b2c" ||
+                          userType === "colab") &&
+                        clientUnreadCount +
+                          clientBudgetCount +
+                          clientBudgetReadyCount +
+                          clientDivergenceCount +
+                          clientAnalysisCount +
+                          clientGoingOnCount +
+                          clientPaymentsCount >
+                          0 && (
+                          <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold px-1 py-0.5 rounded-full min-w-[16px] h-4 flex items-center justify-center text-center">
+                            {clientUnreadCount +
+                              clientBudgetCount +
+                              clientBudgetReadyCount +
+                              clientDivergenceCount +
+                              clientAnalysisCount +
+                              clientGoingOnCount +
+                              clientPaymentsCount >
+                            9
+                              ? "9+"
+                              : clientUnreadCount +
+                                clientBudgetCount +
+                                clientBudgetReadyCount +
+                                clientDivergenceCount +
+                                clientAnalysisCount +
+                                clientGoingOnCount +
+                                clientPaymentsCount}
+                          </span>
+                        )}
                     </div>
                     {shouldShowText() && (
                       <span className="ml-2 sm:ml-3 text-xs sm:text-sm font-medium">
@@ -643,6 +714,37 @@ const Header = () => {
                                 approvedCount +
                                 inAnalysisCount +
                                 onGoingCount}
+                          </span>
+                        )}
+                      {/* Badge de notificação para clientes quando sidebar está expandido */}
+                      {(userType === "b2b" ||
+                        userType === "b2c" ||
+                        userType === "colab") &&
+                        clientUnreadCount +
+                          clientBudgetCount +
+                          clientBudgetReadyCount +
+                          clientDivergenceCount +
+                          clientAnalysisCount +
+                          clientGoingOnCount +
+                          clientPaymentsCount >
+                          0 && (
+                          <span className="bg-red-500 text-white text-xs font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
+                            {clientUnreadCount +
+                              clientBudgetCount +
+                              clientBudgetReadyCount +
+                              clientDivergenceCount +
+                              clientAnalysisCount +
+                              clientGoingOnCount +
+                              clientPaymentsCount >
+                            99
+                              ? "99+"
+                              : clientUnreadCount +
+                                clientBudgetCount +
+                                clientBudgetReadyCount +
+                                clientDivergenceCount +
+                                clientAnalysisCount +
+                                clientGoingOnCount +
+                                clientPaymentsCount}
                           </span>
                         )}
                       <div className="transform transition-transform duration-200">

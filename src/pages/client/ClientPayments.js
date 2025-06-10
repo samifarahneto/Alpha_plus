@@ -10,6 +10,7 @@ import {
   getDocs,
 } from "firebase/firestore";
 import { auth } from "../../firebaseConfig";
+
 import ClientLayout from "../../components/layouts/ClientLayout";
 import DataTable from "../../components/DataTable";
 import "../../styles/Table.css";
