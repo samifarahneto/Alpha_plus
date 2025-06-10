@@ -854,6 +854,8 @@ const MasterAddProject = () => {
         isCertified: isCertifiedSelected,
         clientUid: clientUid,
         masterEmail: currentUser.email,
+        MasterRead: false,
+        ClientRead: false,
       };
 
       // Criar o documento do projeto na coleção apropriada

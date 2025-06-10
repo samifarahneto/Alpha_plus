@@ -4,6 +4,7 @@ import { Elements } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { UnreadCountProvider } from "./contexts/UnreadCountContext";
+import { NotificationProvider } from "./contexts/NotificationContext";
 import Header from "./components/Header";
 import MasterLayout from "./components/MasterLayout";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -403,11 +404,13 @@ const App = () => {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <UnreadCountProvider>
-          <Elements stripe={stripePromise}>
-            <AppContent />
-          </Elements>
-        </UnreadCountProvider>
+        <NotificationProvider>
+          <UnreadCountProvider>
+            <Elements stripe={stripePromise}>
+              <AppContent />
+            </Elements>
+          </UnreadCountProvider>
+        </NotificationProvider>
       </AuthProvider>
     </BrowserRouter>
   );

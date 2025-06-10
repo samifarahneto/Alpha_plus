@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
+import { useNotifications } from "../contexts/NotificationContext";
 import { useMediaQuery } from "react-responsive";
 import logo from "../assets/logo.png";
 import {
@@ -40,6 +41,14 @@ import {
 
 const Header = () => {
   const { logout, user, loading } = useAuth();
+  const {
+    masterUnreadCount,
+    budgetCount,
+    approvalCount,
+    approvedCount,
+    inAnalysisCount,
+    onGoingCount,
+  } = useNotifications();
   const location = useLocation();
   const navigate = useNavigate();
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(false);
@@ -233,18 +242,36 @@ const Header = () => {
 
     if (userType === "master") {
       return [
-        { to: "/company/master/projects", label: "Todos Projetos" },
+        {
+          to: "/company/master/projects",
+          label: "Todos Projetos",
+          notificationCount: masterUnreadCount,
+        },
         {
           to: "/company/master/projects-budget",
           label: "Aguardando Orçamento",
+          notificationCount: budgetCount,
         },
         {
           to: "/company/master/projects-approval",
           label: "Aguardando Aprovação",
+          notificationCount: approvalCount,
         },
-        { to: "/company/master/projects-approved", label: "Aprovados" },
-        { to: "/company/master/projects-in-analysis", label: "Em Análise" },
-        { to: "/company/master/ongoing", label: "Em Andamento" },
+        {
+          to: "/company/master/projects-approved",
+          label: "Aprovados",
+          notificationCount: approvedCount,
+        },
+        {
+          to: "/company/master/projects-in-analysis",
+          label: "Em Análise",
+          notificationCount: inAnalysisCount,
+        },
+        {
+          to: "/company/master/ongoing",
+          label: "Em Andamento",
+          notificationCount: onGoingCount,
+        },
         { to: "/company/master/projects-done", label: "Projetos Concluídos" },
         { to: "/company/master/projects-paid", label: "Projetos Pagos" },
         { to: "/company/master/payments", label: "Pagamentos Pendentes" },
@@ -401,7 +428,7 @@ const Header = () => {
               className="fixed inset-0 bg-black bg-opacity-50 z-40 sm:hidden"
               onClick={toggleSidebar}
             />
-            <div className="fixed top-0 left-0 h-full w-64 bg-white shadow-lg z-50 sm:hidden">
+            <div className="fixed top-0 left-0 h-full w-72 bg-white shadow-lg z-50 sm:hidden">
               <div className="flex justify-between items-center p-4 border-b">
                 <img src={logo} alt="Logo" className="h-8 w-auto" />
                 <button
@@ -513,7 +540,7 @@ const Header = () => {
       {(isMobile ? isSidebarExpanded : true) && (
         <aside
           className={`sidebar-container fixed top-[70px] left-0 bottom-0 bg-white shadow-lg z-40 transition-all duration-300 overflow-y-auto ${
-            isMobile ? "w-64" : isTablet || isSidebarExpanded ? "w-64" : "w-16"
+            isMobile ? "w-72" : isTablet || isSidebarExpanded ? "w-72" : "w-16"
           }`}
         >
           <div className="flex flex-col h-full">
@@ -554,7 +581,36 @@ const Header = () => {
                   title={!shouldShowText() ? "Projetos" : ""}
                 >
                   <div className="flex items-center">
-                    <FaBox className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
+                    <div className="relative">
+                      <FaBox className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
+                      {/* Badge de notificação no ícone quando sidebar está minimizado */}
+                      {!shouldShowText() &&
+                        userType === "master" &&
+                        masterUnreadCount +
+                          budgetCount +
+                          approvalCount +
+                          approvedCount +
+                          inAnalysisCount +
+                          onGoingCount >
+                          0 && (
+                          <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold px-1 py-0.5 rounded-full min-w-[16px] h-4 flex items-center justify-center text-center">
+                            {masterUnreadCount +
+                              budgetCount +
+                              approvalCount +
+                              approvedCount +
+                              inAnalysisCount +
+                              onGoingCount >
+                            9
+                              ? "9+"
+                              : masterUnreadCount +
+                                budgetCount +
+                                approvalCount +
+                                approvedCount +
+                                inAnalysisCount +
+                                onGoingCount}
+                          </span>
+                        )}
+                    </div>
                     {shouldShowText() && (
                       <span className="ml-2 sm:ml-3 text-xs sm:text-sm font-medium">
                         Projetos
@@ -562,12 +618,40 @@ const Header = () => {
                     )}
                   </div>
                   {shouldShowText() && (
-                    <div className="transform transition-transform duration-200">
-                      {isProjectsMenuOpen ? (
-                        <FaChevronDown className="w-3 h-3 sm:w-4 sm:h-4 text-gray-400" />
-                      ) : (
-                        <FaChevronRight className="w-3 h-3 sm:w-4 sm:h-4 text-gray-400" />
-                      )}
+                    <div className="flex items-center gap-2">
+                      {/* Badge de notificação quando sidebar está expandido */}
+                      {userType === "master" &&
+                        masterUnreadCount +
+                          budgetCount +
+                          approvalCount +
+                          approvedCount +
+                          inAnalysisCount +
+                          onGoingCount >
+                          0 && (
+                          <span className="bg-red-500 text-white text-xs font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
+                            {masterUnreadCount +
+                              budgetCount +
+                              approvalCount +
+                              approvedCount +
+                              inAnalysisCount +
+                              onGoingCount >
+                            99
+                              ? "99+"
+                              : masterUnreadCount +
+                                budgetCount +
+                                approvalCount +
+                                approvedCount +
+                                inAnalysisCount +
+                                onGoingCount}
+                          </span>
+                        )}
+                      <div className="transform transition-transform duration-200">
+                        {isProjectsMenuOpen ? (
+                          <FaChevronDown className="w-3 h-3 sm:w-4 sm:h-4 text-gray-400" />
+                        ) : (
+                          <FaChevronRight className="w-3 h-3 sm:w-4 sm:h-4 text-gray-400" />
+                        )}
+                      </div>
                     </div>
                   )}
                 </button>
@@ -580,16 +664,25 @@ const Header = () => {
                         key={link.to}
                         to={link.to}
                         onClick={(e) => handleLinkClick(e, link.to)}
-                        className={`flex items-center px-2 sm:px-3 py-1 sm:py-2 text-xs sm:text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors duration-200 ${
+                        className={`flex items-center justify-between px-2 sm:px-3 py-1 sm:py-2 text-xs sm:text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors duration-200 ${
                           isActive(link.to)
                             ? "text-primary bg-blue-50 font-medium"
                             : ""
                         }`}
                       >
-                        {getIconForPath(link.to)}
-                        <span className="ml-1 sm:ml-2 truncate">
-                          {link.label}
-                        </span>
+                        <div className="flex items-center">
+                          {getIconForPath(link.to)}
+                          <span className="ml-1 sm:ml-2 truncate">
+                            {link.label}
+                          </span>
+                        </div>
+                        {link.notificationCount > 0 && (
+                          <span className="bg-red-500 text-white text-xs font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
+                            {link.notificationCount > 99
+                              ? "99+"
+                              : link.notificationCount}
+                          </span>
+                        )}
                       </Link>
                     ))}
                   </div>
@@ -611,7 +704,7 @@ const Header = () => {
       {/* Ajuste do conteúdo principal */}
       <div
         className={`transition-all duration-300 ${
-          isMobile ? "" : isTablet || isSidebarExpanded ? "ml-64" : "ml-16"
+          isMobile ? "" : isTablet || isSidebarExpanded ? "ml-72" : "ml-16"
         }`}
       >
         {/* Conteúdo será renderizado aqui */}

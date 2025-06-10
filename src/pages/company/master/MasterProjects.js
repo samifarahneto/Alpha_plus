@@ -10,6 +10,7 @@ import {
   serverTimestamp,
 } from "firebase/firestore";
 import { useAuth } from "../../../contexts/AuthContext";
+import { useNotifications } from "../../../contexts/NotificationContext";
 import { FaDownload } from "react-icons/fa";
 import "../../../styles/Pagination.css";
 import DataTable from "../../../components/DataTable";
@@ -36,6 +37,14 @@ import { CSS } from "@dnd-kit/utilities";
 
 const MasterProjects = ({ style, isMobile }) => {
   const { user, loading } = useAuth();
+  const {
+    updateMasterUnreadCount,
+    updateBudgetCount,
+    updateApprovalCount,
+    updateApprovedCount,
+    updateInAnalysisCount,
+    updateOnGoingCount,
+  } = useNotifications();
   const [allUploads, setAllUploads] = useState([]);
   const [filteredUploads, _setFilteredUploads] = useState([]);
   const [clientFilter, setClientFilter] = useState("");
@@ -48,12 +57,6 @@ const MasterProjects = ({ style, isMobile }) => {
   // eslint-disable-next-line no-unused-vars
   const location = useLocation();
   const [clientTypes, setClientTypes] = useState({});
-  // eslint-disable-next-line no-unused-vars
-  const [unreadCount, setUnreadCount] = useState(0);
-  // eslint-disable-next-line no-unused-vars
-  const [unreadBudgetCount, setUnreadBudgetCount] = useState(0);
-  // eslint-disable-next-line no-unused-vars
-  const [unreadApprovalCount, setUnreadApprovalCount] = useState(0);
   // eslint-disable-next-line no-unused-vars
   const [showStatusDropdown, setShowStatusDropdown] = useState(false);
   const [showFilesModal, setShowFilesModal] = useState(false);
@@ -491,62 +494,66 @@ const MasterProjects = ({ style, isMobile }) => {
     };
   }, [user, loading]);
 
+  // useEffect para contar projetos não lidos pelo Master
   useEffect(() => {
     if (!allUploads) return;
 
-    console.log("Estado atual do allUploads:", {
-      total: allUploads.length,
-      collections: allUploads.reduce((acc, project) => {
-        acc[project.collection] = (acc[project.collection] || 0) + 1;
-        return acc;
-      }, {}),
-      projects: allUploads.map((p) => ({
-        id: p.id,
-        name: p.projectName,
-        collection: p.collection,
-      })),
+    // 1. Contar projetos onde MasterRead é false (Todos Projetos)
+    const unreadMasterProjects = allUploads.filter((project) => {
+      return project.MasterRead === false;
     });
 
-    // Processar todos os contadores em um único bloco
-    const processCounters = () => {
-      // Contagem para "Todos Projetos" - projetos não lidos em todas as coleções
-      const unreadProjects = allUploads.filter((project) => {
-        const hasUnreadFiles = project.files?.some((file) => !file.isRead);
-        const isProjectUnread = project.isRead === false;
-        return hasUnreadFiles || isProjectUnread;
-      });
-
-      // Contagem para "Aguardando Orçamento" - projetos nas coleções b2bdocprojects e b2cdocprojects
-      const budgetProjects = allUploads.filter(
-        (project) =>
-          project.collection === "b2bdocprojects" ||
-          project.collection === "b2cdocprojects"
-      );
-
-      // Contagem para "Aguardando Aprovação" - projetos nas coleções b2bapproval e b2capproval
-      const approvalProjects = allUploads.filter(
-        (project) =>
-          project.collection === "b2bapproval" ||
-          project.collection === "b2capproval"
-      );
-
-      // Atualizar todos os contadores de uma vez
-      setUnreadCount(unreadProjects.length);
-      setUnreadBudgetCount(budgetProjects.length);
-      setUnreadApprovalCount(approvalProjects.length);
-    };
-
-    processCounters();
-  }, [allUploads]);
-
-  useEffect(() => {
-    if (!filteredUploads) return;
-
-    const unreadProjects = filteredUploads.filter((project) =>
-      project.files.some((file) => !file.isRead)
+    // 2. Contar projetos aguardando orçamento (ProjectsBudget.js logic)
+    const budgetProjects = allUploads.filter(
+      (project) =>
+        project.collection === "b2bdocprojects" ||
+        project.collection === "b2cdocprojects"
     );
-    setUnreadCount(unreadProjects.length);
-  }, [filteredUploads]);
+
+    // 3. Contar projetos aguardando aprovação (ProjectsApproval.js logic)
+    const approvalProjects = allUploads.filter(
+      (project) =>
+        project.collection === "b2bapproval" ||
+        project.collection === "b2capproval"
+    );
+
+    // 4. Contar projetos aprovados (ProjectsApproved.js logic)
+    const approvedProjects = allUploads.filter(
+      (project) =>
+        project.collection === "b2bapproved" ||
+        project.collection === "b2capproved"
+    );
+
+    // 5. Contar projetos em análise (ProjectsInAnalysis.js logic)
+    const inAnalysisProjects = allUploads.filter(
+      (project) =>
+        (project.collection === "b2bapproved" ||
+          project.collection === "b2bprojectspaid" ||
+          project.collection === "b2cprojectspaid") &&
+        project.project_status?.toLowerCase() === "em análise"
+    );
+
+    // 6. Contar projetos em andamento (MasterOnGoing.js logic)
+    const onGoingProjects = allUploads.filter(
+      (project) => project.project_status === "Em Andamento"
+    );
+
+    // Atualizar todos os contextos de notificações
+    updateMasterUnreadCount(unreadMasterProjects.length);
+    updateBudgetCount(budgetProjects.length);
+    updateApprovalCount(approvalProjects.length);
+    updateApprovedCount(approvedProjects.length);
+    updateInAnalysisCount(inAnalysisProjects.length);
+    updateOnGoingCount(onGoingProjects.length);
+  }, [
+    allUploads,
+    updateMasterUnreadCount,
+    updateBudgetCount,
+    updateApprovalCount,
+    updateApprovedCount,
+    updateInAnalysisCount,
+    updateOnGoingCount,
+  ]);
 
   useEffect(() => {
     if (!allUploads || !clientTypes) return;
@@ -869,46 +876,47 @@ const MasterProjects = ({ style, isMobile }) => {
       return;
     }
 
-    const uploadDoc = doc(firestore, collectionName, uploadId);
-
     try {
-      // Atualiza os arquivos como lidos
-      const updatedFiles = selectedUpload.files.map((file) => ({
-        ...file,
-        isRead: true,
-      }));
-
-      // Atualizar o documento no Firestore com os arquivos lidos e o isRead do documento principal
+      // Atualizar MasterRead para true
+      const uploadDoc = doc(firestore, collectionName, uploadId);
       await updateDoc(uploadDoc, {
-        files: updatedFiles,
-        isRead: true,
+        MasterRead: true,
       });
 
-      // Navegar para a página de detalhes com a coleção correta
-      const url = `/company/master/project/${uploadId}?collection=${collectionName}`;
-      console.log("Navegando para:", url);
-      console.log("Estado sendo passado:", {
-        project: selectedUpload,
-        collection: collectionName,
-      });
+      // Atualizar o estado local imediatamente
+      setAllUploads((prevUploads) =>
+        prevUploads.map((upload) =>
+          upload.id === uploadId ? { ...upload, MasterRead: true } : upload
+        )
+      );
 
-      // Garantir que o projeto tenha todos os dados necessários
-      const projectToPass = {
-        ...selectedUpload,
-        id: uploadId,
-        collection: collectionName,
-        files: updatedFiles,
-      };
-
-      navigate(url, {
-        state: {
-          project: projectToPass,
-          collection: collectionName,
-        },
-      });
+      console.log("MasterRead atualizado para true para o projeto:", uploadId);
     } catch (error) {
-      console.error("Erro ao atualizar o projeto:", error);
+      console.error("Erro ao atualizar MasterRead:", error);
     }
+
+    // Navegar para a página de detalhes com a coleção correta
+    const url = `/company/master/project/${uploadId}?collection=${collectionName}`;
+    console.log("Navegando para:", url);
+    console.log("Estado sendo passado:", {
+      project: selectedUpload,
+      collection: collectionName,
+    });
+
+    // Garantir que o projeto tenha todos os dados necessários
+    const projectToPass = {
+      ...selectedUpload,
+      id: uploadId,
+      collection: collectionName,
+      MasterRead: true, // Garantir que o projeto passado já tenha MasterRead como true
+    };
+
+    navigate(url, {
+      state: {
+        project: projectToPass,
+        collection: collectionName,
+      },
+    });
   };
 
   const updateProjectStatus = async (projectId, newStatus) => {
@@ -1361,11 +1369,8 @@ const MasterProjects = ({ style, isMobile }) => {
     localStorage.setItem("masterProjectsRowsPerPage", value.toString());
   };
 
-  const getRowClassName = (row) => {
-    const rowIsUnread =
-      row.isRead === false ||
-      (Array.isArray(row.files) && row.files.some((file) => !file.isRead));
-    return rowIsUnread ? "unread" : "";
+  const getRowClassName = () => {
+    return "";
   };
 
   const handleClientFilterChange = (e) => {

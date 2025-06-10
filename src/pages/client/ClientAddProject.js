@@ -680,6 +680,8 @@ const ClientAddProject = () => {
         approvedByName: userData.nomeCompleto || "Usuário Aprovador",
         collection: collectionName,
         convertCurrency: convertCurrency,
+        MasterRead: false,
+        ClientRead: false,
       };
 
       // Criar referência para o novo documento
@@ -928,6 +930,8 @@ const ClientAddProject = () => {
         approvedByName: userData.nomeCompleto || "Usuário Aprovador",
         collection: collectionName,
         convertCurrency: convertCurrency,
+        MasterRead: false,
+        ClientRead: false,
       };
 
       console.log("Dados do projeto a serem salvos:", {
@@ -1112,6 +1116,8 @@ const ClientAddProject = () => {
         approvedByName: userData.nomeCompleto || "Usuário Aprovador",
         collection: collectionName,
         convertCurrency: convertCurrency,
+        MasterRead: false,
+        ClientRead: false,
       };
 
       const projectRef = await addDoc(
