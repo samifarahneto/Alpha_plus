@@ -15,8 +15,7 @@ import { getStorage, ref, getDownloadURL } from "firebase/storage";
 import { IoMdSettings } from "react-icons/io";
 import { FaDownload, FaGoogle } from "react-icons/fa";
 import "../../styles/Pagination.css";
-import Filter from "../../components/Filter";
-import "../../components/FilterBar.css";
+
 import ClientLayout from "../../components/layouts/ClientLayout";
 import "../../styles/Navigation.css";
 import DataTable from "../../components/DataTable";
@@ -208,9 +207,18 @@ const ClientProjects = () => {
       const firestore = getFirestore();
       const usersCollection = collection(firestore, "users");
 
+      // Verificar se os projetos já têm authorName para evitar re-renders desnecessários
+      const projectsNeedingNames = allProjects.filter(
+        (project) => !project.authorName && project.projectOwner
+      );
+
+      if (projectsNeedingNames.length === 0) return;
+
       // Atualizar projetos regulares
       const updatedProjects = await Promise.all(
         allProjects.map(async (project) => {
+          if (project.authorName) return project; // Já tem o nome, não buscar novamente
+
           if (project.projectOwner) {
             try {
               const q = query(
@@ -239,45 +247,12 @@ const ClientProjects = () => {
         })
       );
       setAllProjects(updatedProjects);
-      setProjects(updatedProjects);
-
-      // Atualizar projetos em análise
-      const updatedDocProjects = await Promise.all(
-        docProjects.map(async (project) => {
-          if (project.projectOwner) {
-            try {
-              const q = query(
-                usersCollection,
-                where("email", "==", project.projectOwner)
-              );
-              const querySnapshot = await getDocs(q);
-              if (!querySnapshot.empty) {
-                const userData = querySnapshot.docs[0].data();
-                return {
-                  ...project,
-                  authorName: userData.nomeCompleto || project.projectOwner,
-                };
-              }
-            } catch (error) {
-              console.error(
-                `Erro ao buscar nome para o email ${project.projectOwner}:`,
-                error
-              );
-            }
-          }
-          return {
-            ...project,
-            authorName: project.projectOwner || "Não informado",
-          };
-        })
-      );
-      setDocProjects(updatedDocProjects);
     };
 
-    if (allProjects.length > 0 || docProjects.length > 0) {
+    if (allProjects.length > 0) {
       fetchAuthorNames();
     }
-  }, [allProjects, docProjects]);
+  }, [allProjects.length]); // Mudança aqui - apenas quando o comprimento muda
 
   useEffect(() => {
     const fetchProjects = async () => {
@@ -563,7 +538,7 @@ const ClientProjects = () => {
     if (allProjects.length > 0) {
       filterData(filters, allProjects);
     }
-  }, [allProjects, filters]);
+  }, [allProjects, filterData, filters]);
 
   // useEffect para inicializar a ordem das colunas no modal
   useEffect(() => {
@@ -581,44 +556,95 @@ const ClientProjects = () => {
   // Função para mudar página
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
-  const handleFilterChange = (e) => {
-    const { name, value } = e.target;
-    const newFilters = { ...filters, [name]: value };
-    setFilters(newFilters);
-    filterData(newFilters, allProjects);
-  };
+  const handleFilterChange = useCallback(
+    (e) => {
+      const { name, value } = e.target;
+      setFilters((prevFilters) => {
+        const newFilters = { ...prevFilters, [name]: value };
+        // Aplicar filtros com debounce para texto
+        if (name === "projectName" || name === "authorName") {
+          clearTimeout(handleFilterChange.timeoutId);
+          handleFilterChange.timeoutId = setTimeout(() => {
+            filterData(newFilters, allProjects);
+          }, 300);
+        } else {
+          // Para datas, aplicar imediatamente
+          filterData(newFilters, allProjects);
+        }
+        return newFilters;
+      });
+    },
+    [allProjects]
+  );
 
-  const filterData = (currentFilters, projectsToFilter) => {
+  const filterData = useCallback((currentFilters, projectsToFilter) => {
     let filteredData = [...projectsToFilter];
 
-    if (currentFilters.projectName) {
+    // Filtro por nome do projeto
+    if (currentFilters.projectName?.trim()) {
+      const projectNameLower = currentFilters.projectName.toLowerCase().trim();
       filteredData = filteredData.filter((project) =>
-        project.projectName
-          ?.toLowerCase()
-          .includes(currentFilters.projectName.toLowerCase())
+        project.projectName?.toLowerCase().includes(projectNameLower)
       );
     }
-    if (currentFilters.authorName) {
-      filteredData = filteredData.filter((project) =>
-        project.authorName
-          ?.toLowerCase()
-          .includes(currentFilters.authorName.toLowerCase())
-      );
-    }
-    if (currentFilters.startDate && currentFilters.endDate) {
-      const startDate = new Date(`${currentFilters.startDate}T00:00:00`);
-      const endDate = new Date(`${currentFilters.endDate}T23:59:59`);
 
+    // Filtro por nome do autor
+    if (currentFilters.authorName?.trim()) {
+      const authorNameLower = currentFilters.authorName.toLowerCase().trim();
+      filteredData = filteredData.filter((project) =>
+        project.authorName?.toLowerCase().includes(authorNameLower)
+      );
+    }
+
+    // Filtro por intervalo de datas (baseado na coluna Data - createdAt)
+    if (currentFilters.startDate || currentFilters.endDate) {
       filteredData = filteredData.filter((project) => {
-        const createdAt = project.createdAt?.seconds
-          ? new Date(project.createdAt.seconds * 1000)
-          : null;
-        return createdAt && createdAt >= startDate && createdAt <= endDate;
+        // Extrair a data de criação do projeto
+        let projectDate = null;
+
+        if (project.createdAt?.seconds) {
+          // Timestamp do Firestore
+          projectDate = new Date(project.createdAt.seconds * 1000);
+        } else if (project.createdAt instanceof Date) {
+          projectDate = project.createdAt;
+        } else if (typeof project.createdAt === "string") {
+          projectDate = new Date(project.createdAt);
+        }
+
+        if (!projectDate || isNaN(projectDate.getTime())) {
+          return false; // Excluir projetos sem data válida
+        }
+
+        // Verificar data de início
+        if (currentFilters.startDate) {
+          const startDate = new Date(`${currentFilters.startDate}T00:00:00`);
+          if (projectDate < startDate) return false;
+        }
+
+        // Verificar data de fim
+        if (currentFilters.endDate) {
+          const endDate = new Date(`${currentFilters.endDate}T23:59:59`);
+          if (projectDate > endDate) return false;
+        }
+
+        return true;
       });
     }
 
     setProjects(filteredData);
-  };
+    setCurrentPage(1); // Resetar para primeira página quando filtrar
+  }, []);
+
+  const handleClearFilters = useCallback(() => {
+    const clearedFilters = {
+      projectName: "",
+      authorName: "",
+      startDate: "",
+      endDate: "",
+    };
+    setFilters(clearedFilters);
+    filterData(clearedFilters, allProjects);
+  }, [allProjects, filterData]);
 
   const calculateTotalPages = useCallback((files, row) => {
     // Primeiro, calcular as páginas dos arquivos originais
@@ -1094,46 +1120,86 @@ const ClientProjects = () => {
 
   const renderFilterBar = () => {
     return (
-      <div className="filter-bar">
-        <div className="filter-group">
-          <Filter
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 lg:gap-4">
+        {/* Filtro Autor */}
+        <div className="space-y-1">
+          <label className="block text-sm font-medium text-gray-700">
+            Autor
+          </label>
+          <input
             type="text"
             name="authorName"
             value={filters.authorName}
             onChange={handleFilterChange}
             placeholder="Filtrar por autor"
-            label="Autor"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-sm"
           />
         </div>
-        <div className="filter-group">
-          <Filter
+
+        {/* Filtro Nome do Projeto */}
+        <div className="space-y-1">
+          <label className="block text-sm font-medium text-gray-700">
+            Nome do Projeto
+          </label>
+          <input
             type="text"
             name="projectName"
             value={filters.projectName}
             onChange={handleFilterChange}
             placeholder="Filtrar por nome"
-            label="Nome do Projeto"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-sm"
           />
         </div>
-        <div className="filter-group">
-          <Filter
+
+        {/* Filtro Data Início */}
+        <div className="space-y-1">
+          <label className="block text-sm font-medium text-gray-700">
+            Data Início
+          </label>
+          <input
             type="date"
             name="startDate"
             value={filters.startDate}
             onChange={handleFilterChange}
-            placeholder="Data Início"
-            label="Data Início"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-sm"
           />
         </div>
-        <div className="filter-group">
-          <Filter
+
+        {/* Filtro Data Fim */}
+        <div className="space-y-1">
+          <label className="block text-sm font-medium text-gray-700">
+            Data Fim
+          </label>
+          <input
             type="date"
             name="endDate"
             value={filters.endDate}
             onChange={handleFilterChange}
-            placeholder="Data Fim"
-            label="Data Fim"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-sm"
           />
+        </div>
+
+        {/* Botão Limpar Filtros */}
+        <div className="space-y-1 lg:flex lg:items-end">
+          <button
+            onClick={handleClearFilters}
+            className="w-full lg:w-auto px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md text-sm font-medium transition-colors duration-200 flex items-center justify-center gap-2"
+          >
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+            Limpar
+          </button>
         </div>
       </div>
     );
