@@ -201,57 +201,8 @@ const ClientProjects = () => {
     return totalPages === 0;
   };
 
-  useEffect(() => {
-    const fetchAuthorNames = async () => {
-      const firestore = getFirestore();
-      const usersCollection = collection(firestore, "users");
-
-      // Verificar se os projetos já têm authorName para evitar re-renders desnecessários
-      const projectsNeedingNames = allProjects.filter(
-        (project) => !project.authorName && project.projectOwner
-      );
-
-      if (projectsNeedingNames.length === 0) return;
-
-      // Atualizar projetos regulares
-      const updatedProjects = await Promise.all(
-        allProjects.map(async (project) => {
-          if (project.authorName) return project; // Já tem o nome, não buscar novamente
-
-          if (project.projectOwner) {
-            try {
-              const q = query(
-                usersCollection,
-                where("email", "==", project.projectOwner)
-              );
-              const querySnapshot = await getDocs(q);
-              if (!querySnapshot.empty) {
-                const userData = querySnapshot.docs[0].data();
-                return {
-                  ...project,
-                  authorName: userData.nomeCompleto || project.projectOwner,
-                };
-              }
-            } catch (error) {
-              console.error(
-                `Erro ao buscar nome para o email ${project.projectOwner}:`,
-                error
-              );
-            }
-          }
-          return {
-            ...project,
-            authorName: project.projectOwner || "Não informado",
-          };
-        })
-      );
-      setAllProjects(updatedProjects);
-    };
-
-    if (allProjects.length > 0) {
-      fetchAuthorNames();
-    }
-  }, [allProjects]); // Incluir allProjects como dependência
+  // Removido useEffect duplicado de fetchAuthorNames
+  // A busca de nomes já é feita nos listeners onSnapshot
 
   useEffect(() => {
     const fetchProjects = async () => {
@@ -402,20 +353,79 @@ const ClientProjects = () => {
                   const usersCollection = collection(firestore, "users");
 
                   let authorName = "Não informado";
-                  if (projectData.projectOwner) {
+
+                  // Debug: verificar todos os campos do projeto
+                  console.log("Dados do projeto (q1):", {
+                    projectOwner: projectData.projectOwner,
+                    userEmail: projectData.userEmail,
+                    oldclientName: projectData.oldclientName,
+                    oldclientEmail: projectData.oldclientEmail,
+                  });
+
+                  // Tentar encontrar o email real para buscar o usuário
+                  let emailToSearch = null;
+                  if (
+                    projectData.userEmail &&
+                    projectData.userEmail.includes("@")
+                  ) {
+                    emailToSearch = projectData.userEmail;
+                  } else if (
+                    projectData.oldclientEmail &&
+                    projectData.oldclientEmail.includes("@")
+                  ) {
+                    emailToSearch = projectData.oldclientEmail;
+                  } else if (
+                    projectData.projectOwner &&
+                    projectData.projectOwner.includes("@")
+                  ) {
+                    emailToSearch = projectData.projectOwner;
+                  }
+
+                  if (emailToSearch) {
                     try {
                       const userQuery = query(
                         usersCollection,
-                        where("email", "==", projectData.projectOwner)
+                        where("email", "==", emailToSearch)
                       );
                       const userSnapshot = await getDocs(userQuery);
                       if (!userSnapshot.empty) {
                         const userData = userSnapshot.docs[0].data();
-                        authorName = userData.nomeCompleto || "Não informado";
+                        console.log(
+                          "Dados do usuário encontrado (q1):",
+                          userData
+                        );
+                        authorName =
+                          userData.nomeCompleto ||
+                          userData.name ||
+                          userData.displayName ||
+                          emailToSearch;
+                      } else {
+                        console.log(
+                          "Usuário não encontrado para email (q1):",
+                          emailToSearch
+                        );
+                        // Se não encontrou, usar o que está em projectOwner ou oldclientName
+                        authorName =
+                          projectData.oldclientName ||
+                          projectData.projectOwner ||
+                          "Não informado";
                       }
                     } catch (error) {
-                      console.error("Erro ao buscar nome do autor:", error);
+                      console.error(
+                        "Erro ao buscar nome do autor (q1):",
+                        error
+                      );
+                      authorName =
+                        projectData.oldclientName ||
+                        projectData.projectOwner ||
+                        "Não informado";
                     }
+                  } else {
+                    // Se não tem email válido, usar o nome que está salvo
+                    authorName =
+                      projectData.oldclientName ||
+                      projectData.projectOwner ||
+                      "Não informado";
                   }
 
                   return {
@@ -461,20 +471,79 @@ const ClientProjects = () => {
                   const usersCollection = collection(firestore, "users");
 
                   let authorName = "Não informado";
-                  if (projectData.projectOwner) {
+
+                  // Debug: verificar todos os campos do projeto
+                  console.log("Dados do projeto (q2):", {
+                    projectOwner: projectData.projectOwner,
+                    userEmail: projectData.userEmail,
+                    oldclientName: projectData.oldclientName,
+                    oldclientEmail: projectData.oldclientEmail,
+                  });
+
+                  // Tentar encontrar o email real para buscar o usuário
+                  let emailToSearch = null;
+                  if (
+                    projectData.userEmail &&
+                    projectData.userEmail.includes("@")
+                  ) {
+                    emailToSearch = projectData.userEmail;
+                  } else if (
+                    projectData.oldclientEmail &&
+                    projectData.oldclientEmail.includes("@")
+                  ) {
+                    emailToSearch = projectData.oldclientEmail;
+                  } else if (
+                    projectData.projectOwner &&
+                    projectData.projectOwner.includes("@")
+                  ) {
+                    emailToSearch = projectData.projectOwner;
+                  }
+
+                  if (emailToSearch) {
                     try {
                       const userQuery = query(
                         usersCollection,
-                        where("email", "==", projectData.projectOwner)
+                        where("email", "==", emailToSearch)
                       );
                       const userSnapshot = await getDocs(userQuery);
                       if (!userSnapshot.empty) {
                         const userData = userSnapshot.docs[0].data();
-                        authorName = userData.nomeCompleto || "Não informado";
+                        console.log(
+                          "Dados do usuário encontrado (q2):",
+                          userData
+                        );
+                        authorName =
+                          userData.nomeCompleto ||
+                          userData.name ||
+                          userData.displayName ||
+                          emailToSearch;
+                      } else {
+                        console.log(
+                          "Usuário não encontrado para email (q2):",
+                          emailToSearch
+                        );
+                        // Se não encontrou, usar o que está em projectOwner ou oldclientName
+                        authorName =
+                          projectData.oldclientName ||
+                          projectData.projectOwner ||
+                          "Não informado";
                       }
                     } catch (error) {
-                      console.error("Erro ao buscar nome do autor:", error);
+                      console.error(
+                        "Erro ao buscar nome do autor (q2):",
+                        error
+                      );
+                      authorName =
+                        projectData.oldclientName ||
+                        projectData.projectOwner ||
+                        "Não informado";
                     }
+                  } else {
+                    // Se não tem email válido, usar o nome que está salvo
+                    authorName =
+                      projectData.oldclientName ||
+                      projectData.projectOwner ||
+                      "Não informado";
                   }
 
                   return {
@@ -531,20 +600,6 @@ const ClientProjects = () => {
 
     fetchProjects();
   }, []);
-
-  // useEffect para atualizar dados filtrados quando allProjects muda
-  useEffect(() => {
-    if (allProjects.length > 0) {
-      filterData(filters, allProjects);
-    }
-  }, [allProjects, filterData, filters]);
-
-  // useEffect para inicializar a ordem das colunas no modal
-  useEffect(() => {
-    if (showColumnSelector && modalColumnOrder.length === 0) {
-      setModalColumnOrder([...columnOrder]);
-    }
-  }, [showColumnSelector, columnOrder, modalColumnOrder.length]);
 
   const handleRowsPerPageChange = (value) => {
     setRowsPerPage(value);
@@ -645,6 +700,20 @@ const ClientProjects = () => {
     setFilters(clearedFilters);
     filterData(clearedFilters, allProjects);
   }, [allProjects, filterData]);
+
+  // useEffect para atualizar dados filtrados quando allProjects muda
+  useEffect(() => {
+    if (allProjects.length > 0) {
+      filterData(filters, allProjects);
+    }
+  }, [allProjects, filterData, filters]);
+
+  // useEffect para inicializar a ordem das colunas no modal
+  useEffect(() => {
+    if (showColumnSelector && modalColumnOrder.length === 0) {
+      setModalColumnOrder([...columnOrder]);
+    }
+  }, [showColumnSelector, columnOrder, modalColumnOrder.length]);
 
   const calculateTotalPages = useCallback((files, row) => {
     // Primeiro, calcular as páginas dos arquivos originais
