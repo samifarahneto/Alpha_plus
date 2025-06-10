@@ -41,7 +41,6 @@ import { CSS } from "@dnd-kit/utilities";
 const ClientProjects = () => {
   const [allProjects, setAllProjects] = useState([]);
   const [projects, setProjects] = useState([]);
-  const [docProjects, setDocProjects] = useState([]);
   const [selectedProjects, setSelectedProjects] = useState([]);
   const [filters, setFilters] = useState({
     projectName: "",
@@ -252,7 +251,7 @@ const ClientProjects = () => {
     if (allProjects.length > 0) {
       fetchAuthorNames();
     }
-  }, [allProjects.length]); // Mudança aqui - apenas quando o comprimento muda
+  }, [allProjects]); // Incluir allProjects como dependência
 
   useEffect(() => {
     const fetchProjects = async () => {
@@ -556,27 +555,7 @@ const ClientProjects = () => {
   // Função para mudar página
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
-  const handleFilterChange = useCallback(
-    (e) => {
-      const { name, value } = e.target;
-      setFilters((prevFilters) => {
-        const newFilters = { ...prevFilters, [name]: value };
-        // Aplicar filtros com debounce para texto
-        if (name === "projectName" || name === "authorName") {
-          clearTimeout(handleFilterChange.timeoutId);
-          handleFilterChange.timeoutId = setTimeout(() => {
-            filterData(newFilters, allProjects);
-          }, 300);
-        } else {
-          // Para datas, aplicar imediatamente
-          filterData(newFilters, allProjects);
-        }
-        return newFilters;
-      });
-    },
-    [allProjects]
-  );
-
+  // Função de filtro de dados - deve vir antes das outras funções que a utilizam
   const filterData = useCallback((currentFilters, projectsToFilter) => {
     let filteredData = [...projectsToFilter];
 
@@ -634,6 +613,27 @@ const ClientProjects = () => {
     setProjects(filteredData);
     setCurrentPage(1); // Resetar para primeira página quando filtrar
   }, []);
+
+  const handleFilterChange = useCallback(
+    (e) => {
+      const { name, value } = e.target;
+      setFilters((prevFilters) => {
+        const newFilters = { ...prevFilters, [name]: value };
+        // Aplicar filtros com debounce para texto
+        if (name === "projectName" || name === "authorName") {
+          clearTimeout(handleFilterChange.timeoutId);
+          handleFilterChange.timeoutId = setTimeout(() => {
+            filterData(newFilters, allProjects);
+          }, 300);
+        } else {
+          // Para datas, aplicar imediatamente
+          filterData(newFilters, allProjects);
+        }
+        return newFilters;
+      });
+    },
+    [allProjects, filterData]
+  );
 
   const handleClearFilters = useCallback(() => {
     const clearedFilters = {
