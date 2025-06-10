@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { useNotifications } from "../contexts/NotificationContext";
 import { useClientNotifications } from "../hooks/useClientNotifications";
+import { useMasterNotifications } from "../hooks/useMasterNotifications";
 import { useMediaQuery } from "react-responsive";
 import logo from "../assets/logo.png";
 import {
@@ -58,8 +59,9 @@ const Header = () => {
     clientPaymentsCount,
   } = useNotifications();
 
-  // Hook centralizado para carregar notificações do cliente
-  useClientNotifications();
+  // Hooks centralizados para carregar notificações
+  useClientNotifications(); // Para clientes
+  useMasterNotifications(); // Para master
   const location = useLocation();
   const navigate = useNavigate();
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(false);

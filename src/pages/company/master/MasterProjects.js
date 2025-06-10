@@ -10,7 +10,6 @@ import {
   serverTimestamp,
 } from "firebase/firestore";
 import { useAuth } from "../../../contexts/AuthContext";
-import { useNotifications } from "../../../contexts/NotificationContext";
 import { FaDownload } from "react-icons/fa";
 import "../../../styles/Pagination.css";
 import DataTable from "../../../components/DataTable";
@@ -37,14 +36,7 @@ import { CSS } from "@dnd-kit/utilities";
 
 const MasterProjects = ({ style, isMobile }) => {
   const { user, loading } = useAuth();
-  const {
-    updateMasterUnreadCount,
-    updateBudgetCount,
-    updateApprovalCount,
-    updateApprovedCount,
-    updateInAnalysisCount,
-    updateOnGoingCount,
-  } = useNotifications();
+  // Notificações agora são gerenciadas pelo hook centralizado useMasterNotifications no Header
   const [allUploads, setAllUploads] = useState([]);
   const [filteredUploads, _setFilteredUploads] = useState([]);
   const [clientFilter, setClientFilter] = useState("");
@@ -494,66 +486,7 @@ const MasterProjects = ({ style, isMobile }) => {
     };
   }, [user, loading]);
 
-  // useEffect para contar projetos não lidos pelo Master
-  useEffect(() => {
-    if (!allUploads) return;
-
-    // 1. Contar projetos onde MasterRead é false (Todos Projetos)
-    const unreadMasterProjects = allUploads.filter((project) => {
-      return project.MasterRead === false;
-    });
-
-    // 2. Contar projetos aguardando orçamento (ProjectsBudget.js logic)
-    const budgetProjects = allUploads.filter(
-      (project) =>
-        project.collection === "b2bdocprojects" ||
-        project.collection === "b2cdocprojects"
-    );
-
-    // 3. Contar projetos aguardando aprovação (ProjectsApproval.js logic)
-    const approvalProjects = allUploads.filter(
-      (project) =>
-        project.collection === "b2bapproval" ||
-        project.collection === "b2capproval"
-    );
-
-    // 4. Contar projetos aprovados (ProjectsApproved.js logic)
-    const approvedProjects = allUploads.filter(
-      (project) =>
-        project.collection === "b2bapproved" ||
-        project.collection === "b2capproved"
-    );
-
-    // 5. Contar projetos em análise (ProjectsInAnalysis.js logic)
-    const inAnalysisProjects = allUploads.filter(
-      (project) =>
-        (project.collection === "b2bapproved" ||
-          project.collection === "b2bprojectspaid" ||
-          project.collection === "b2cprojectspaid") &&
-        project.project_status?.toLowerCase() === "em análise"
-    );
-
-    // 6. Contar projetos em andamento (MasterOnGoing.js logic)
-    const onGoingProjects = allUploads.filter(
-      (project) => project.project_status === "Em Andamento"
-    );
-
-    // Atualizar todos os contextos de notificações
-    updateMasterUnreadCount(unreadMasterProjects.length);
-    updateBudgetCount(budgetProjects.length);
-    updateApprovalCount(approvalProjects.length);
-    updateApprovedCount(approvedProjects.length);
-    updateInAnalysisCount(inAnalysisProjects.length);
-    updateOnGoingCount(onGoingProjects.length);
-  }, [
-    allUploads,
-    updateMasterUnreadCount,
-    updateBudgetCount,
-    updateApprovalCount,
-    updateApprovedCount,
-    updateInAnalysisCount,
-    updateOnGoingCount,
-  ]);
+  // Notificações do Master agora são gerenciadas pelo hook centralizado useMasterNotifications
 
   useEffect(() => {
     if (!allUploads || !clientTypes) return;

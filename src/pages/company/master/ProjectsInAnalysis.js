@@ -185,14 +185,23 @@ const ProjectsInAnalysis = () => {
     });
   };
 
-  const paginatedData = React.useMemo(() => {
+  // Primeiro filtramos os projetos "Em Análise"
+  const filteredProjects = React.useMemo(() => {
     if (!projects || !Array.isArray(projects)) return [];
 
-    const sortedData = sortData(projects, sortConfig);
+    return projects.filter(
+      (row) =>
+        row && row.id && row.project_status?.toLowerCase() === "em análise"
+    );
+  }, [projects]);
+
+  // Depois aplicamos paginação nos dados filtrados
+  const paginatedData = React.useMemo(() => {
+    const sortedData = sortData(filteredProjects, sortConfig);
     const startIndex = (currentPage - 1) * rowsPerPage;
     const endIndex = startIndex + rowsPerPage;
     return sortedData.slice(startIndex, endIndex);
-  }, [projects, currentPage, rowsPerPage, sortConfig]);
+  }, [filteredProjects, currentPage, rowsPerPage, sortConfig]);
 
   const renderPaymentStatusBadge = (status) => {
     const statusConfig = {
@@ -289,96 +298,92 @@ const ProjectsInAnalysis = () => {
     );
   };
 
+  // Por fim formatamos apenas os dados paginados
   const formattedData = React.useMemo(() => {
-    return paginatedData
-      .filter(
-        (row) =>
-          row && row.id && row.project_status?.toLowerCase() === "em análise"
-      )
-      .map((row) => ({
-        ...row,
-        id: row.id || `temp-${Math.random()}`,
-        client: clientTypes[row.userEmail]?.nomeCompleto || "N/A",
-        clientOrigin: row.userEmail || "N/A",
-        type: (() => {
-          const userInfo = clientTypes[row.userEmail];
-          if (!userInfo) return "Desconhecido";
-          if (userInfo.userType === "colaborator" && userInfo.registeredBy) {
-            const registeredByInfo = clientTypes[userInfo.registeredBy];
-            if (registeredByInfo && registeredByInfo.userType === "b2b")
-              return "B2B";
-            if (
-              registeredByInfo &&
-              (registeredByInfo.clientType === "Cliente" ||
-                registeredByInfo.clientType === "Colab")
-            )
-              return "B2C";
-          }
+    return paginatedData.map((row) => ({
+      ...row,
+      id: row.id || `temp-${Math.random()}`,
+      client: clientTypes[row.userEmail]?.nomeCompleto || "N/A",
+      clientOrigin: row.userEmail || "N/A",
+      type: (() => {
+        const userInfo = clientTypes[row.userEmail];
+        if (!userInfo) return "Desconhecido";
+        if (userInfo.userType === "colaborator" && userInfo.registeredBy) {
+          const registeredByInfo = clientTypes[userInfo.registeredBy];
+          if (registeredByInfo && registeredByInfo.userType === "b2b")
+            return "B2B";
           if (
-            userInfo.clientType === "Colab" ||
-            userInfo.clientType === "Cliente"
+            registeredByInfo &&
+            (registeredByInfo.clientType === "Cliente" ||
+              registeredByInfo.clientType === "Colab")
           )
             return "B2C";
-          return userInfo.clientType || "Desconhecido";
-        })(),
-        origin: (() => {
-          const text =
-            clientTypes[row.userEmail]?.registeredBy &&
-            clientTypes[row.userEmail]?.registeredBy.trim() !== ""
-              ? clientTypes[row.userEmail]?.registeredBy
-              : row.userEmail || "N/A";
-          return text.length > 20 ? `${text.slice(0, 20)}...` : text;
-        })(),
-        projectName:
-          row.projectName && row.projectName.length > 20
-            ? `${row.projectName.slice(0, 20)}...`
-            : row.projectName || "Sem Nome",
-        createdAt: row.createdAt?.seconds
-          ? new Date(row.createdAt.seconds * 1000).toLocaleDateString("pt-BR")
-          : "Sem Data",
-        monthYear: row.createdAt?.seconds
-          ? new Date(row.createdAt.seconds * 1000).toLocaleDateString("pt-BR", {
+        }
+        if (
+          userInfo.clientType === "Colab" ||
+          userInfo.clientType === "Cliente"
+        )
+          return "B2C";
+        return userInfo.clientType || "Desconhecido";
+      })(),
+      origin: (() => {
+        const text =
+          clientTypes[row.userEmail]?.registeredBy &&
+          clientTypes[row.userEmail]?.registeredBy.trim() !== ""
+            ? clientTypes[row.userEmail]?.registeredBy
+            : row.userEmail || "N/A";
+        return text.length > 20 ? `${text.slice(0, 20)}...` : text;
+      })(),
+      projectName:
+        row.projectName && row.projectName.length > 20
+          ? `${row.projectName.slice(0, 20)}...`
+          : row.projectName || "Sem Nome",
+      createdAt: row.createdAt?.seconds
+        ? new Date(row.createdAt.seconds * 1000).toLocaleDateString("pt-BR")
+        : "Sem Data",
+      monthYear: row.createdAt?.seconds
+        ? new Date(row.createdAt.seconds * 1000).toLocaleDateString("pt-BR", {
+            month: "2-digit",
+            year: "2-digit",
+          })
+        : "Sem Data",
+      sourceLanguage: row.sourceLanguage || "N/A",
+      targetLanguage: row.targetLanguage || "N/A",
+      convertCurrency: row.convertCurrency ? "Sim" : "Não",
+      totalValue: `U$ ${Number(
+        row.totalProjectValue || row.totalValue || 0
+      ).toFixed(2)}`,
+      paymentStatus: renderPaymentStatusBadge(
+        typeof row.payment_status === "object"
+          ? row.payment_status.status || "N/A"
+          : row.payment_status || "N/A"
+      ),
+      deadline: (() => {
+        if (row.deadlineDate) {
+          const [day, month, year] = row.deadlineDate.split("/");
+          const date = new Date(`${year}-${month}-${day}`);
+          if (!isNaN(date.getTime())) {
+            return date.toLocaleDateString("pt-BR", {
+              day: "2-digit",
               month: "2-digit",
-              year: "2-digit",
-            })
-          : "Sem Data",
-        sourceLanguage: row.sourceLanguage || "N/A",
-        targetLanguage: row.targetLanguage || "N/A",
-        convertCurrency: row.convertCurrency ? "Sim" : "Não",
-        totalValue: `U$ ${Number(
-          row.totalProjectValue || row.totalValue || 0
-        ).toFixed(2)}`,
-        paymentStatus: renderPaymentStatusBadge(
-          typeof row.payment_status === "object"
-            ? row.payment_status.status || "N/A"
-            : row.payment_status || "N/A"
-        ),
-        deadline: (() => {
-          if (row.deadlineDate) {
-            const [day, month, year] = row.deadlineDate.split("/");
-            const date = new Date(`${year}-${month}-${day}`);
-            if (!isNaN(date.getTime())) {
-              return date.toLocaleDateString("pt-BR", {
-                day: "2-digit",
-                month: "2-digit",
-                year: "numeric",
-              });
-            }
+              year: "numeric",
+            });
           }
-          if (row.deadline) {
-            const date = new Date(row.deadline);
-            if (!isNaN(date.getTime())) {
-              return date.toLocaleDateString("pt-BR", {
-                day: "2-digit",
-                month: "2-digit",
-                year: "numeric",
-              });
-            }
+        }
+        if (row.deadline) {
+          const date = new Date(row.deadline);
+          if (!isNaN(date.getTime())) {
+            return date.toLocaleDateString("pt-BR", {
+              day: "2-digit",
+              month: "2-digit",
+              year: "numeric",
+            });
           }
-          return "Sem Prazo";
-        })(),
-        status: renderProjectStatusBadge("Em Análise"),
-      }));
+        }
+        return "Sem Prazo";
+      })(),
+      status: renderProjectStatusBadge("Em Análise"),
+    }));
   }, [paginatedData, clientTypes]);
 
   return (
@@ -406,7 +411,7 @@ const ProjectsInAnalysis = () => {
             currentPage={currentPage}
             totalPages={Math.max(
               1,
-              Math.ceil((projects?.length || 0) / rowsPerPage)
+              Math.ceil((filteredProjects?.length || 0) / rowsPerPage)
             )}
             onPageChange={setCurrentPage}
             rowsPerPage={rowsPerPage}
@@ -414,7 +419,7 @@ const ProjectsInAnalysis = () => {
               setRowsPerPage(value);
               localStorage.setItem("projectsInAnalysisRowsPerPage", value);
             }}
-            totalItems={projects?.length || 0}
+            totalItems={filteredProjects?.length || 0}
           />
         </div>
       )}

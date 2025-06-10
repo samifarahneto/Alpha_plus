@@ -10,6 +10,7 @@ import {
   getDocs,
 } from "firebase/firestore";
 import { auth } from "../../firebaseConfig";
+import { onAuthStateChanged } from "firebase/auth";
 
 import { getStorage, ref, getDownloadURL } from "firebase/storage";
 import { IoMdSettings } from "react-icons/io";
@@ -205,11 +206,16 @@ const ClientProjects = () => {
   // A busca de nomes já é feita nos listeners onSnapshot
 
   useEffect(() => {
+    let unsubscribeFunctions = [];
+
     const fetchProjects = async () => {
       try {
         setLoading(true);
         const currentUser = auth.currentUser;
-        if (!currentUser) return;
+        if (!currentUser) {
+          setLoading(false);
+          return;
+        }
 
         const firestore = getFirestore();
         const userDoc = await getDocs(
@@ -321,8 +327,9 @@ const ClientProjects = () => {
           collections,
         });
 
-        // Array para armazenar os unsubscribe functions
-        const unsubscribeFunctions = [];
+        // Limpar listeners anteriores se existirem
+        unsubscribeFunctions.forEach((unsubscribe) => unsubscribe());
+        unsubscribeFunctions = [];
 
         // Para cada coleção
         collections.forEach((collectionName) => {
@@ -345,125 +352,152 @@ const ClientProjects = () => {
             );
 
             // Adicionar listeners para atualização em tempo real
-            const unsubscribe1 = onSnapshot(q1, async (snapshot) => {
-              const newProjects = await Promise.all(
-                snapshot.docs.map(async (doc) => {
-                  const projectData = doc.data();
-                  const firestore = getFirestore();
-                  const usersCollection = collection(firestore, "users");
-
-                  let authorName = "Não informado";
-
-                  // Debug: verificar todos os campos do projeto
-                  console.log("Dados do projeto (q1):", {
-                    projectOwner: projectData.projectOwner,
-                    userEmail: projectData.userEmail,
-                    oldclientName: projectData.oldclientName,
-                    oldclientEmail: projectData.oldclientEmail,
-                  });
-
-                  // Tentar encontrar o email real para buscar o usuário
-                  let emailToSearch = null;
-                  if (
-                    projectData.userEmail &&
-                    projectData.userEmail.includes("@")
-                  ) {
-                    emailToSearch = projectData.userEmail;
-                  } else if (
-                    projectData.oldclientEmail &&
-                    projectData.oldclientEmail.includes("@")
-                  ) {
-                    emailToSearch = projectData.oldclientEmail;
-                  } else if (
-                    projectData.projectOwner &&
-                    projectData.projectOwner.includes("@")
-                  ) {
-                    emailToSearch = projectData.projectOwner;
+            const unsubscribe1 = onSnapshot(
+              q1,
+              async (snapshot) => {
+                try {
+                  // Verificar se o usuário ainda está autenticado
+                  if (!auth.currentUser) {
+                    console.log(
+                      "Usuário não autenticado, cancelando listener q1"
+                    );
+                    return;
                   }
+                  const newProjects = await Promise.all(
+                    snapshot.docs.map(async (doc) => {
+                      const projectData = doc.data();
+                      const firestore = getFirestore();
+                      const usersCollection = collection(firestore, "users");
 
-                  if (emailToSearch) {
-                    try {
-                      const userQuery = query(
-                        usersCollection,
-                        where("email", "==", emailToSearch)
-                      );
-                      const userSnapshot = await getDocs(userQuery);
-                      if (!userSnapshot.empty) {
-                        const userData = userSnapshot.docs[0].data();
-                        console.log(
-                          "Dados do usuário encontrado (q1):",
-                          userData
-                        );
-                        authorName =
-                          userData.nomeCompleto ||
-                          userData.name ||
-                          userData.displayName ||
-                          emailToSearch;
+                      let authorName = "Não informado";
+
+                      // Debug: verificar todos os campos do projeto
+                      console.log("Dados do projeto (q1):", {
+                        projectOwner: projectData.projectOwner,
+                        userEmail: projectData.userEmail,
+                        oldclientName: projectData.oldclientName,
+                        oldclientEmail: projectData.oldclientEmail,
+                      });
+
+                      // Tentar encontrar o email real para buscar o usuário
+                      let emailToSearch = null;
+                      if (
+                        projectData.userEmail &&
+                        projectData.userEmail.includes("@")
+                      ) {
+                        emailToSearch = projectData.userEmail;
+                      } else if (
+                        projectData.oldclientEmail &&
+                        projectData.oldclientEmail.includes("@")
+                      ) {
+                        emailToSearch = projectData.oldclientEmail;
+                      } else if (
+                        projectData.projectOwner &&
+                        projectData.projectOwner.includes("@")
+                      ) {
+                        emailToSearch = projectData.projectOwner;
+                      }
+
+                      if (emailToSearch) {
+                        try {
+                          const userQuery = query(
+                            usersCollection,
+                            where("email", "==", emailToSearch)
+                          );
+                          const userSnapshot = await getDocs(userQuery);
+                          if (!userSnapshot.empty) {
+                            const userData = userSnapshot.docs[0].data();
+                            console.log(
+                              "Dados do usuário encontrado (q1):",
+                              userData
+                            );
+                            authorName =
+                              userData.nomeCompleto ||
+                              userData.name ||
+                              userData.displayName ||
+                              emailToSearch;
+                          } else {
+                            console.log(
+                              "Usuário não encontrado para email (q1):",
+                              emailToSearch
+                            );
+                            // Se não encontrou, usar o que está em projectOwner ou oldclientName
+                            authorName =
+                              projectData.oldclientName ||
+                              projectData.projectOwner ||
+                              "Não informado";
+                          }
+                        } catch (error) {
+                          console.error(
+                            "Erro ao buscar nome do autor (q1):",
+                            error
+                          );
+                          authorName =
+                            projectData.oldclientName ||
+                            projectData.projectOwner ||
+                            "Não informado";
+                        }
                       } else {
-                        console.log(
-                          "Usuário não encontrado para email (q1):",
-                          emailToSearch
-                        );
-                        // Se não encontrou, usar o que está em projectOwner ou oldclientName
+                        // Se não tem email válido, usar o nome que está salvo
                         authorName =
                           projectData.oldclientName ||
                           projectData.projectOwner ||
                           "Não informado";
                       }
-                    } catch (error) {
-                      console.error(
-                        "Erro ao buscar nome do autor (q1):",
-                        error
-                      );
-                      authorName =
-                        projectData.oldclientName ||
-                        projectData.projectOwner ||
-                        "Não informado";
-                    }
-                  } else {
-                    // Se não tem email válido, usar o nome que está salvo
-                    authorName =
-                      projectData.oldclientName ||
-                      projectData.projectOwner ||
-                      "Não informado";
-                  }
 
-                  return {
-                    ...projectData,
-                    id: doc.id,
-                    collection: collectionName,
-                    authorName: authorName,
-                    projectOwner: projectData.projectOwner || "Não informado",
-                    userEmail: projectData.userEmail || "Não informado",
-                  };
-                })
-              );
+                      return {
+                        ...projectData,
+                        id: doc.id,
+                        collection: collectionName,
+                        authorName: authorName,
+                        projectOwner:
+                          projectData.projectOwner || "Não informado",
+                        userEmail: projectData.userEmail || "Não informado",
+                      };
+                    })
+                  );
 
-              // Atualizar o estado com os novos dados
-              setProjects((prevProjects) => {
-                const projectMap = new Map(prevProjects.map((p) => [p.id, p]));
+                  // Atualizar o estado com os novos dados
+                  setProjects((prevProjects) => {
+                    const projectMap = new Map(
+                      prevProjects.map((p) => [p.id, p])
+                    );
 
-                // Adicionar novos projetos
-                newProjects.forEach((project) => {
-                  projectMap.set(project.id, project);
-                });
+                    // Adicionar novos projetos
+                    newProjects.forEach((project) => {
+                      projectMap.set(project.id, project);
+                    });
 
-                return Array.from(projectMap.values());
-              });
+                    return Array.from(projectMap.values());
+                  });
 
-              setAllProjects((prevProjects) => {
-                const projectMap = new Map(prevProjects.map((p) => [p.id, p]));
+                  setAllProjects((prevProjects) => {
+                    const projectMap = new Map(
+                      prevProjects.map((p) => [p.id, p])
+                    );
 
-                // Adicionar novos projetos
-                newProjects.forEach((project) => {
-                  projectMap.set(project.id, project);
-                });
+                    // Adicionar novos projetos
+                    newProjects.forEach((project) => {
+                      projectMap.set(project.id, project);
+                    });
 
-                return Array.from(projectMap.values());
-              });
-            });
+                    return Array.from(projectMap.values());
+                  });
+                } catch (error) {
+                  console.error("Erro no listener q1:", error);
+                }
+              },
+              (error) => {
+                console.error("Erro de permissão no listener q1:", error);
+              }
+            );
 
             const unsubscribe2 = onSnapshot(q2, async (snapshot) => {
+              // Verificar se o usuário ainda está autenticado
+              if (!auth.currentUser) {
+                console.log("Usuário não autenticado, cancelando listener");
+                return;
+              }
               const newProjects = await Promise.all(
                 snapshot.docs.map(async (doc) => {
                   const projectData = doc.data();
@@ -557,6 +591,11 @@ const ClientProjects = () => {
                 })
               );
 
+              console.log(
+                "Novos projetos encontrados (q2):",
+                newProjects.length
+              );
+
               // Atualizar o estado com os novos dados
               setProjects((prevProjects) => {
                 const projectMap = new Map(prevProjects.map((p) => [p.id, p]));
@@ -566,7 +605,12 @@ const ClientProjects = () => {
                   projectMap.set(project.id, project);
                 });
 
-                return Array.from(projectMap.values());
+                const result = Array.from(projectMap.values());
+                console.log(
+                  "Estado projects atualizado, total:",
+                  result.length
+                );
+                return result;
               });
 
               setAllProjects((prevProjects) => {
@@ -577,7 +621,12 @@ const ClientProjects = () => {
                   projectMap.set(project.id, project);
                 });
 
-                return Array.from(projectMap.values());
+                const result = Array.from(projectMap.values());
+                console.log(
+                  "Estado allProjects atualizado, total:",
+                  result.length
+                );
+                return result;
               });
             });
 
@@ -585,12 +634,8 @@ const ClientProjects = () => {
           });
         });
 
+        // Definir loading como false após configurar os listeners
         setLoading(false);
-
-        // Cleanup function para remover todos os listeners quando o componente for desmontado
-        return () => {
-          unsubscribeFunctions.forEach((unsubscribe) => unsubscribe());
-        };
       } catch (error) {
         console.error("Erro ao buscar projetos:", error);
         setError(error.message);
@@ -598,7 +643,27 @@ const ClientProjects = () => {
       }
     };
 
-    fetchProjects();
+    // Listener para mudanças de autenticação
+    const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        console.log("Usuário autenticado, buscando projetos...");
+        fetchProjects();
+      } else {
+        // Usuário fez logout, cancelar todos os listeners
+        console.log("Usuário fez logout, cancelando listeners");
+        unsubscribeFunctions.forEach((unsubscribe) => unsubscribe());
+        unsubscribeFunctions = [];
+        setProjects([]);
+        setAllProjects([]);
+        setLoading(false);
+      }
+    });
+
+    // Cleanup function para remover todos os listeners quando o componente for desmontado
+    return () => {
+      unsubscribeAuth();
+      unsubscribeFunctions.forEach((unsubscribe) => unsubscribe());
+    };
   }, []);
 
   const handleRowsPerPageChange = (value) => {
@@ -1635,6 +1700,14 @@ const ClientProjects = () => {
             Todos Projetos
           </h1>
         </div>
+        {console.log(
+          "Renderizando - loading:",
+          loading,
+          "projects.length:",
+          projects.length,
+          "allProjects.length:",
+          allProjects.length
+        )}
         {!loading && (
           <>
             <div className="flex flex-col md:flex-row items-end gap-2.5 mb-8">
