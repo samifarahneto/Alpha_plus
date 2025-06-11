@@ -1697,7 +1697,7 @@ const ClientProjects = () => {
       <div className="w-full pt-0 pb-4 md:pb-6 lg:pb-8 space-y-4 md:space-y-6 lg:space-y-8 px-4 sm:px-6">
         <div className="text-center mb-4 sm:mb-6 lg:mb-8">
           <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-blue-600 sm:bg-gradient-to-r sm:from-blue-600 sm:to-purple-600 sm:bg-clip-text sm:text-transparent mb-2">
-            Todos Projetos
+            Todos os Projetos
           </h1>
         </div>
         {console.log(
