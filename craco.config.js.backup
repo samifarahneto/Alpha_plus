@@ -51,27 +51,33 @@ module.exports = {
       return webpackConfig;
     },
   },
-  devServer: {
-    port: 3001,
-    hot: true,
-    liveReload: true,
-    watchFiles: {
-      paths: ["src/**/*", "public/**/*"],
-      options: {
-        usePolling: true,
-        interval: 1000,
+  devServer: (devServerConfig, { env, paths }) => {
+    // Configuração compatível com diferentes versões do webpack-dev-server
+    return {
+      ...devServerConfig,
+      port: 3001,
+      hot: true,
+      liveReload: true,
+      historyApiFallback: true,
+      client: {
+        overlay: {
+          errors: true,
+          warnings: false,
+        },
+        progress: true,
       },
-    },
-    client: {
-      overlay: {
-        errors: true,
-        warnings: false,
-      },
-      progress: true,
-    },
-    setupMiddlewares: (middlewares, devServer) => {
-      // Substitui onAfterSetupMiddleware
-      return middlewares;
-    },
+      // Usar setupMiddlewares se disponível, senão usar onAfterSetupMiddleware
+      ...(devServerConfig.setupMiddlewares
+        ? {
+            setupMiddlewares: (middlewares, devServer) => {
+              return middlewares;
+            },
+          }
+        : {
+            onAfterSetupMiddleware: (devServer) => {
+              // Compatibilidade com versões antigas
+            },
+          }),
+    };
   },
 };

@@ -47,21 +47,30 @@
     "web-vitals": "^2.1.4"
   },
   "scripts": {
-    "start": "craco start",
-    "build": "craco build",
-    "test": "craco test",
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
     "eject": "react-scripts eject",
     "deploy": "npm run build && firebase deploy --only hosting",
     "deploy:full": "npm run build && firebase deploy"
   },
+  "resolutions": {
+    "webpack": "^5.75.0",
+    "@babel/preset-react": "^7.18.6"
+  },
   "overrides": {
     "nth-check": "^2.1.1",
-    "webpack-dev-server": "^5.2.1",
     "resolve-url-loader": "^5.0.0",
     "path-to-regexp": "^0.1.12",
     "brace-expansion": "^2.0.1",
     "minimatch": "^5.0.0",
-    "glob": "^8.0.1"
+    "glob": "^8.0.1",
+    "ajv": "^6.12.6",
+    "ajv-keywords": "^3.5.2",
+    "ajv-formats": "^1.6.1",
+    "schema-utils": "^3.1.1",
+    "babel-loader": "^8.3.0",
+    "loader-utils": "^2.0.4"
   },
   "eslintConfig": {
     "extends": [
