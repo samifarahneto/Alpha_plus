@@ -13,6 +13,7 @@ import { auth } from "../../firebaseConfig";
 
 import ClientLayout from "../../components/layouts/ClientLayout";
 import DataTable from "../../components/DataTable";
+import Pagination from "../../components/Pagination";
 import "../../styles/Table.css";
 
 const ClientPayments = () => {
@@ -24,8 +25,16 @@ const ClientPayments = () => {
     const savedRowsPerPage = localStorage.getItem("clientPaymentsRowsPerPage");
     return savedRowsPerPage ? parseInt(savedRowsPerPage) : 10;
   });
-  const [showRowsDropdown, setShowRowsDropdown] = useState(false);
+
   const [selectedProjects, setSelectedProjects] = useState([]);
+
+  // Debug logs para verificar mudanças
+  console.log("Estado atual da paginação:", {
+    currentPage,
+    rowsPerPage,
+    totalProjects: projects.length,
+    totalPages: Math.ceil(projects.length / rowsPerPage),
+  });
   const [columnOrder] = useState(() => {
     const savedColumnOrder = localStorage.getItem("clientPaymentsColumnOrder");
     return savedColumnOrder
@@ -48,6 +57,12 @@ const ClientPayments = () => {
   const navigate = useNavigate();
 
   const fixedColumns = ["author", "email", "projectName"];
+
+  // UseEffect para resetar página quando rowsPerPage mudar
+  useEffect(() => {
+    console.log("RowsPerPage mudou para:", rowsPerPage);
+    setCurrentPage(1);
+  }, [rowsPerPage]);
 
   useEffect(() => {
     const fetchProjects = async () => {
@@ -191,7 +206,12 @@ const ClientPayments = () => {
                 projectsList.forEach((project) => {
                   projectMap.set(project.id, project);
                 });
-                return Array.from(projectMap.values());
+                const updatedProjects = Array.from(projectMap.values());
+                console.log(
+                  "Total de projetos após atualização q1:",
+                  updatedProjects.length
+                );
+                return updatedProjects;
               });
               setLoading(false);
             });
@@ -211,7 +231,12 @@ const ClientPayments = () => {
                 projectsList.forEach((project) => {
                   projectMap.set(project.id, project);
                 });
-                return Array.from(projectMap.values());
+                const updatedProjects = Array.from(projectMap.values());
+                console.log(
+                  "Total de projetos após atualização q2:",
+                  updatedProjects.length
+                );
+                return updatedProjects;
               });
               setLoading(false);
             });
@@ -276,7 +301,7 @@ const ClientPayments = () => {
 
   const handleSelectAll = (isSelected) => {
     if (isSelected) {
-      setSelectedProjects(currentRows.map((row) => row.id));
+      setSelectedProjects(projects.map((row) => row.id));
     } else {
       setSelectedProjects([]);
     }
@@ -454,7 +479,7 @@ const ClientPayments = () => {
     {
       id: "status",
       label: "PGTO",
-      render: (value) => {
+      render: (value, row) => {
         const statusConfig = {
           Pago: {
             bg: "bg-green-50",
@@ -476,6 +501,11 @@ const ClientPayments = () => {
             text: "text-red-700",
             border: "border-red-200",
           },
+          "Em Reembolso": {
+            bg: "bg-orange-50",
+            text: "text-orange-700",
+            border: "border-orange-200",
+          },
           "N/A": {
             bg: "bg-gray-50",
             text: "text-gray-700",
@@ -483,7 +513,16 @@ const ClientPayments = () => {
           },
         };
 
-        const status = value || "Pendente";
+        // Usar especificamente o payment_status do row, não o value
+        const paymentStatus = row.payment_status;
+        let status = "Pendente"; // default
+
+        if (typeof paymentStatus === "string") {
+          status = paymentStatus;
+        } else if (typeof paymentStatus === "object" && paymentStatus?.status) {
+          status = paymentStatus.status;
+        }
+
         const config = statusConfig[status] || statusConfig["N/A"];
 
         return (
@@ -548,19 +587,24 @@ const ClientPayments = () => {
     },
   ];
 
-  // Calcular índices para paginação
-  const indexOfLastRow = currentPage * rowsPerPage;
-  const indexOfFirstRow = indexOfLastRow - rowsPerPage;
-  const currentRows = projects.slice(indexOfFirstRow, indexOfLastRow);
+  // Remover paginação manual - deixar o DataTable gerenciar
   const totalPages = Math.ceil(projects.length / rowsPerPage);
+
+  // Debug da paginação
+  console.log("Dados para paginação:", {
+    totalProjects: projects.length,
+    currentPage,
+    rowsPerPage,
+    totalPages,
+  });
 
   // Função para mudar página
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
   const handleRowsPerPageChange = (value) => {
+    console.log("Mudando linhas por página de", rowsPerPage, "para", value);
     setRowsPerPage(value);
     setCurrentPage(1);
-    setShowRowsDropdown(false);
     localStorage.setItem("clientPaymentsRowsPerPage", value.toString());
   };
 
@@ -614,7 +658,9 @@ const ClientPayments = () => {
               <div className="w-full shadow-lg rounded-lg">
                 <DataTable
                   columns={columns}
-                  data={currentRows}
+                  data={projects}
+                  currentPage={currentPage}
+                  rowsPerPage={rowsPerPage}
                   initialColumnOrder={columnOrder}
                   fixedColumns={fixedColumns}
                   onRowClick={(row) => handleProjectClick(row.id)}
@@ -628,88 +674,14 @@ const ClientPayments = () => {
               </div>
             </div>
 
-            {/* Paginação */}
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-4 p-4">
-              <div className="flex items-center gap-2 w-full sm:w-auto justify-center sm:justify-start">
-                <span className="text-sm text-gray-600">
-                  Projetos por página:
-                </span>
-                <div className="relative">
-                  <button
-                    id="rows-button"
-                    onClick={() => setShowRowsDropdown(!showRowsDropdown)}
-                    className="flex items-center gap-2 px-3 py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-50"
-                  >
-                    {rowsPerPage}
-                    <svg
-                      className="w-4 h-4 text-gray-500"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M19 9l-7 7-7-7"
-                      />
-                    </svg>
-                  </button>
-                  {showRowsDropdown && (
-                    <div
-                      id="rows-dropdown"
-                      className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg"
-                    >
-                      <div className="py-1">
-                        {[10, 25, 50, 100].map((value) => (
-                          <button
-                            key={value}
-                            onClick={() => handleRowsPerPageChange(value)}
-                            className="w-full px-4 py-2 text-sm text-left hover:bg-gray-50"
-                          >
-                            {value}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2 w-full sm:w-auto justify-center">
-                <button
-                  onClick={() => paginate(currentPage - 1)}
-                  disabled={currentPage === 1}
-                  className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-                >
-                  Anterior
-                </button>
-                <div className="flex items-center gap-1 overflow-x-auto max-w-[200px] sm:max-w-none">
-                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(
-                    (page) => (
-                      <button
-                        key={page}
-                        onClick={() => paginate(page)}
-                        className={`w-8 h-8 text-sm border rounded-lg flex-shrink-0 ${
-                          currentPage === page
-                            ? "bg-blue-500 text-white border-blue-500"
-                            : "border-gray-300 hover:bg-gray-50"
-                        }`}
-                      >
-                        {page}
-                      </button>
-                    )
-                  )}
-                </div>
-                <button
-                  onClick={() => paginate(currentPage + 1)}
-                  disabled={currentPage === totalPages}
-                  className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-                >
-                  Próximo
-                </button>
-              </div>
-            </div>
+            <Pagination
+              currentPage={currentPage}
+              totalPages={Math.ceil(projects.length / rowsPerPage)}
+              onPageChange={paginate}
+              rowsPerPage={rowsPerPage}
+              onRowsPerPageChange={handleRowsPerPageChange}
+              totalItems={projects.length}
+            />
           </>
         )}
       </div>
