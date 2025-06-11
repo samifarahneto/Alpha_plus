@@ -81,11 +81,28 @@ const ClienteProjectDetails = () => {
             doc(firestore, collectionFromUrl, projectId)
           );
           if (projectDoc.exists()) {
-            setProject({
+            const projectData = {
               id: projectId,
               collection: collectionFromUrl,
               ...projectDoc.data(),
-            });
+            };
+            setProject(projectData);
+
+            // Buscar dados do usuário imediatamente após carregar o projeto
+            if (projectData.userEmail) {
+              const userQuery = query(
+                collection(firestore, "users"),
+                where("email", "==", projectData.userEmail)
+              );
+              const userSnapshot = await getDocs(userQuery);
+              if (!userSnapshot.empty) {
+                setUserData(userSnapshot.docs[0].data());
+                console.log("UserData carregado:", userSnapshot.docs[0].data());
+              } else {
+                console.log("Usuário não encontrado:", projectData.userEmail);
+              }
+            }
+
             setLoading(false);
             return;
           }
@@ -95,11 +112,28 @@ const ClienteProjectDetails = () => {
           if (collectionName === collectionFromUrl) continue;
           projectDoc = await getDoc(doc(firestore, collectionName, projectId));
           if (projectDoc.exists()) {
-            setProject({
+            const projectData = {
               id: projectId,
               collection: collectionName,
               ...projectDoc.data(),
-            });
+            };
+            setProject(projectData);
+
+            // Buscar dados do usuário imediatamente após carregar o projeto
+            if (projectData.userEmail) {
+              const userQuery = query(
+                collection(firestore, "users"),
+                where("email", "==", projectData.userEmail)
+              );
+              const userSnapshot = await getDocs(userQuery);
+              if (!userSnapshot.empty) {
+                setUserData(userSnapshot.docs[0].data());
+                console.log("UserData carregado:", userSnapshot.docs[0].data());
+              } else {
+                console.log("Usuário não encontrado:", projectData.userEmail);
+              }
+            }
+
             setLoading(false);
             return;
           }
@@ -115,24 +149,10 @@ const ClienteProjectDetails = () => {
       }
     };
 
-    const fetchUserData = async () => {
-      const userQuery = query(
-        collection(getFirestore(), "users"),
-        where("email", "==", project?.userEmail)
-      );
-      const userSnapshot = await getDocs(userQuery);
-      if (!userSnapshot.empty) {
-        setUserData(userSnapshot.docs[0].data());
-      }
-    };
-
     if (projectId) {
       fetchProjectDetails();
-      if (project?.userEmail) {
-        fetchUserData();
-      }
     }
-  }, [projectId, navigate, project?.userEmail]);
+  }, [projectId, navigate]);
 
   const calculateTotalPages = (files) => {
     if (!files || !Array.isArray(files)) return 0;
@@ -1296,34 +1316,95 @@ const ClienteProjectDetails = () => {
             )}
           {/* Seção de Ações */}
           <div className="flex justify-center">
+            {/* Debug: Verificar valores para botões de aprovação */}
+            {console.log("=== DEBUG BOTÕES DE APROVAÇÃO ===")}
+            {console.log("userData:", userData)}
+            {console.log("userData?.canTest:", userData?.canTest)}
+            {console.log(
+              "userData?.canTest === true:",
+              userData?.canTest === true
+            )}
+            {console.log("project.collection:", project.collection)}
+            {console.log("Coleções aceitas:", [
+              "b2bapproval",
+              "b2capproval",
+              "b2bprojects",
+              "b2cprojects",
+              "b2bapproved",
+            ])}
+            {console.log(
+              "É coleção aceita:",
+              [
+                "b2bapproval",
+                "b2capproval",
+                "b2bprojects",
+                "b2cprojects",
+                "b2bapproved",
+              ].includes(project.collection)
+            )}
+            {console.log(
+              "Condição completa:",
+              userData?.canTest === true &&
+                (project.collection === "b2bapproval" ||
+                  project.collection === "b2capproval" ||
+                  project.collection === "b2bprojects" ||
+                  project.collection === "b2cprojects" ||
+                  project.collection === "b2bapproved")
+            )}
+            {console.log("=== FIM DEBUG ===")}
+
             {userData?.canTest === true &&
-            project.collection === "b2bapproval" ? (
-              <div className="flex gap-4 flex-col md:flex-row">
+            (project.collection === "b2bapproval" ||
+              project.collection === "b2capproval" ||
+              project.collection === "b2bprojects" ||
+              project.collection === "b2cprojects" ||
+              project.collection === "b2bapproved") ? (
+              <div className="flex justify-center mt-6 gap-4">
                 <button
                   onClick={() => setShowApprovalModal(true)}
-                  className="w-full md:w-[350px] px-4 md:px-6 py-2 md:py-3 bg-blue-500 text-white text-sm md:text-base rounded-lg border-none cursor-pointer transition-colors duration-200 hover:bg-blue-600 flex items-center justify-center gap-2"
+                  className="w-[350px] bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center gap-2"
                 >
                   <FaCheck />
-                  Aprovar
+                  {project.collection === "b2bapproval" ||
+                  project.collection === "b2capproval"
+                    ? "Aprovar"
+                    : "Aprovar Projeto"}
                 </button>
                 <button
                   onClick={async () => {
-                    // Primeiro aprova o projeto
-                    await handleProjectApproval();
-                    // Depois redireciona para o checkout
-                    setTimeout(() => {
+                    // Se já está em uma coleção de aprovação, apenas aprova
+                    if (
+                      project.collection === "b2bapproval" ||
+                      project.collection === "b2capproval"
+                    ) {
+                      await handleProjectApproval();
+                      setTimeout(() => {
+                        navigate("/client/checkout", {
+                          state: {
+                            selectedProjects: [projectId],
+                            collection: project.collection.includes("b2b")
+                              ? "b2bapproved"
+                              : "b2capproved",
+                          },
+                        });
+                      }, 1000);
+                    } else {
+                      // Se está em projects, vai direto para checkout
                       navigate("/client/checkout", {
                         state: {
                           selectedProjects: [projectId],
-                          collection: "b2bapproved", // já será movido para b2bapproved
+                          collection: project.collection,
                         },
                       });
-                    }, 1000); // Pequeno delay para garantir que a aprovação foi processada
+                    }
                   }}
-                  className="w-full md:w-[350px] px-4 md:px-6 py-2 md:py-3 bg-green-500 text-white text-sm md:text-base rounded-lg border-none cursor-pointer transition-colors duration-200 hover:bg-green-600 flex items-center justify-center gap-2"
+                  className="w-[350px] bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center gap-2"
                 >
                   <FaCreditCard />
-                  Aprovar e Pagar
+                  {project.collection === "b2bapproval" ||
+                  project.collection === "b2capproval"
+                    ? "Aprovar e Pagar"
+                    : "Pagar"}
                 </button>
               </div>
             ) : (

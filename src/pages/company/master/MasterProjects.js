@@ -264,7 +264,7 @@ const MasterProjects = ({ style, isMobile }) => {
     },
     {
       id: "paymentStatus",
-      label: "Status Pgto",
+      label: "Pgto",
       minWidth: "100px",
       render: (value, row) =>
         renderPaymentStatusBadge(
@@ -313,7 +313,7 @@ const MasterProjects = ({ style, isMobile }) => {
     },
     {
       id: "projectStatus",
-      label: "Status do Projeto",
+      label: "Projeto",
       fixed: true,
       minWidth: "120px",
       render: (value, row) =>
@@ -321,7 +321,7 @@ const MasterProjects = ({ style, isMobile }) => {
     },
     {
       id: "translationStatus",
-      label: "Status de Tradução",
+      label: "Tradução",
       fixed: true,
       minWidth: "140px",
       render: (value, row) => (
