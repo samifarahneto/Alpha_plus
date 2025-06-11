@@ -298,7 +298,6 @@ const Header = () => {
           label: "Todos Projetos",
           notificationCount: clientUnreadCount,
         },
-        { to: "/client/projects/clientaddproject", label: "Criar Projetos" },
         {
           to: "/client/projects-budget",
           label: "Aguardando Orçamento",
@@ -350,12 +349,13 @@ const Header = () => {
     } else {
       const links = [
         { to: "/client/dashboard", label: "Dashboard" },
+        { to: "/client/projects/clientaddproject", label: "Criar Projetos" },
         { to: "/client/profile", label: "Meu Perfil" },
       ];
 
       // Adicionar colaboradores se for b2b ou b2c
       if (userType === "b2b" || userType === "b2c") {
-        links.splice(1, 0, {
+        links.push({
           to: "/client/add-collaborator",
           label: "Colaboradores",
         });
@@ -587,31 +587,35 @@ const Header = () => {
           <div className="flex flex-col h-full">
             <nav className="flex-1 py-2 sm:py-4">
               <div className="px-1 sm:px-2 space-y-1 sm:space-y-2">
-                {/* Links Principais */}
-                {mainLinks.map((link) => (
-                  <Link
-                    key={link.to}
-                    to={link.to}
-                    onClick={(e) => handleLinkClick(e, link.to)}
-                    className={`flex items-center ${
-                      shouldShowText() ? "px-2 sm:px-3" : "justify-center px-2"
-                    } py-2 sm:py-3 text-gray-700 hover:bg-gray-100 rounded-md transition-colors duration-200 ${
-                      isActive(link.to)
-                        ? "text-primary bg-blue-50 font-medium"
-                        : ""
-                    }`}
-                    title={!shouldShowText() ? link.label : ""}
-                  >
-                    {getIconForPath(link.to)}
-                    {shouldShowText() && (
-                      <span className="ml-2 sm:ml-3 text-xs sm:text-sm font-medium truncate">
-                        {link.label}
-                      </span>
-                    )}
-                  </Link>
-                ))}
+                {/* Dashboard - sempre primeiro */}
+                {mainLinks
+                  .filter((link) => link.to.includes("dashboard"))
+                  .map((link) => (
+                    <Link
+                      key={link.to}
+                      to={link.to}
+                      onClick={(e) => handleLinkClick(e, link.to)}
+                      className={`flex items-center ${
+                        shouldShowText()
+                          ? "px-2 sm:px-3"
+                          : "justify-center px-2"
+                      } py-2 sm:py-3 text-gray-700 hover:bg-gray-100 rounded-md transition-colors duration-200 ${
+                        isActive(link.to)
+                          ? "text-primary bg-blue-50 font-medium"
+                          : ""
+                      }`}
+                      title={!shouldShowText() ? link.label : ""}
+                    >
+                      {getIconForPath(link.to)}
+                      {shouldShowText() && (
+                        <span className="ml-2 sm:ml-3 text-xs sm:text-sm font-medium truncate">
+                          {link.label}
+                        </span>
+                      )}
+                    </Link>
+                  ))}
 
-                {/* Menu Projetos */}
+                {/* Menu Projetos - segundo */}
                 <button
                   onClick={handleProjectsClick}
                   className={`w-full flex items-center ${
@@ -791,6 +795,34 @@ const Header = () => {
                     ))}
                   </div>
                 )}
+
+                {/* Demais Links Principais - após projetos */}
+                {mainLinks
+                  .filter((link) => !link.to.includes("dashboard"))
+                  .map((link) => (
+                    <Link
+                      key={link.to}
+                      to={link.to}
+                      onClick={(e) => handleLinkClick(e, link.to)}
+                      className={`flex items-center ${
+                        shouldShowText()
+                          ? "px-2 sm:px-3"
+                          : "justify-center px-2"
+                      } py-2 sm:py-3 text-gray-700 hover:bg-gray-100 rounded-md transition-colors duration-200 ${
+                        isActive(link.to)
+                          ? "text-primary bg-blue-50 font-medium"
+                          : ""
+                      }`}
+                      title={!shouldShowText() ? link.label : ""}
+                    >
+                      {getIconForPath(link.to)}
+                      {shouldShowText() && (
+                        <span className="ml-2 sm:ml-3 text-xs sm:text-sm font-medium truncate">
+                          {link.label}
+                        </span>
+                      )}
+                    </Link>
+                  ))}
               </div>
             </nav>
           </div>
