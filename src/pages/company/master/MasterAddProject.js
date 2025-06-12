@@ -79,6 +79,10 @@ const MasterAddProject = () => {
   const [userSuggestions, setUserSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
 
+  // Estados para drag and drop
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragCounter, setDragCounter] = useState(0);
+
   const normalize = useCallback((text) => {
     if (!text) return "";
     return text
@@ -544,6 +548,43 @@ const MasterAddProject = () => {
     setFiles((prevFiles) => [...prevFiles, ...selectedFiles]);
   };
 
+  // Funções para drag and drop
+  const handleDragEnter = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragCounter(dragCounter + 1);
+    if (e.dataTransfer.items && e.dataTransfer.items.length > 0) {
+      setIsDragging(true);
+    }
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragCounter(dragCounter - 1);
+    if (dragCounter === 1) {
+      setIsDragging(false);
+    }
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    setDragCounter(0);
+
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      const droppedFiles = Array.from(e.dataTransfer.files);
+      setFiles((prevFiles) => [...prevFiles, ...droppedFiles]);
+      e.dataTransfer.clearData();
+    }
+  };
+
   const handleRemoveFile = (indexToRemove) => {
     setFiles((prevFiles) =>
       prevFiles.filter((_, index) => index !== indexToRemove)
@@ -920,6 +961,8 @@ const MasterAddProject = () => {
     setUserEmailError("");
     setUserSuggestions([]);
     setShowSuggestions(false);
+    setIsDragging(false);
+    setDragCounter(0);
   };
 
   return (
@@ -1125,35 +1168,58 @@ const MasterAddProject = () => {
                   onChange={handleFileChange}
                   className="hidden"
                 />
-                <label
-                  htmlFor="fileInput"
-                  className="flex flex-col items-center justify-center w-full h-24 md:h-32 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer bg-white/50 backdrop-blur-sm hover:bg-blue-50 hover:border-blue-400 transition-all duration-300"
+                <div
+                  onDragEnter={handleDragEnter}
+                  onDragLeave={handleDragLeave}
+                  onDragOver={handleDragOver}
+                  onDrop={handleDrop}
+                  className={`flex flex-col items-center justify-center w-full h-24 md:h-32 border-2 border-dashed rounded-xl cursor-pointer bg-white/50 backdrop-blur-sm transition-all duration-300 ${
+                    isDragging
+                      ? "border-blue-500 bg-blue-50 scale-105 shadow-lg"
+                      : "border-gray-300 hover:bg-blue-50 hover:border-blue-400"
+                  }`}
+                  onClick={() => document.getElementById("fileInput").click()}
                 >
-                  <div className="flex flex-col items-center justify-center pt-3 md:pt-5 pb-4 md:pb-6">
-                    <svg
-                      className="w-6 md:w-8 h-6 md:h-8 mb-2 md:mb-4 text-gray-500"
-                      aria-hidden="true"
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 20 16"
-                    >
-                      <path
-                        stroke="currentColor"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"
-                      />
-                    </svg>
-                    <p className="mb-1 md:mb-2 text-xs md:text-sm text-gray-500">
-                      <span className="font-semibold">Clique para enviar</span>{" "}
-                      ou arraste e solte
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      PDF, DOC, DOCX, imagens
-                    </p>
+                  <div className="flex flex-col items-center justify-center pt-3 md:pt-5 pb-4 md:pb-6 pointer-events-none">
+                    {isDragging ? (
+                      <>
+                        <div className="w-6 md:w-8 h-6 md:h-8 mb-2 md:mb-4 text-blue-500 animate-bounce">
+                          📁
+                        </div>
+                        <p className="mb-1 md:mb-2 text-xs md:text-sm text-blue-600 font-semibold">
+                          Solte os arquivos aqui!
+                        </p>
+                      </>
+                    ) : (
+                      <>
+                        <svg
+                          className="w-6 md:w-8 h-6 md:h-8 mb-2 md:mb-4 text-gray-500"
+                          aria-hidden="true"
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 20 16"
+                        >
+                          <path
+                            stroke="currentColor"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"
+                          />
+                        </svg>
+                        <p className="mb-1 md:mb-2 text-xs md:text-sm text-gray-500">
+                          <span className="font-semibold">
+                            Clique para enviar
+                          </span>{" "}
+                          ou arraste e solte
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          PDF, DOC, DOCX, imagens
+                        </p>
+                      </>
+                    )}
                   </div>
-                </label>
+                </div>
               </div>
             </div>
 
