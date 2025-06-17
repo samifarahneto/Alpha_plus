@@ -34,6 +34,7 @@ import {
   runTransaction,
 } from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
+import ClientLayout from "../../components/layouts/ClientLayout";
 
 const ClientAddProject = () => {
   const [sourceLanguage, setSourceLanguage] = useState("");
@@ -1406,7 +1407,7 @@ const ClientAddProject = () => {
 
   const renderContent = () => {
     return (
-      <div className="w-full pt-0 pb-4 md:pb-6 lg:pb-8 space-y-4 md:space-y-6 lg:space-y-8 px-4 sm:px-6 md:px-8">
+      <div className="w-full space-y-4 md:space-y-6 lg:space-y-8">
         <h1 className="text-2xl sm:text-3xl font-bold text-center mb-4 sm:mb-6 lg:mb-8 text-blue-600 sm:bg-gradient-to-r sm:from-blue-600 sm:to-purple-600 sm:bg-clip-text sm:text-transparent">
           {currentStep === 1 ? "Criar Projeto" : "Resumo do Projeto"}
         </h1>
@@ -2575,7 +2576,7 @@ const ClientAddProject = () => {
     }
   };
 
-  return renderContent();
+  return <ClientLayout>{renderContent()}</ClientLayout>;
 };
 
 // Exportação fora de qualquer bloco de código
