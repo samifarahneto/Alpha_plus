@@ -1,13 +1,7 @@
 const functions = require("firebase-functions");
 const Stripe = require("stripe");
 const cors = require("cors");
-const admin = require("firebase-admin");
 require("dotenv").config();
-
-// Inicialização do Firebase Admin SDK
-if (!admin.apps.length) {
-    admin.initializeApp();
-}
 
 // Configuração do Stripe
 const stripe = new Stripe(
@@ -17,54 +11,6 @@ const stripe = new Stripe(
 
 // Middleware de CORS
 const corsHandler = cors({origin: true});
-
-/**
- * Cloud Function que gera um ID autoincremental para projetos
- *
- * Esta função:
- * 1. Usa uma transação para garantir operações atômicas
- * 2. Incrementa o contador na coleção 'counters'
- * 3. Retorna o novo valor do contador como ID do projeto
- */
-exports.getNextProjectId = functions.https.onCall(async (data, context) => {
-    try {
-        const db = admin.firestore();
-
-        // Referência para o documento contador
-        const counterRef = db.collection("counters").doc("projects");
-
-        // Executar uma transação para garantir atomicidade
-        const newId = await db.runTransaction(async (transaction) => {
-            const counterDoc = await transaction.get(counterRef);
-
-            // Se o documento não existir, crie-o com valor inicial 1
-            if (!counterDoc.exists) {
-                transaction.set(counterRef, {current: 1});
-                return 1;
-            }
-
-            // Caso contrário, incremente o valor atual
-            const currentValue = counterDoc.data().current;
-            const nextValue = currentValue + 1;
-
-            transaction.update(counterRef, {current: nextValue});
-
-            return nextValue;
-        });
-
-        // Registrar o ID gerado para fins de depuração
-        console.log(`Novo ID de projeto gerado: ${newId}`);
-
-        // Retornar o novo ID
-        return {projectId: newId};
-    } catch (error) {
-        console.error("Erro ao gerar ID de projeto:", error);
-        throw new functions.https.HttpsError(
-            "internal",
-            `Erro ao gerar ID: ${error.message}`,
-        );
-    }
-});
 
 // Função do Stripe: Criar Payment Intent
 exports.createPaymentIntent = functions.https.onRequest((req, res) => {
@@ -136,7 +82,7 @@ exports.stripeWebhook = functions.https.onRequest((req, res) => {
         const projectId = paymentIntent.metadata.project_id;
 
         if (projectId) {
-            const firestore = admin.firestore();
+            const firestore = require("firebase-admin").firestore();
 
             firestore
                 .collection("projects")

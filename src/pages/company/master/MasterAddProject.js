@@ -801,6 +801,38 @@ const MasterAddProject = () => {
     return `${day}/${month}/${year}`;
   };
 
+  // Função auxiliar para processar o deadline e gerar a data de entrega
+  const processDeadlineToDate = (deadlineString) => {
+    if (!deadlineString) {
+      return "A ser definido";
+    }
+
+    // Se já é "A ser definido", mantém assim
+    if (deadlineString === "A ser definido") {
+      return "A ser definido";
+    }
+
+    // Se contém "dias úteis", extrai o número e calcula a data
+    if (deadlineString.includes("dias úteis")) {
+      const daysMatch = deadlineString.match(/(\d+)\s*dias úteis/);
+      if (daysMatch && daysMatch[1]) {
+        const days = parseInt(daysMatch[1]);
+        if (!isNaN(days) && days > 0) {
+          return calculateDeliveryDate(days);
+        }
+      }
+    }
+
+    // Se for apenas um número, assume que são dias úteis
+    const numericDeadline = parseInt(deadlineString);
+    if (!isNaN(numericDeadline) && numericDeadline > 0) {
+      return calculateDeliveryDate(numericDeadline);
+    }
+
+    // Fallback
+    return "A ser definido";
+  };
+
   const saveProjectToFirestore = async (status) => {
     setIsSubmitting(true);
     try {
@@ -833,14 +865,8 @@ const MasterAddProject = () => {
       // Calcular o prazo em dias úteis
       const deadlineDays = calculateDeadline(projectData.totalPages);
 
-      // Calcular a data de entrega
-      let deadlineDate = "";
-      if (deadlineDays.includes("dias úteis")) {
-        const days = parseInt(deadlineDays.split(" ")[0]);
-        if (!isNaN(days)) {
-          deadlineDate = calculateDeliveryDate(days);
-        }
-      }
+      // Calcular a data de entrega baseada no deadline usando a função auxiliar
+      const deadlineDate = processDeadlineToDate(deadlineDays);
 
       // Determinar a coleção correta baseada no tipo de usuário e tipo de arquivo
       const collectionName = projectData.hasManualQuoteFiles

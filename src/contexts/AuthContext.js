@@ -97,47 +97,12 @@ export function AuthProvider({ children }) {
     }
   };
 
-  // Função para verificar se o usuário pode acessar uma rota
-  const canAccessRoute = (pathname) => {
-    // Rotas públicas sempre permitidas
-    const publicRoutes = ["/", "/login", "/register"];
-    if (publicRoutes.includes(pathname)) {
-      return true;
-    }
-
-    // Se não há usuário, só pode acessar rotas públicas
-    if (!user) {
-      return false;
-    }
-
-    const userType = user.userType?.toLowerCase();
-
-    // Rotas do cliente
-    if (pathname.startsWith("/client")) {
-      return ["b2b", "b2c", "colab"].includes(userType);
-    }
-
-    // Rotas do master
-    if (pathname.startsWith("/company/master")) {
-      return userType === "master";
-    }
-
-    // Rota de pagamento
-    if (pathname === "/payment") {
-      return true; // Qualquer usuário autenticado
-    }
-
-    // Por padrão, negar acesso a rotas não reconhecidas
-    return false;
-  };
-
   const value = {
     user,
     signup,
     login,
     logout,
     loading,
-    canAccessRoute,
   };
 
   if (loading && !user) {

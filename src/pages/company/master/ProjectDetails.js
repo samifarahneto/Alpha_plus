@@ -219,7 +219,7 @@ const ProjectDetails = () => {
   const [newProjectName, setNewProjectName] = useState("");
   const [link, setLink] = useState("");
   const [showDeadlineModal, setShowDeadlineModal] = useState(false);
-  const [newDeadline, setNewDeadline] = useState({ date: "", time: "" });
+  const [newDeadline, setNewDeadline] = useState({ date: "" });
   const navigate = useNavigate();
   const [showEditPagesModal, setShowEditPagesModal] = useState(false);
   const [editedPages, setEditedPages] = useState({});
@@ -444,37 +444,44 @@ const ProjectDetails = () => {
 
   const handleDeadlineUpdate = async () => {
     try {
+      if (!newDeadline.date) {
+        alert("Por favor, selecione uma data para o prazo.");
+        return;
+      }
+
+      if (isWeekend(newDeadline.date)) {
+        alert("Por favor, selecione uma data que não seja fim de semana.");
+        return;
+      }
+
       const firestore = getFirestore();
       const projectRef = doc(firestore, project.collection, projectId);
 
-      // Criar um objeto Date com a data e hora selecionadas
+      // Criar um objeto Date com a data selecionada (meio-dia para evitar problemas de timezone)
       const [year, month, day] = newDeadline.date.split("-");
-      const [hours, minutes] = newDeadline.time.split(":");
-
-      // Criar a data no fuso horário GMT-3
       const updatedDeadline = new Date(
         parseInt(year),
         parseInt(month) - 1,
         parseInt(day),
-        parseInt(hours),
-        parseInt(minutes)
+        12, // Meio-dia
+        0 // 0 minutos
       );
 
-      // Ajustar para GMT-3
-      updatedDeadline.setHours(updatedDeadline.getHours() + 3);
+      // Validar se a data é válida
+      if (isNaN(updatedDeadline.getTime())) {
+        alert("Data inválida. Por favor, verifique a data selecionada.");
+        return;
+      }
 
-      // Formatar a data para exibição
-      const formattedDeadline = updatedDeadline.toLocaleString("pt-BR", {
+      // Formatar a data para exibição no padrão brasileiro
+      const formattedDeadline = updatedDeadline.toLocaleDateString("pt-BR", {
         day: "2-digit",
         month: "2-digit",
         year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-        timeZone: "America/Sao_Paulo",
       });
 
       const updateData = {
-        deadline: formattedDeadline,
+        deadline: `${formattedDeadline}`,
         deadlineDate: updatedDeadline.toISOString(),
       };
 
@@ -488,8 +495,9 @@ const ProjectDetails = () => {
             nome: project.projectName,
             email: project.userEmail,
           },
-          prazoAnterior: project.deadline || "Não definido",
+          prazoAnterior: formatDeadline(project),
           prazoNovo: formattedDeadline,
+          dataISO: updatedDeadline.toISOString(),
         },
       };
 
@@ -505,6 +513,7 @@ const ProjectDetails = () => {
       }));
 
       setShowDeadlineModal(false);
+      setNewDeadline({ date: "" });
       alert("Prazo atualizado com sucesso!");
     } catch (error) {
       console.error("Erro ao atualizar o prazo:", error);
@@ -565,25 +574,11 @@ const ProjectDetails = () => {
     return today.toISOString().split("T")[0];
   };
 
-  const disableWeekends = () => {
-    const today = new Date();
-    const year = today.getFullYear();
-    const month = String(today.getMonth() + 1).padStart(2, "0");
-
-    // Criar string de datas desabilitadas
-    let disabledDates = [];
-    let date = new Date(year, today.getMonth(), 1);
-
-    while (date.getMonth() === today.getMonth()) {
-      if (date.getDay() === 0 || date.getDay() === 6) {
-        // 0 = Domingo, 6 = Sábado
-        const day = String(date.getDate()).padStart(2, "0");
-        disabledDates.push(`${year}-${month}-${day}`);
-      }
-      date.setDate(date.getDate() + 1);
-    }
-
-    return disabledDates.join(",");
+  const isWeekend = (dateString) => {
+    if (!dateString) return false;
+    const date = new Date(dateString + "T00:00:00");
+    const dayOfWeek = date.getDay();
+    return dayOfWeek === 0 || dayOfWeek === 6; // 0 = Domingo, 6 = Sábado
   };
 
   const getFileDownloadUrl = async (fileUrl) => {
@@ -1610,6 +1605,73 @@ const ProjectDetails = () => {
     }
   };
 
+  // Função específica para formatar prazo que tenta usar deadlineDate primeiro
+  const formatDeadline = (project) => {
+    // Primeiro tenta usar deadlineDate se existir
+    if (project.deadlineDate) {
+      const formatted = formatDate(project.deadlineDate);
+      if (formatted !== "A definir") {
+        return formatted;
+      }
+    }
+
+    // Se deadlineDate não existe ou é inválido, tenta deadline
+    if (project.deadline) {
+      const formatted = formatDate(project.deadline);
+      if (formatted !== "A definir") {
+        return formatted;
+      }
+    }
+
+    return "A definir";
+  };
+
+  // Função para pré-popular o modal com data atual se existir
+  const openDeadlineModal = () => {
+    // Tentar extrair data dos campos existentes
+    let initialDate = "";
+
+    // Primeiro tenta usar deadlineDate
+    if (project.deadlineDate) {
+      try {
+        const date = new Date(project.deadlineDate);
+        if (!isNaN(date.getTime())) {
+          initialDate = date.toISOString().split("T")[0];
+        }
+      } catch (error) {
+        console.log("Erro ao processar deadlineDate:", error);
+      }
+    }
+
+    // Se não conseguiu extrair de deadlineDate, tenta deadline
+    if (!initialDate && project.deadline) {
+      try {
+        // Tentar diferentes formatos de data
+        let dateString = project.deadline;
+
+        // Se vier no formato "dd/mm/yyyy"
+        if (dateString.includes("/")) {
+          const parts = dateString.split("/");
+          if (parts.length >= 3) {
+            const day = parts[0].padStart(2, "0");
+            const month = parts[1].padStart(2, "0");
+            const year = parts[2].length === 2 ? "20" + parts[2] : parts[2];
+            const isoString = `${year}-${month}-${day}`;
+            const date = new Date(isoString);
+            if (!isNaN(date.getTime())) {
+              initialDate = isoString;
+            }
+          }
+        }
+      } catch (error) {
+        console.log("Erro ao processar deadline:", error);
+      }
+    }
+
+    setNewDeadline({ date: initialDate });
+    setShowDeadlineModal(true);
+  };
+
   const calculateTotalValue = (files) => {
     if (!files || !Array.isArray(files)) return "0.00";
 
@@ -1771,15 +1833,15 @@ const ProjectDetails = () => {
           {/* Prazo */}
           <div className="flex items-center justify-between">
             <span className="text-gray-600 text-sm">Prazo:</span>
-            <span className="text-gray-800 text-sm truncate">
-              {(
-                typeof project.payment_status === "object"
-                  ? project.payment_status.status === "Pago"
-                  : project.payment_status === "Pago"
-              )
-                ? project.deadlineDate || "Não definido"
-                : formatDate(project.deadline)}
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-gray-800 text-sm truncate">
+                {formatDeadline(project)}
+              </span>
+              <FaEdit
+                className="text-blue-600 cursor-pointer flex-shrink-0"
+                onClick={openDeadlineModal}
+              />
+            </div>
           </div>
 
           {/* Data de Recebimento */}
@@ -2355,15 +2417,15 @@ const ProjectDetails = () => {
                     <FaClock className="text-blue-600" />
                     Prazo
                   </h3>
-                  <span className="text-gray-800">
-                    {(
-                      typeof project.payment_status === "object"
-                        ? project.payment_status.status === "Pago"
-                        : project.payment_status === "Pago"
-                    )
-                      ? project.deadlineDate || "Não definido"
-                      : formatDate(project.deadline)}
-                  </span>
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-800">
+                      {formatDeadline(project)}
+                    </span>
+                    <FaEdit
+                      className="text-blue-600 cursor-pointer hover:text-blue-700 transition-colors"
+                      onClick={openDeadlineModal}
+                    />
+                  </div>
                 </div>
 
                 {/* Data de Recebimento */}
@@ -2979,49 +3041,59 @@ const ProjectDetails = () => {
       {showDeadlineModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-96">
-            <h3 className="text-lg font-semibold mb-4">Definir Prazo</h3>
+            <h3 className="text-lg font-semibold mb-4">Editar Prazo</h3>
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Data
+                  Data de Entrega
                 </label>
                 <input
                   type="date"
                   value={newDeadline.date}
-                  onChange={(e) =>
-                    setNewDeadline({ ...newDeadline, date: e.target.value })
-                  }
+                  onChange={(e) => {
+                    const selectedDate = e.target.value;
+                    setNewDeadline({ date: selectedDate });
+                  }}
                   min={getMinDate()}
-                  disabled={disableWeekends()}
-                  className="w-full px-3 py-2 border rounded-lg"
+                  className={`w-full px-3 py-2 border rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 ${
+                    newDeadline.date && isWeekend(newDeadline.date)
+                      ? "border-red-400 bg-red-50"
+                      : ""
+                  }`}
                 />
+                {newDeadline.date && isWeekend(newDeadline.date) && (
+                  <p className="text-red-500 text-xs mt-1">
+                    ⚠️ Finais de semana não são permitidos. Selecione uma data
+                    entre segunda e sexta-feira.
+                  </p>
+                )}
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Hora
-                </label>
-                <input
-                  type="time"
-                  value={newDeadline.time}
-                  onChange={(e) =>
-                    setNewDeadline({ ...newDeadline, time: e.target.value })
-                  }
-                  className="w-full px-3 py-2 border rounded-lg"
-                />
+              <div className="text-sm text-gray-600 bg-blue-50 p-3 rounded-lg border border-blue-200">
+                <p>
+                  <strong>Prazo Atual:</strong> {formatDeadline(project)}
+                </p>
+                <p className="mt-1">
+                  Selecione uma nova data para o prazo de entrega (apenas dias
+                  úteis).
+                </p>
               </div>
             </div>
-            <div className="flex justify-end gap-2 mt-4">
+            <div className="flex justify-end gap-2 mt-6">
               <button
-                onClick={() => setShowDeadlineModal(false)}
-                className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                onClick={() => {
+                  setShowDeadlineModal(false);
+                  setNewDeadline({ date: "" });
+                }}
+                className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
               >
                 Cancelar
               </button>
               <button
                 onClick={handleDeadlineUpdate}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                disabled={!newDeadline.date || isWeekend(newDeadline.date)}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
-                Salvar
+                Salvar Prazo
               </button>
             </div>
           </div>
