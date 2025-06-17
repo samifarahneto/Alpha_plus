@@ -2156,43 +2156,43 @@ const ProjectDetails = () => {
       </Card>
 
       {/* Link do Projeto */}
-      {(typeof project.payment_status === "object"
+      {((typeof project.payment_status === "object"
         ? project.payment_status.status === "Pago"
-        : project.payment_status === "Pago") &&
-        project.project_status === "Finalizado" && (
-          <Card title="Link do Projeto" color="blue" className="mb-4">
-            <div className="space-y-4">
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={link}
-                  onChange={(e) => setLink(e.target.value)}
-                  placeholder="Insira o link do projeto"
-                  className="flex-1 px-3 py-2 rounded-lg border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-sm"
-                />
-                <button
-                  onClick={handleShareLink}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 whitespace-nowrap text-sm"
-                >
-                  Compartilhar
-                </button>
-              </div>
-              {project.shareLink && (
-                <div className="text-gray-600 text-sm">
-                  <strong>Link Atual:</strong>{" "}
-                  <a
-                    href={project.shareLink}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-600 hover:text-blue-800 break-all"
-                  >
-                    {project.shareLink}
-                  </a>
-                </div>
-              )}
+        : project.payment_status === "Pago") ||
+        project.project_status === "Finalizado") && (
+        <Card title="Link do Projeto" color="blue" className="mb-4">
+          <div className="space-y-4">
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={link}
+                onChange={(e) => setLink(e.target.value)}
+                placeholder="Insira o link do projeto"
+                className="flex-1 px-3 py-2 rounded-lg border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-sm"
+              />
+              <button
+                onClick={handleShareLink}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 whitespace-nowrap text-sm"
+              >
+                Compartilhar
+              </button>
             </div>
-          </Card>
-        )}
+            {project.shareLink && (
+              <div className="text-gray-600 text-sm">
+                <strong>Link Atual:</strong>{" "}
+                <a
+                  href={project.shareLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-600 hover:text-blue-800 break-all"
+                >
+                  {project.shareLink}
+                </a>
+              </div>
+            )}
+          </div>
+        </Card>
+      )}
 
       {/* Histórico de Movimentações */}
       <Card title="Histórico de Movimentações" color="blue">
@@ -2660,44 +2660,44 @@ const ProjectDetails = () => {
           </div>
 
           {/* Seção do Link do Projeto */}
-          {(typeof project.payment_status === "object"
+          {((typeof project.payment_status === "object"
             ? project.payment_status.status === "Pago"
-            : project.payment_status === "Pago") &&
-            project.project_status === "Finalizado" && (
-              <div className="bg-white rounded-xl p-6 space-y-4 border border-gray-200">
-                <h3 className="text-lg font-semibold text-gray-700">
-                  Link do Projeto
-                </h3>
-                <div className="flex gap-4 items-center">
-                  <input
-                    type="text"
-                    value={link}
-                    onChange={(e) => setLink(e.target.value)}
-                    placeholder="Insira o link do projeto"
-                    className="flex-1 px-4 py-2 rounded-lg border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
-                  />
-                  <button
-                    onClick={handleShareLink}
-                    className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors w-[250px]"
-                  >
-                    Compartilhar
-                  </button>
-                </div>
-                {project.shareLink && (
-                  <div className="text-gray-600 mt-4">
-                    <strong>Link Atual:</strong>{" "}
-                    <a
-                      href={project.shareLink}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-600 hover:text-blue-800 transition-colors"
-                    >
-                      {project.shareLink}
-                    </a>
-                  </div>
-                )}
+            : project.payment_status === "Pago") ||
+            project.project_status === "Finalizado") && (
+            <div className="bg-white rounded-xl p-6 space-y-4 border border-gray-200">
+              <h3 className="text-lg font-semibold text-gray-700">
+                Link do Projeto
+              </h3>
+              <div className="flex gap-4 items-center">
+                <input
+                  type="text"
+                  value={link}
+                  onChange={(e) => setLink(e.target.value)}
+                  placeholder="Insira o link do projeto"
+                  className="flex-1 px-4 py-2 rounded-lg border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
+                />
+                <button
+                  onClick={handleShareLink}
+                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors w-[250px]"
+                >
+                  Compartilhar
+                </button>
               </div>
-            )}
+              {project.shareLink && (
+                <div className="text-gray-600 mt-4">
+                  <strong>Link Atual:</strong>{" "}
+                  <a
+                    href={project.shareLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 hover:text-blue-800 transition-colors"
+                  >
+                    {project.shareLink}
+                  </a>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Seção de Arquivos */}
           <div className="space-y-4">

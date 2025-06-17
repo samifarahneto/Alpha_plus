@@ -269,73 +269,8 @@ const ClienteProjectDetails = () => {
   const handleProjectApproval = async () => {
     try {
       const firestore = getFirestore();
-      const usersRef = collection(firestore, "users");
 
-      // Buscar informações do usuário
-      const userQuery = query(
-        usersRef,
-        where("email", "==", project.userEmail)
-      );
-      const userSnapshot = await getDocs(userQuery);
-
-      if (userSnapshot.empty) {
-        throw new Error("Usuário não encontrado");
-      }
-
-      const userData = userSnapshot.docs[0].data();
-      let targetCollection;
-
-      // Determinar a coleção correta baseada no tipo de usuário
-      if (
-        userData.userType === "b2b" ||
-        (userData.userType === "colab" && userData.registeredByType === "b2b")
-      ) {
-        targetCollection = "b2bapproved";
-      } else if (
-        userData.userType === "b2c" ||
-        (userData.userType === "colab" && userData.registeredByType === "b2c")
-      ) {
-        targetCollection = "b2capproved";
-      } else {
-        throw new Error("Tipo de usuário não reconhecido");
-      }
-
-      console.log("Coleção de origem:", project.collection);
-      console.log("Coleção de destino:", targetCollection);
-
-      // Verificar se o documento existe na coleção de origem
-      let sourceRef = doc(firestore, project.collection, projectId);
-      const sourceDoc = await getDoc(sourceRef);
-
-      if (!sourceDoc.exists()) {
-        // Tentar encontrar o documento em outras coleções possíveis
-        const possibleCollections = ["b2bapproval", "b2capproval"];
-        let foundDoc = null;
-        let foundCollection = null;
-
-        for (const collection of possibleCollections) {
-          const docRef = doc(firestore, collection, projectId);
-          const docSnapshot = await getDoc(docRef);
-          if (docSnapshot.exists()) {
-            foundDoc = docSnapshot;
-            foundCollection = collection;
-            break;
-          }
-        }
-
-        if (!foundDoc) {
-          throw new Error(
-            "Documento não encontrado em nenhuma coleção de aprovação"
-          );
-        }
-
-        // Atualizar a referência do documento
-        sourceRef = doc(firestore, foundCollection, projectId);
-      }
-
-      // Criar o documento na coleção correta
-      const targetRef = collection(firestore, targetCollection);
-      const newProjectRef = doc(targetRef, projectId);
+      console.log("Aprovando projeto na coleção atual:", project.collection);
 
       // Calcular o prazo em dias úteis
       const deadlineDays = project.deadline;
@@ -343,35 +278,34 @@ const ClienteProjectDetails = () => {
         Number(deadlineDays.split(" ")[0])
       );
 
-      // Atualizar o status do projeto
-      const updatedProject = {
-        ...project,
-        id: projectId,
+      // Apenas atualizar o documento existente na coleção atual
+      const projectRef = doc(firestore, project.collection, projectId);
+
+      await updateDoc(projectRef, {
         status: "Aprovado",
         approvedAt: serverTimestamp(),
         approvedBy: project.userEmail,
         deadline: deadlineDays,
         deadlineDate: deadlineDate,
-        collection: targetCollection,
         project_status: "Em Análise",
         payment_status: "Pendente",
         translation_status: "N/A",
-      };
+      });
 
-      // Primeiro, salvar na nova coleção
-      console.log("Salvando na nova coleção...");
-      await setDoc(newProjectRef, updatedProject);
-      console.log("Documento salvo na nova coleção");
+      console.log("Status atualizado com sucesso");
 
-      // Depois, deletar da coleção de origem
-      console.log("Deletando da coleção de origem...");
-      try {
-        await deleteDoc(sourceRef);
-        console.log("Documento deletado com sucesso da coleção de origem");
-      } catch (deleteError) {
-        console.error("Erro ao deletar da coleção de origem:", deleteError);
-        throw new Error("Falha ao deletar o documento da coleção de origem");
-      }
+      // Atualizar o estado local
+      setProject((prev) => ({
+        ...prev,
+        status: "Aprovado",
+        approvedAt: new Date(),
+        approvedBy: project.userEmail,
+        deadline: deadlineDays,
+        deadlineDate: deadlineDate,
+        project_status: "Em Análise",
+        payment_status: "Pendente",
+        translation_status: "N/A",
+      }));
 
       // Adicionar log de aprovação do projeto
       const logData = {
@@ -1331,6 +1265,7 @@ const ClienteProjectDetails = () => {
               "b2bprojects",
               "b2cprojects",
               "b2bapproved",
+              "b2capproved",
             ])}
             {console.log(
               "É coleção aceita:",
@@ -1340,6 +1275,7 @@ const ClienteProjectDetails = () => {
                 "b2bprojects",
                 "b2cprojects",
                 "b2bapproved",
+                "b2capproved",
               ].includes(project.collection)
             )}
             {console.log(
@@ -1349,16 +1285,19 @@ const ClienteProjectDetails = () => {
                   project.collection === "b2capproval" ||
                   project.collection === "b2bprojects" ||
                   project.collection === "b2cprojects" ||
-                  project.collection === "b2bapproved")
+                  project.collection === "b2bapproved" ||
+                  project.collection === "b2capproved")
             )}
             {console.log("=== FIM DEBUG ===")}
 
             {userData?.canTest === true &&
+            project.status !== "Aprovado" &&
             (project.collection === "b2bapproval" ||
               project.collection === "b2capproval" ||
               project.collection === "b2bprojects" ||
               project.collection === "b2cprojects" ||
-              project.collection === "b2bapproved") ? (
+              project.collection === "b2bapproved" ||
+              project.collection === "b2capproved") ? (
               <div className="flex justify-center mt-6 gap-4">
                 <button
                   onClick={() => setShowApprovalModal(true)}
@@ -1405,6 +1344,23 @@ const ClienteProjectDetails = () => {
                   project.collection === "b2capproval"
                     ? "Aprovar e Pagar"
                     : "Pagar"}
+                </button>
+              </div>
+            ) : userData?.canTest === true &&
+              project.status === "Aprovado" &&
+              (project.collection === "b2bapproval" ||
+                project.collection === "b2capproval" ||
+                project.collection === "b2bprojects" ||
+                project.collection === "b2cprojects" ||
+                project.collection === "b2bapproved" ||
+                project.collection === "b2capproved") ? (
+              <div className="flex justify-center mt-6">
+                <button
+                  disabled
+                  className="w-[350px] bg-green-500 text-white font-bold py-2 px-4 rounded-lg cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  <FaCheck />
+                  Projeto Já Aprovado
                 </button>
               </div>
             ) : (
