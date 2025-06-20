@@ -1249,122 +1249,120 @@ const ClienteProjectDetails = () => {
           </div>
 
           {/* Seção de Divergência (se aplicável) */}
-          {typeof project.payment_status === "object" &&
-            project.payment_status.status === "Divergência" && (
-              <div className="bg-red-50 p-6 rounded-xl border border-red-200">
-                <h2 className="text-xl font-semibold mb-4 text-red-700 flex items-center gap-2">
-                  <FaInfoCircle className="text-red-700" />
-                  Informações da Divergência
-                </h2>
-                <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
-                  <table className="w-full">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-4 py-2 text-left text-sm font-medium text-gray-600">
-                          Páginas Divergentes
-                        </th>
-                        <th className="px-4 py-2 text-left text-sm font-medium text-gray-600">
-                          Motivo
-                        </th>
-                        <th className="px-4 py-2 text-right text-sm font-medium text-gray-600">
-                          Valor por Página
-                        </th>
-                        <th className="px-4 py-2 text-right text-sm font-medium text-gray-600">
-                          Valor Total
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-200">
-                      <tr>
-                        <td className="px-4 py-2 text-sm">
-                          {project.payment_status.pages}
-                        </td>
-                        <td className="px-4 py-2 text-sm">
-                          {project.payment_status.reason}
-                        </td>
-                        <td className="px-4 py-2 text-sm text-right">
-                          U${" "}
-                          {(
-                            Number(
-                              project.totalProjectValue || project.totalValue
-                            ) / calculateTotalPages(project.files)
-                          ).toFixed(2)}
-                        </td>
-                        <td className="px-4 py-2 text-sm text-right text-red-700 font-bold">
-                          U${" "}
-                          {(
-                            (Number(
-                              project.totalProjectValue || project.totalValue
-                            ) /
-                              calculateTotalPages(project.files)) *
-                            (calculateTotalPages(project.files) +
-                              Number(project.payment_status.pages))
-                          ).toFixed(2)}
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-
-                <div className="flex justify-center mt-6 gap-4">
-                  <button
-                    onClick={() => {
-                      const totalPages = calculateTotalPages(project.files);
-                      const divergencePages = Number(
-                        project.payment_status.pages
-                      );
-                      const valuePerPage =
-                        project.files && project.files.length > 0
-                          ? Number(project.files[0].valuePerPage) || 0
-                          : 0;
-
-                      // Se o projeto NÃO foi pago anteriormente, enviar valor total
-                      // Se JÁ foi pago, enviar apenas valor da divergência
-                      const paymentValue = !isProjectPaid()
-                        ? (
-                            (totalPages + divergencePages) *
-                            valuePerPage
-                          ).toFixed(2) // Valor total
-                        : (divergencePages * valuePerPage).toFixed(2); // Apenas divergência
-
-                      console.log("Cálculo do valor para pagamento:", {
-                        totalPages,
-                        divergencePages,
-                        valuePerPage,
-                        isProjectPaid: isProjectPaid(),
-                        paymentValue,
-                        type: !isProjectPaid()
-                          ? "valor_total"
-                          : "apenas_divergencia",
-                      });
-
-                      navigate("/client/checkout", {
-                        state: {
-                          selectedProjects: [projectId],
-                          isDivergencePayment: true,
-                          divergenceValue: paymentValue,
-                        },
-                      });
-                    }}
-                    className="w-[350px] bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center gap-2"
-                  >
-                    <FaCreditCard />
-                    {!isProjectPaid()
-                      ? "Pagar Projeto Completo"
-                      : "Pagar Valor da Divergência"}
-                  </button>
-                  <button
-                    onClick={() => setShowRefundModal(true)}
-                    className="w-[350px] bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center gap-2"
-                  >
-                    <FaUndo />
-                    {isProjectPaid()
-                      ? "Cancelar e Pedir Reembolso"
-                      : "Cancelar"}
-                  </button>
-                </div>
+          {((typeof project.payment_status === "object" &&
+            project.payment_status.status === "Divergência") ||
+            project.project_status === "Em Divergência") && (
+            <div className="bg-red-50 p-6 rounded-xl border border-red-200">
+              <h2 className="text-xl font-semibold mb-4 text-red-700 flex items-center gap-2">
+                <FaInfoCircle className="text-red-700" />
+                Informações da Divergência
+              </h2>
+              <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
+                <table className="w-full">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-4 py-2 text-left text-sm font-medium text-gray-600">
+                        Páginas Divergentes
+                      </th>
+                      <th className="px-4 py-2 text-left text-sm font-medium text-gray-600">
+                        Motivo
+                      </th>
+                      <th className="px-4 py-2 text-right text-sm font-medium text-gray-600">
+                        Valor por Página
+                      </th>
+                      <th className="px-4 py-2 text-right text-sm font-medium text-gray-600">
+                        Valor Total
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    <tr>
+                      <td className="px-4 py-2 text-sm">
+                        {project.payment_status.pages}
+                      </td>
+                      <td className="px-4 py-2 text-sm">
+                        {project.payment_status.reason}
+                      </td>
+                      <td className="px-4 py-2 text-sm text-right">
+                        U${" "}
+                        {(
+                          Number(
+                            project.totalProjectValue || project.totalValue
+                          ) / calculateTotalPages(project.files)
+                        ).toFixed(2)}
+                      </td>
+                      <td className="px-4 py-2 text-sm text-right text-red-700 font-bold">
+                        U${" "}
+                        {(
+                          (Number(
+                            project.totalProjectValue || project.totalValue
+                          ) /
+                            calculateTotalPages(project.files)) *
+                          (calculateTotalPages(project.files) +
+                            Number(project.payment_status.pages))
+                        ).toFixed(2)}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
-            )}
+
+              <div className="flex justify-center mt-6 gap-4">
+                <button
+                  onClick={() => {
+                    const totalPages = calculateTotalPages(project.files);
+                    const divergencePages = Number(
+                      project.payment_status.pages
+                    );
+                    const valuePerPage =
+                      project.files && project.files.length > 0
+                        ? Number(project.files[0].valuePerPage) || 0
+                        : 0;
+
+                    // Se o projeto NÃO foi pago anteriormente, enviar valor total
+                    // Se JÁ foi pago, enviar apenas valor da divergência
+                    const paymentValue = !isProjectPaid()
+                      ? ((totalPages + divergencePages) * valuePerPage).toFixed(
+                          2
+                        ) // Valor total
+                      : (divergencePages * valuePerPage).toFixed(2); // Apenas divergência
+
+                    console.log("Cálculo do valor para pagamento:", {
+                      totalPages,
+                      divergencePages,
+                      valuePerPage,
+                      isProjectPaid: isProjectPaid(),
+                      paymentValue,
+                      type: !isProjectPaid()
+                        ? "valor_total"
+                        : "apenas_divergencia",
+                    });
+
+                    navigate("/client/checkout", {
+                      state: {
+                        selectedProjects: [projectId],
+                        isDivergencePayment: true,
+                        divergenceValue: paymentValue,
+                      },
+                    });
+                  }}
+                  className="w-[350px] bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center gap-2"
+                >
+                  <FaCreditCard />
+                  {!isProjectPaid()
+                    ? "Pagar Projeto Completo"
+                    : "Pagar Valor da Divergência"}
+                </button>
+                <button
+                  onClick={() => setShowRefundModal(true)}
+                  className="w-[350px] bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center gap-2"
+                >
+                  <FaUndo />
+                  {isProjectPaid() ? "Cancelar e Pedir Reembolso" : "Cancelar"}
+                </button>
+              </div>
+            </div>
+          )}
           {/* Seção de Ações */}
           <div className="flex justify-center">
             {/* Debug: Verificar valores para botões de aprovação */}
@@ -1411,6 +1409,29 @@ const ClienteProjectDetails = () => {
                   project.collection === "b2bsketch" ||
                   project.collection === "b2csketch")
             )}
+            {console.log("project.status:", project.status)}
+            {console.log(
+              "project.status === 'Aprovado':",
+              project.status === "Aprovado"
+            )}
+            {console.log(
+              "Primeira condição canTest:",
+              userData?.canTest === true &&
+                project.status !== "Aprovado" &&
+                (project.collection === "b2bapproval" ||
+                  project.collection === "b2capproval" ||
+                  project.collection === "b2bprojects" ||
+                  project.collection === "b2cprojects" ||
+                  project.collection === "b2bsketch" ||
+                  project.collection === "b2csketch")
+            )}
+            {console.log(
+              "Segunda condição canTest:",
+              userData?.canTest === true &&
+                project.status === "Aprovado" &&
+                (project.collection === "b2bapproved" ||
+                  project.collection === "b2capproved")
+            )}
             {console.log("=== FIM DEBUG ===")}
 
             {userData?.canTest === true &&
@@ -1425,8 +1446,9 @@ const ClienteProjectDetails = () => {
                 <button
                   onClick={() => setShowApprovalModal(true)}
                   className={`w-[350px] ${
-                    typeof project.payment_status === "object" &&
-                    project.payment_status.status === "Divergência"
+                    (typeof project.payment_status === "object" &&
+                      project.payment_status.status === "Divergência") ||
+                    project.project_status === "Em Divergência"
                       ? "bg-green-600 hover:bg-green-700"
                       : "bg-blue-600 hover:bg-blue-700"
                   } text-white font-bold py-2 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center gap-2`}
@@ -1438,8 +1460,9 @@ const ClienteProjectDetails = () => {
                     : "Aprovar Projeto"}
                 </button>
                 {!(
-                  typeof project.payment_status === "object" &&
-                  project.payment_status.status === "Divergência"
+                  (typeof project.payment_status === "object" &&
+                    project.payment_status.status === "Divergência") ||
+                  project.project_status === "Em Divergência"
                 ) && (
                   <button
                     onClick={async () => {
@@ -1486,18 +1509,14 @@ const ClienteProjectDetails = () => {
               <div className="flex justify-center mt-6 gap-4">
                 <button
                   disabled
-                  className={`w-[350px] ${
-                    typeof project.payment_status === "object" &&
-                    project.payment_status.status === "Divergência"
-                      ? "bg-green-500"
-                      : "bg-green-500"
-                  } text-white font-bold py-2 px-4 rounded-lg cursor-not-allowed flex items-center justify-center gap-2`}
+                  className="w-[350px] bg-gray-500 text-white font-bold py-2 px-4 rounded-lg cursor-not-allowed flex items-center justify-center gap-2"
                 >
                   <FaCheck />
                   Projeto Já Aprovado
                 </button>
-                {typeof project.payment_status === "object" &&
-                project.payment_status.status === "Divergência" ? (
+                {(typeof project.payment_status === "object" &&
+                  project.payment_status.status === "Divergência") ||
+                project.project_status === "Em Divergência" ? (
                   <button
                     onClick={async () => {
                       try {
@@ -1508,27 +1527,35 @@ const ClienteProjectDetails = () => {
                           projectId
                         );
 
-                        // Calcular total de páginas incluindo divergência
+                        // Calcular total de páginas: originais + divergentes
                         const originalPages = calculateTotalPages(
                           project.files
                         );
-                        const divergencePages = Number(
-                          project.payment_status.pages
-                        );
+                        const divergencePages =
+                          typeof project.payment_status === "object"
+                            ? Number(project.payment_status.pages || 0)
+                            : 0; // Se não há objeto payment_status, assumir 0 páginas divergentes
                         const totalPages = originalPages + divergencePages;
 
-                        // Calcular valor total incluindo divergência
-                        const valuePerPage =
-                          project.files && project.files.length > 0
-                            ? Number(project.files[0].valuePerPage) || 0
-                            : 0;
-                        const totalValue = totalPages * valuePerPage;
+                        // Calcular valor total: valor inicial + valor da divergência
+                        const originalValue = Number(
+                          project.totalProjectValue ||
+                            calculateTotalValue(project.files)
+                        );
+                        const divergenceValue =
+                          typeof project.payment_status === "object"
+                            ? Number(
+                                project.payment_status.divergencePayment || 0
+                              )
+                            : 0; // Se não há objeto payment_status, assumir 0 valor divergente
+                        const totalValue = originalValue + divergenceValue;
 
                         // Update do projeto
                         await updateDoc(projectRef, {
                           totalPages: totalPages,
                           totalProjectValue: totalValue,
                           payment_status: "Pendente",
+                          project_status: "Ag. Pagamento",
                         });
 
                         // Atualizar estado local
@@ -1537,6 +1564,7 @@ const ClienteProjectDetails = () => {
                           totalPages: totalPages,
                           totalProjectValue: totalValue,
                           payment_status: "Pendente",
+                          project_status: "Ag. Pagamento",
                         }));
 
                         alert("Divergência aprovada com sucesso!");
@@ -1578,7 +1606,7 @@ const ClienteProjectDetails = () => {
               <div className="flex justify-center mt-6">
                 <button
                   disabled
-                  className="w-[350px] bg-green-500 text-white font-bold py-2 px-4 rounded-lg cursor-not-allowed flex items-center justify-center gap-2"
+                  className="w-[350px] bg-gray-500 text-white font-bold py-2 px-4 rounded-lg cursor-not-allowed flex items-center justify-center gap-2"
                 >
                   <FaCheck />
                   Projeto Já Aprovado
