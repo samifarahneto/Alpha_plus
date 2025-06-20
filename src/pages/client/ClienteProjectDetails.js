@@ -303,74 +303,125 @@ const ClienteProjectDetails = () => {
       console.log("Coleção de origem:", project.collection);
       console.log("Coleção de destino:", targetCollection);
 
-      // Verificar se o documento existe na coleção de origem
-      let sourceRef = doc(firestore, project.collection, projectId);
-      const sourceDoc = await getDoc(sourceRef);
-
-      if (!sourceDoc.exists()) {
-        // Tentar encontrar o documento em outras coleções possíveis
-        const possibleCollections = ["b2bapproval", "b2capproval"];
-        let foundDoc = null;
-        let foundCollection = null;
-
-        for (const collection of possibleCollections) {
-          const docRef = doc(firestore, collection, projectId);
-          const docSnapshot = await getDoc(docRef);
-          if (docSnapshot.exists()) {
-            foundDoc = docSnapshot;
-            foundCollection = collection;
-            break;
-          }
-        }
-
-        if (!foundDoc) {
-          throw new Error(
-            "Documento não encontrado em nenhuma coleção de aprovação"
-          );
-        }
-
-        // Atualizar a referência do documento
-        sourceRef = doc(firestore, foundCollection, projectId);
-      }
-
-      // Criar o documento na coleção correta
-      const targetRef = collection(firestore, targetCollection);
-      const newProjectRef = doc(targetRef, projectId);
-
       // Calcular o prazo em dias úteis
       const deadlineDays = project.deadline;
       const deadlineDate = calculateDeliveryDate(
         Number(deadlineDays.split(" ")[0])
       );
 
-      // Atualizar o status do projeto
-      const updatedProject = {
-        ...project,
-        id: projectId,
-        status: "Aprovado",
-        approvedAt: serverTimestamp(),
-        approvedBy: project.userEmail,
-        deadline: deadlineDays,
-        deadlineDate: deadlineDate,
-        collection: targetCollection,
-        project_status: "Em Análise",
-        payment_status: "Pendente",
-        translation_status: "N/A",
-      };
+      // Verificar se o projeto já está na coleção correta
+      if (project.collection === targetCollection) {
+        console.log(
+          "Projeto já está na coleção correta, apenas atualizando status..."
+        );
 
-      // Primeiro, salvar na nova coleção
-      console.log("Salvando na nova coleção...");
-      await setDoc(newProjectRef, updatedProject);
-      console.log("Documento salvo na nova coleção");
+        // Apenas atualizar o documento existente
+        const projectRef = doc(firestore, targetCollection, projectId);
 
-      // Depois, deletar da coleção de origem
-      console.log("Deletando da coleção de origem...");
-      try {
-        await deleteDoc(sourceRef);
-        console.log("Documento deletado com sucesso da coleção de origem");
-      } catch (deleteError) {
-        console.error("Erro ao deletar da coleção de origem:", deleteError);
-        throw new Error("Falha ao deletar o documento da coleção de origem");
+        await updateDoc(projectRef, {
+          status: "Aprovado",
+          approvedAt: serverTimestamp(),
+          approvedBy: project.userEmail,
+          deadline: deadlineDays,
+          deadlineDate: deadlineDate,
+          project_status: "Em Análise",
+          payment_status: "Pendente",
+          translation_status: "N/A",
+        });
+
+        console.log("Status atualizado com sucesso");
+
+        // Atualizar o estado local
+        setProject((prev) => ({
+          ...prev,
+          status: "Aprovado",
+          approvedAt: new Date(),
+          approvedBy: project.userEmail,
+          deadline: deadlineDays,
+          deadlineDate: deadlineDate,
+          project_status: "Em Análise",
+          payment_status: "Pendente",
+          translation_status: "N/A",
+        }));
+      } else {
+        // Projeto está em coleção diferente, precisa mover
+        console.log("Movendo projeto para coleção correta...");
+
+        // Verificar se o documento existe na coleção de origem
+        let sourceRef = doc(firestore, project.collection, projectId);
+        const sourceDoc = await getDoc(sourceRef);
+
+        if (!sourceDoc.exists()) {
+          // Tentar encontrar o documento em outras coleções possíveis
+          const possibleCollections = [
+            "b2bapproval",
+            "b2capproval",
+            "b2bsketch",
+            "b2csketch",
+          ];
+          let foundDoc = null;
+          let foundCollection = null;
+
+          for (const collection of possibleCollections) {
+            const docRef = doc(firestore, collection, projectId);
+            const docSnapshot = await getDoc(docRef);
+            if (docSnapshot.exists()) {
+              foundDoc = docSnapshot;
+              foundCollection = collection;
+              break;
+            }
+          }
+
+          if (!foundDoc) {
+            throw new Error(
+              "Documento não encontrado em nenhuma coleção de aprovação"
+            );
+          }
+
+          // Atualizar a referência do documento
+          sourceRef = doc(firestore, foundCollection, projectId);
+        }
+
+        // Criar o documento na coleção correta
+        const targetRef = collection(firestore, targetCollection);
+        const newProjectRef = doc(targetRef, projectId);
+
+        // Atualizar o status do projeto
+        const updatedProject = {
+          ...project,
+          id: projectId,
+          status: "Aprovado",
+          approvedAt: serverTimestamp(),
+          approvedBy: project.userEmail,
+          deadline: deadlineDays,
+          deadlineDate: deadlineDate,
+          collection: targetCollection,
+          project_status: "Em Análise",
+          payment_status: "Pendente",
+          translation_status: "N/A",
+        };
+
+        // Primeiro, salvar na nova coleção
+        console.log("Salvando na nova coleção...");
+        await setDoc(newProjectRef, updatedProject);
+        console.log("Documento salvo na nova coleção");
+
+        // Depois, deletar da coleção de origem
+        console.log("Deletando da coleção de origem...");
+        try {
+          await deleteDoc(sourceRef);
+          console.log("Documento deletado com sucesso da coleção de origem");
+        } catch (deleteError) {
+          console.error("Erro ao deletar da coleção de origem:", deleteError);
+          throw new Error("Falha ao deletar o documento da coleção de origem");
+        }
+
+        // Atualizar o estado local
+        setProject((prev) => ({
+          ...prev,
+          ...updatedProject,
+          collection: targetCollection,
+        }));
       }
 
       // Adicionar log de aprovação do projeto
@@ -1331,6 +1382,9 @@ const ClienteProjectDetails = () => {
               "b2bprojects",
               "b2cprojects",
               "b2bapproved",
+              "b2capproved",
+              "b2bsketch",
+              "b2csketch",
             ])}
             {console.log(
               "É coleção aceita:",
@@ -1340,6 +1394,9 @@ const ClienteProjectDetails = () => {
                 "b2bprojects",
                 "b2cprojects",
                 "b2bapproved",
+                "b2capproved",
+                "b2bsketch",
+                "b2csketch",
               ].includes(project.collection)
             )}
             {console.log(
@@ -1349,16 +1406,21 @@ const ClienteProjectDetails = () => {
                   project.collection === "b2capproval" ||
                   project.collection === "b2bprojects" ||
                   project.collection === "b2cprojects" ||
-                  project.collection === "b2bapproved")
+                  project.collection === "b2bapproved" ||
+                  project.collection === "b2capproved" ||
+                  project.collection === "b2bsketch" ||
+                  project.collection === "b2csketch")
             )}
             {console.log("=== FIM DEBUG ===")}
 
             {userData?.canTest === true &&
+            project.status !== "Aprovado" &&
             (project.collection === "b2bapproval" ||
               project.collection === "b2capproval" ||
               project.collection === "b2bprojects" ||
               project.collection === "b2cprojects" ||
-              project.collection === "b2bapproved") ? (
+              project.collection === "b2bsketch" ||
+              project.collection === "b2csketch") ? (
               <div className="flex justify-center mt-6 gap-4">
                 <button
                   onClick={() => setShowApprovalModal(true)}
@@ -1375,7 +1437,6 @@ const ClienteProjectDetails = () => {
                     ? "Aprovar"
                     : "Aprovar Projeto"}
                 </button>
-                {/* Só mostra o botão verde se NÃO há divergência */}
                 {!(
                   typeof project.payment_status === "object" &&
                   project.payment_status.status === "Divergência"
@@ -1417,6 +1478,111 @@ const ClienteProjectDetails = () => {
                       : "Pagar"}
                   </button>
                 )}
+              </div>
+            ) : userData?.canTest === true &&
+              project.status === "Aprovado" &&
+              (project.collection === "b2bapproved" ||
+                project.collection === "b2capproved") ? (
+              <div className="flex justify-center mt-6 gap-4">
+                <button
+                  disabled
+                  className={`w-[350px] ${
+                    typeof project.payment_status === "object" &&
+                    project.payment_status.status === "Divergência"
+                      ? "bg-green-500"
+                      : "bg-green-500"
+                  } text-white font-bold py-2 px-4 rounded-lg cursor-not-allowed flex items-center justify-center gap-2`}
+                >
+                  <FaCheck />
+                  Projeto Já Aprovado
+                </button>
+                {typeof project.payment_status === "object" &&
+                project.payment_status.status === "Divergência" ? (
+                  <button
+                    onClick={async () => {
+                      try {
+                        const firestore = getFirestore();
+                        const projectRef = doc(
+                          firestore,
+                          project.collection,
+                          projectId
+                        );
+
+                        // Calcular total de páginas incluindo divergência
+                        const originalPages = calculateTotalPages(
+                          project.files
+                        );
+                        const divergencePages = Number(
+                          project.payment_status.pages
+                        );
+                        const totalPages = originalPages + divergencePages;
+
+                        // Calcular valor total incluindo divergência
+                        const valuePerPage =
+                          project.files && project.files.length > 0
+                            ? Number(project.files[0].valuePerPage) || 0
+                            : 0;
+                        const totalValue = totalPages * valuePerPage;
+
+                        // Update do projeto
+                        await updateDoc(projectRef, {
+                          totalPages: totalPages,
+                          totalProjectValue: totalValue,
+                          payment_status: "Pendente",
+                        });
+
+                        // Atualizar estado local
+                        setProject((prev) => ({
+                          ...prev,
+                          totalPages: totalPages,
+                          totalProjectValue: totalValue,
+                          payment_status: "Pendente",
+                        }));
+
+                        alert("Divergência aprovada com sucesso!");
+                      } catch (error) {
+                        console.error("Erro ao aprovar divergência:", error);
+                        alert("Erro ao aprovar divergência. Tente novamente.");
+                      }
+                    }}
+                    className="w-[350px] bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center gap-2"
+                  >
+                    <FaCheck />
+                    Aprovar Divergência
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => {
+                      navigate("/client/checkout", {
+                        state: {
+                          selectedProjects: [projectId],
+                          collection: project.collection,
+                        },
+                      });
+                    }}
+                    className="w-[350px] bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center gap-2"
+                  >
+                    <FaCreditCard />
+                    Ir para Pagamento
+                  </button>
+                )}
+              </div>
+            ) : userData?.canTest === true &&
+              project.status === "Aprovado" &&
+              (project.collection === "b2bapproval" ||
+                project.collection === "b2capproval" ||
+                project.collection === "b2bprojects" ||
+                project.collection === "b2cprojects" ||
+                project.collection === "b2bsketch" ||
+                project.collection === "b2csketch") ? (
+              <div className="flex justify-center mt-6">
+                <button
+                  disabled
+                  className="w-[350px] bg-green-500 text-white font-bold py-2 px-4 rounded-lg cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  <FaCheck />
+                  Projeto Já Aprovado
+                </button>
               </div>
             ) : (
               <>
