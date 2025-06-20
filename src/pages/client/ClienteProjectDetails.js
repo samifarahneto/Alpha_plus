@@ -303,125 +303,74 @@ const ClienteProjectDetails = () => {
       console.log("Coleção de origem:", project.collection);
       console.log("Coleção de destino:", targetCollection);
 
+      // Verificar se o documento existe na coleção de origem
+      let sourceRef = doc(firestore, project.collection, projectId);
+      const sourceDoc = await getDoc(sourceRef);
+
+      if (!sourceDoc.exists()) {
+        // Tentar encontrar o documento em outras coleções possíveis
+        const possibleCollections = ["b2bapproval", "b2capproval"];
+        let foundDoc = null;
+        let foundCollection = null;
+
+        for (const collection of possibleCollections) {
+          const docRef = doc(firestore, collection, projectId);
+          const docSnapshot = await getDoc(docRef);
+          if (docSnapshot.exists()) {
+            foundDoc = docSnapshot;
+            foundCollection = collection;
+            break;
+          }
+        }
+
+        if (!foundDoc) {
+          throw new Error(
+            "Documento não encontrado em nenhuma coleção de aprovação"
+          );
+        }
+
+        // Atualizar a referência do documento
+        sourceRef = doc(firestore, foundCollection, projectId);
+      }
+
+      // Criar o documento na coleção correta
+      const targetRef = collection(firestore, targetCollection);
+      const newProjectRef = doc(targetRef, projectId);
+
       // Calcular o prazo em dias úteis
       const deadlineDays = project.deadline;
       const deadlineDate = calculateDeliveryDate(
         Number(deadlineDays.split(" ")[0])
       );
 
-      // Verificar se o projeto já está na coleção correta
-      if (project.collection === targetCollection) {
-        console.log(
-          "Projeto já está na coleção correta, apenas atualizando status..."
-        );
+      // Atualizar o status do projeto
+      const updatedProject = {
+        ...project,
+        id: projectId,
+        status: "Aprovado",
+        approvedAt: serverTimestamp(),
+        approvedBy: project.userEmail,
+        deadline: deadlineDays,
+        deadlineDate: deadlineDate,
+        collection: targetCollection,
+        project_status: "Em Análise",
+        payment_status: "Pendente",
+        translation_status: "N/A",
+      };
 
-        // Apenas atualizar o documento existente
-        const projectRef = doc(firestore, targetCollection, projectId);
+      // Primeiro, salvar na nova coleção
+      console.log("Salvando na nova coleção...");
+      await setDoc(newProjectRef, updatedProject);
+      console.log("Documento salvo na nova coleção");
 
-        await updateDoc(projectRef, {
-          status: "Aprovado",
-          approvedAt: serverTimestamp(),
-          approvedBy: project.userEmail,
-          deadline: deadlineDays,
-          deadlineDate: deadlineDate,
-          project_status: "Em Análise",
-          payment_status: "Pendente",
-          translation_status: "N/A",
-        });
-
-        console.log("Status atualizado com sucesso");
-
-        // Atualizar o estado local
-        setProject((prev) => ({
-          ...prev,
-          status: "Aprovado",
-          approvedAt: new Date(),
-          approvedBy: project.userEmail,
-          deadline: deadlineDays,
-          deadlineDate: deadlineDate,
-          project_status: "Em Análise",
-          payment_status: "Pendente",
-          translation_status: "N/A",
-        }));
-      } else {
-        // Projeto está em coleção diferente, precisa mover
-        console.log("Movendo projeto para coleção correta...");
-
-        // Verificar se o documento existe na coleção de origem
-        let sourceRef = doc(firestore, project.collection, projectId);
-        const sourceDoc = await getDoc(sourceRef);
-
-        if (!sourceDoc.exists()) {
-          // Tentar encontrar o documento em outras coleções possíveis
-          const possibleCollections = [
-            "b2bapproval",
-            "b2capproval",
-            "b2bsketch",
-            "b2csketch",
-          ];
-          let foundDoc = null;
-          let foundCollection = null;
-
-          for (const collection of possibleCollections) {
-            const docRef = doc(firestore, collection, projectId);
-            const docSnapshot = await getDoc(docRef);
-            if (docSnapshot.exists()) {
-              foundDoc = docSnapshot;
-              foundCollection = collection;
-              break;
-            }
-          }
-
-          if (!foundDoc) {
-            throw new Error(
-              "Documento não encontrado em nenhuma coleção de aprovação"
-            );
-          }
-
-          // Atualizar a referência do documento
-          sourceRef = doc(firestore, foundCollection, projectId);
-        }
-
-        // Criar o documento na coleção correta
-        const targetRef = collection(firestore, targetCollection);
-        const newProjectRef = doc(targetRef, projectId);
-
-        // Atualizar o status do projeto
-        const updatedProject = {
-          ...project,
-          id: projectId,
-          status: "Aprovado",
-          approvedAt: serverTimestamp(),
-          approvedBy: project.userEmail,
-          deadline: deadlineDays,
-          deadlineDate: deadlineDate,
-          collection: targetCollection,
-          project_status: "Em Análise",
-          payment_status: "Pendente",
-          translation_status: "N/A",
-        };
-
-        // Primeiro, salvar na nova coleção
-        console.log("Salvando na nova coleção...");
-        await setDoc(newProjectRef, updatedProject);
-        console.log("Documento salvo na nova coleção");
-
-        // Depois, deletar da coleção de origem
-        console.log("Deletando da coleção de origem...");
-        try {
-          await deleteDoc(sourceRef);
-          console.log("Documento deletado com sucesso da coleção de origem");
-        } catch (deleteError) {
-          console.error("Erro ao deletar da coleção de origem:", deleteError);
-          throw new Error("Falha ao deletar o documento da coleção de origem");
-        }
-
-        // Atualizar o estado local
-        setProject((prev) => ({
-          ...prev,
-          ...updatedProject,
-          collection: targetCollection,
-        }));
+      // Depois, deletar da coleção de origem
+      console.log("Deletando da coleção de origem...");
+      try {
+        await deleteDoc(sourceRef);
+        console.log("Documento deletado com sucesso da coleção de origem");
+      } catch (deleteError) {
+        console.error("Erro ao deletar da coleção de origem:", deleteError);
+        throw new Error("Falha ao deletar o documento da coleção de origem");
       }
 
       // Adicionar log de aprovação do projeto
@@ -1382,9 +1331,6 @@ const ClienteProjectDetails = () => {
               "b2bprojects",
               "b2cprojects",
               "b2bapproved",
-              "b2capproved",
-              "b2bsketch",
-              "b2csketch",
             ])}
             {console.log(
               "É coleção aceita:",
@@ -1394,9 +1340,6 @@ const ClienteProjectDetails = () => {
                 "b2bprojects",
                 "b2cprojects",
                 "b2bapproved",
-                "b2capproved",
-                "b2bsketch",
-                "b2csketch",
               ].includes(project.collection)
             )}
             {console.log(
@@ -1406,25 +1349,25 @@ const ClienteProjectDetails = () => {
                   project.collection === "b2capproval" ||
                   project.collection === "b2bprojects" ||
                   project.collection === "b2cprojects" ||
-                  project.collection === "b2bapproved" ||
-                  project.collection === "b2capproved" ||
-                  project.collection === "b2bsketch" ||
-                  project.collection === "b2csketch")
+                  project.collection === "b2bapproved")
             )}
             {console.log("=== FIM DEBUG ===")}
 
             {userData?.canTest === true &&
-            project.status !== "Aprovado" &&
             (project.collection === "b2bapproval" ||
               project.collection === "b2capproval" ||
               project.collection === "b2bprojects" ||
               project.collection === "b2cprojects" ||
-              project.collection === "b2bsketch" ||
-              project.collection === "b2csketch") ? (
+              project.collection === "b2bapproved") ? (
               <div className="flex justify-center mt-6 gap-4">
                 <button
                   onClick={() => setShowApprovalModal(true)}
-                  className="w-[350px] bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center gap-2"
+                  className={`w-[350px] ${
+                    typeof project.payment_status === "object" &&
+                    project.payment_status.status === "Divergência"
+                      ? "bg-green-600 hover:bg-green-700"
+                      : "bg-blue-600 hover:bg-blue-700"
+                  } text-white font-bold py-2 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center gap-2`}
                 >
                   <FaCheck />
                   {project.collection === "b2bapproval" ||
@@ -1432,86 +1375,48 @@ const ClienteProjectDetails = () => {
                     ? "Aprovar"
                     : "Aprovar Projeto"}
                 </button>
-                <button
-                  onClick={async () => {
-                    // Se já está em uma coleção de aprovação, apenas aprova
-                    if (
-                      project.collection === "b2bapproval" ||
-                      project.collection === "b2capproval"
-                    ) {
-                      await handleProjectApproval();
-                      setTimeout(() => {
+                {/* Só mostra o botão verde se NÃO há divergência */}
+                {!(
+                  typeof project.payment_status === "object" &&
+                  project.payment_status.status === "Divergência"
+                ) && (
+                  <button
+                    onClick={async () => {
+                      // Se já está em uma coleção de aprovação, apenas aprova
+                      if (
+                        project.collection === "b2bapproval" ||
+                        project.collection === "b2capproval"
+                      ) {
+                        await handleProjectApproval();
+                        setTimeout(() => {
+                          navigate("/client/checkout", {
+                            state: {
+                              selectedProjects: [projectId],
+                              collection: project.collection.includes("b2b")
+                                ? "b2bapproved"
+                                : "b2capproved",
+                            },
+                          });
+                        }, 1000);
+                      } else {
+                        // Se está em projects, vai direto para checkout
                         navigate("/client/checkout", {
                           state: {
                             selectedProjects: [projectId],
-                            collection: project.collection.includes("b2b")
-                              ? "b2bapproved"
-                              : "b2capproved",
+                            collection: project.collection,
                           },
                         });
-                      }, 1000);
-                    } else {
-                      // Se está em projects, vai direto para checkout
-                      navigate("/client/checkout", {
-                        state: {
-                          selectedProjects: [projectId],
-                          collection: project.collection,
-                        },
-                      });
-                    }
-                  }}
-                  className="w-[350px] bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center gap-2"
-                >
-                  <FaCreditCard />
-                  {project.collection === "b2bapproval" ||
-                  project.collection === "b2capproval"
-                    ? "Aprovar e Pagar"
-                    : "Pagar"}
-                </button>
-              </div>
-            ) : userData?.canTest === true &&
-              project.status === "Aprovado" &&
-              (project.collection === "b2bapproved" ||
-                project.collection === "b2capproved") ? (
-              <div className="flex justify-center mt-6 gap-4">
-                <button
-                  disabled
-                  className="w-[350px] bg-green-500 text-white font-bold py-2 px-4 rounded-lg cursor-not-allowed flex items-center justify-center gap-2"
-                >
-                  <FaCheck />
-                  Projeto Já Aprovado
-                </button>
-                <button
-                  onClick={() => {
-                    navigate("/client/checkout", {
-                      state: {
-                        selectedProjects: [projectId],
-                        collection: project.collection,
-                      },
-                    });
-                  }}
-                  className="w-[350px] bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center gap-2"
-                >
-                  <FaCreditCard />
-                  Ir para Pagamento
-                </button>
-              </div>
-            ) : userData?.canTest === true &&
-              project.status === "Aprovado" &&
-              (project.collection === "b2bapproval" ||
-                project.collection === "b2capproval" ||
-                project.collection === "b2bprojects" ||
-                project.collection === "b2cprojects" ||
-                project.collection === "b2bsketch" ||
-                project.collection === "b2csketch") ? (
-              <div className="flex justify-center mt-6">
-                <button
-                  disabled
-                  className="w-[350px] bg-green-500 text-white font-bold py-2 px-4 rounded-lg cursor-not-allowed flex items-center justify-center gap-2"
-                >
-                  <FaCheck />
-                  Projeto Já Aprovado
-                </button>
+                      }
+                    }}
+                    className="w-[350px] bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center gap-2"
+                  >
+                    <FaCreditCard />
+                    {project.collection === "b2bapproval" ||
+                    project.collection === "b2capproval"
+                      ? "Aprovar e Pagar"
+                      : "Pagar"}
+                  </button>
+                )}
               </div>
             ) : (
               <>
