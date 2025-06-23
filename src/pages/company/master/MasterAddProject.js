@@ -440,6 +440,28 @@ const MasterAddProject = () => {
   };
 
   const convertFilesToPDF = async () => {
+    // Validação dos campos obrigatórios
+    if (!projectName.trim()) {
+      alert("Por favor, insira o nome do projeto.");
+      return;
+    }
+    if (!sourceLanguage) {
+      alert("Por favor, selecione o idioma de origem.");
+      return;
+    }
+    if (!targetLanguage) {
+      alert("Por favor, selecione o idioma de destino.");
+      return;
+    }
+    if (!userEmail.trim()) {
+      alert("Por favor, insira o email do cliente.");
+      return;
+    }
+    if (files.length === 0) {
+      alert("Por favor, adicione pelo menos um arquivo.");
+      return;
+    }
+
     setIsAnalyzing(true);
     const uploadedFiles = [];
     let totalPagesCount = 0;
@@ -1013,13 +1035,20 @@ const MasterAddProject = () => {
               </h2>
             </div>
 
+            <div className="mb-3 md:mb-4 p-2 md:p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-xs md:text-sm text-blue-700">
+                <span className="text-red-500 font-bold">*</span> Campos
+                obrigatórios para análise do projeto
+              </p>
+            </div>
+
             {/* Input para o email do usuário com autocompletar */}
             <div className="mb-4 md:mb-6 relative">
               <label
                 htmlFor="userEmail"
                 className="block text-gray-700 text-sm font-semibold mb-2 md:mb-3"
               >
-                Email do Cliente:
+                Email do Cliente: <span className="text-red-500">*</span>
               </label>
               <input
                 type="email"
@@ -1064,7 +1093,7 @@ const MasterAddProject = () => {
                 htmlFor="projectName"
                 className="block text-gray-700 text-sm font-semibold mb-2 md:mb-3"
               >
-                Nome do Projeto:
+                Nome do Projeto: <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
@@ -1073,6 +1102,7 @@ const MasterAddProject = () => {
                 onChange={handleProjectNameChange}
                 className="w-full px-3 md:px-4 py-2 md:py-3 border-2 border-gray-200 rounded-xl bg-white/50 backdrop-blur-sm transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 hover:border-blue-300 text-sm md:text-base"
                 placeholder="Ex: Tradução de Documentos Legais"
+                required
               />
             </div>
 
@@ -1082,7 +1112,7 @@ const MasterAddProject = () => {
                   htmlFor="sourceLanguage"
                   className="block text-gray-700 text-sm font-semibold mb-2 md:mb-3"
                 >
-                  Idioma de Origem:
+                  Idioma de Origem: <span className="text-red-500">*</span>
                 </label>
                 <select
                   id="sourceLanguage"
@@ -1104,7 +1134,7 @@ const MasterAddProject = () => {
                   htmlFor="targetLanguage"
                   className="block text-gray-700 text-sm font-semibold mb-2 md:mb-3"
                 >
-                  Idioma de Destino:
+                  Idioma de Destino: <span className="text-red-500">*</span>
                 </label>
                 <select
                   id="targetLanguage"
@@ -1184,7 +1214,7 @@ const MasterAddProject = () => {
                 htmlFor="fileInput"
                 className="block text-gray-700 text-sm font-semibold mb-2 md:mb-3"
               >
-                Anexar Arquivos:
+                Anexar Arquivos: <span className="text-red-500">*</span>
               </label>
               <div className="relative">
                 <input

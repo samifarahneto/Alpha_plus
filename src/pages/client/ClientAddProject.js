@@ -457,6 +457,24 @@ const ClientAddProject = () => {
   };
 
   const convertFilesToPDF = async () => {
+    // Validação dos campos obrigatórios
+    if (!projectName.trim()) {
+      alert("Por favor, insira o nome do projeto.");
+      return;
+    }
+    if (!sourceLanguage) {
+      alert("Por favor, selecione o idioma de origem.");
+      return;
+    }
+    if (!targetLanguage) {
+      alert("Por favor, selecione o idioma de destino.");
+      return;
+    }
+    if (files.length === 0) {
+      alert("Por favor, adicione pelo menos um arquivo.");
+      return;
+    }
+
     setIsAnalyzing(true);
     const uploadedFiles = [];
     let totalPagesCount = 0;
@@ -1569,11 +1587,18 @@ const ClientAddProject = () => {
                 </h2>
               </div>
 
+              <div className="mb-3 md:mb-4 p-2 md:p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <p className="text-xs md:text-sm text-blue-700">
+                  <span className="text-red-500 font-bold">*</span> Campos
+                  obrigatórios para análise do projeto
+                </p>
+              </div>
+
               <form className="flex flex-col flex-1 relative">
                 <div className="flex-1 overflow-y-auto flex flex-col gap-4 px-[5px]">
                   <div className="flex flex-col gap-1">
                     <span className="text-md text-gray-800">
-                      Nome do Projeto
+                      Nome do Projeto <span className="text-red-500">*</span>
                     </span>
                     <input
                       type="text"
@@ -1583,12 +1608,13 @@ const ClientAddProject = () => {
                       onChange={(e) => setProjectName(e.target.value)}
                       placeholder="Digite o nome do projeto"
                       className="p-2.5 rounded border border-gray-300 text-sm"
+                      required
                     />
                   </div>
 
                   <div className="flex flex-col gap-1">
                     <span className="text-md text-gray-800">
-                      Língua de Origem
+                      Língua de Origem <span className="text-red-500">*</span>
                     </span>
                     <select
                       id="sourceLanguage"
@@ -1596,6 +1622,7 @@ const ClientAddProject = () => {
                       value={sourceLanguage}
                       onChange={handleSourceLanguageChange}
                       className="p-2.5 rounded border border-gray-300 text-sm"
+                      required
                     >
                       <option value="" disabled>
                         Selecionar
@@ -1611,7 +1638,7 @@ const ClientAddProject = () => {
 
                   <div className="flex flex-col gap-1">
                     <span className="text-md text-gray-800">
-                      Língua de Destino
+                      Língua de Destino <span className="text-red-500">*</span>
                     </span>
                     <select
                       id="targetLanguage"
@@ -1619,6 +1646,7 @@ const ClientAddProject = () => {
                       value={targetLanguage}
                       onChange={handleTargetLanguageChange}
                       className="p-2.5 rounded border border-gray-300 text-sm"
+                      required
                     >
                       <option value="" disabled>
                         Selecionar
@@ -1675,8 +1703,10 @@ const ClientAddProject = () => {
                       multiple
                       onChange={handleFileChange}
                       className="absolute inset-0 opacity-0 cursor-pointer"
+                      required
                     />
                     <p className="text-sm text-gray-600">
+                      <span className="text-red-500">* </span>
                       Arraste e solte arquivos aqui ou clique para selecionar
                     </p>
                   </div>
