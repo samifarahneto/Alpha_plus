@@ -303,10 +303,23 @@ const CheckoutPage = () => {
   const calculateTotalValue = (projects) => {
     return projects
       .reduce((total, project) => {
+        // Se é pagamento de divergência, usar o divergenceValue passado pelo state
+        if (isDivergencePayment) {
+          return total + Number(divergenceValue);
+        }
+
+        // Para pagamentos normais, calcular valor dos arquivos
         const projectTotal = project.files.reduce((sum, file) => {
           const fileTotal = Number(file.total) || Number(file.totalValue) || 0;
           return sum + fileTotal;
         }, 0);
+
+        // Se o projeto tem divergenceInfo mas não é pagamento específico de divergência,
+        // incluir o valor da divergência no total
+        if (project.divergenceInfo && project.divergenceInfo.value) {
+          return total + projectTotal + Number(project.divergenceInfo.value);
+        }
+
         return total + projectTotal;
       }, 0)
       .toFixed(2);
@@ -695,6 +708,36 @@ const CheckoutPage = () => {
                         </div>
                       </div>
 
+                      {/* Nota explicativa para pagamento de divergência */}
+                      {isDivergencePayment && (
+                        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
+                          <div className="flex items-start">
+                            <div className="flex-shrink-0">
+                              <svg
+                                className="h-5 w-5 text-yellow-400"
+                                viewBox="0 0 20 20"
+                                fill="currentColor"
+                              >
+                                <path
+                                  fillRule="evenodd"
+                                  d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z"
+                                  clipRule="evenodd"
+                                />
+                              </svg>
+                            </div>
+                            <div className="ml-3">
+                              <p className="text-sm text-yellow-800">
+                                <strong>Pagamento de Divergência:</strong> Este
+                                valor corresponde às páginas adicionais
+                                identificadas durante a análise do projeto.{" "}
+                                {projects[0]?.payment_status?.reason &&
+                                  `Motivo: ${projects[0].payment_status.reason}`}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
                       {isDivergencePayment ? (
                         <div className="bg-gray-50 rounded-lg p-4 mb-4">
                           <div className="flex flex-col gap-2">
@@ -827,6 +870,96 @@ const CheckoutPage = () => {
                                 </td>
                               </tr>
                             ))}
+                            {/* Mostrar informações de divergência se for pagamento de divergência */}
+                            {isDivergencePayment && project.divergenceInfo && (
+                              <tr className="bg-red-50 hover:bg-red-100">
+                                <td className="px-4 py-3 text-sm font-medium text-red-700">
+                                  Páginas de Divergência
+                                </td>
+                                <td className="px-4 py-3 text-sm text-red-600 text-center">
+                                  {project.divergenceInfo.pages || 0}
+                                </td>
+                                <td className="px-4 py-3 text-sm text-red-600 text-center">
+                                  {project.sourceLanguage || "N/A"} →{" "}
+                                  {project.targetLanguage || "N/A"}
+                                </td>
+                                <td className="px-4 py-3 text-sm font-medium text-red-700 text-right">
+                                  U${" "}
+                                  {Number(
+                                    project.divergenceInfo.value || 0
+                                  ).toFixed(2)}
+                                </td>
+                              </tr>
+                            )}
+                            {/* Se é pagamento de divergência mas não tem divergenceInfo, calcular dinamicamente */}
+                            {isDivergencePayment && !project.divergenceInfo && (
+                              <tr className="bg-red-50 hover:bg-red-100">
+                                <td className="px-4 py-3 text-sm font-medium text-red-700">
+                                  Páginas de Divergência
+                                </td>
+                                <td className="px-4 py-3 text-sm text-red-600 text-center">
+                                  {(() => {
+                                    // Calcular páginas de divergência baseado no divergenceValue
+                                    const originalValue = project.files.reduce(
+                                      (sum, file) => {
+                                        return (
+                                          sum +
+                                          (Number(file.total) ||
+                                            Number(file.totalValue) ||
+                                            0)
+                                        );
+                                      },
+                                      0
+                                    );
+                                    const valuePerPage =
+                                      project.files.length > 0
+                                        ? Number(
+                                            project.files[0].valuePerPage
+                                          ) || 0
+                                        : 0;
+                                    const totalValue = Number(divergenceValue);
+                                    const divergenceValueCalc =
+                                      totalValue - originalValue;
+                                    const divergencePages =
+                                      valuePerPage > 0
+                                        ? Math.round(
+                                            divergenceValueCalc / valuePerPage
+                                          )
+                                        : 0;
+                                    return divergencePages > 0
+                                      ? divergencePages
+                                      : 0;
+                                  })()}
+                                </td>
+                                <td className="px-4 py-3 text-sm text-red-600 text-center">
+                                  {project.sourceLanguage || "N/A"} →{" "}
+                                  {project.targetLanguage || "N/A"}
+                                </td>
+                                <td className="px-4 py-3 text-sm font-medium text-red-700 text-right">
+                                  U${" "}
+                                  {(() => {
+                                    // Calcular valor de divergência baseado no divergenceValue
+                                    const originalValue = project.files.reduce(
+                                      (sum, file) => {
+                                        return (
+                                          sum +
+                                          (Number(file.total) ||
+                                            Number(file.totalValue) ||
+                                            0)
+                                        );
+                                      },
+                                      0
+                                    );
+                                    const totalValue = Number(divergenceValue);
+                                    const divergenceValueCalc =
+                                      totalValue - originalValue;
+                                    return divergenceValueCalc > 0
+                                      ? divergenceValueCalc.toFixed(2)
+                                      : "0.00";
+                                  })()}
+                                </td>
+                              </tr>
+                            )}
                           </tbody>
                         </table>
                       </div>
@@ -835,9 +968,95 @@ const CheckoutPage = () => {
                 })}
 
                 <div className="pt-4 border-t border-gray-100">
+                  {/* Se é pagamento de divergência, mostrar breakdown dos valores */}
+                  {isDivergencePayment && (
+                    <div className="space-y-2 mb-4">
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="text-gray-600">
+                          Valor Original dos Arquivos:
+                        </span>
+                        <span className="text-gray-800">
+                          U${" "}
+                          {projects
+                            .reduce((total, project) => {
+                              const projectTotal = project.files.reduce(
+                                (sum, file) => {
+                                  return (
+                                    sum +
+                                    (Number(file.total) ||
+                                      Number(file.totalValue) ||
+                                      0)
+                                  );
+                                },
+                                0
+                              );
+                              return total + projectTotal;
+                            }, 0)
+                            .toFixed(2)}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="text-red-600">
+                          Valor da Divergência:
+                        </span>
+                        <span className="text-red-700">
+                          U${" "}
+                          {projects
+                            .reduce((total, project) => {
+                              // Se tem divergenceInfo, usar esse valor
+                              if (
+                                project.divergenceInfo &&
+                                project.divergenceInfo.value
+                              ) {
+                                return (
+                                  total + Number(project.divergenceInfo.value)
+                                );
+                              }
+                              // Se tem payment_status estruturado, usar esse valor
+                              if (
+                                project.payment_status &&
+                                typeof project.payment_status === "object" &&
+                                project.payment_status.divergencePayment
+                              ) {
+                                return (
+                                  total +
+                                  Number(
+                                    project.payment_status.divergencePayment
+                                  )
+                                );
+                              }
+                              // Senão, calcular baseado no divergenceValue total menos valor original
+                              const originalValue = project.files.reduce(
+                                (sum, file) => {
+                                  return (
+                                    sum +
+                                    (Number(file.total) ||
+                                      Number(file.totalValue) ||
+                                      0)
+                                  );
+                                },
+                                0
+                              );
+                              const totalValue = Number(divergenceValue);
+                              const divergenceValueCalc =
+                                totalValue - originalValue;
+                              return (
+                                total +
+                                (divergenceValueCalc > 0
+                                  ? divergenceValueCalc
+                                  : 0)
+                              );
+                            }, 0)
+                            .toFixed(2)}
+                        </span>
+                      </div>
+                      <div className="border-t border-gray-200 my-2"></div>
+                    </div>
+                  )}
+
                   <div className="flex justify-between items-center">
                     <span className="text-lg font-medium text-gray-900">
-                      Total
+                      Total {isDivergencePayment ? "a Pagar" : ""}
                     </span>
                     <span className="text-2xl font-bold text-blue-600">
                       U${" "}

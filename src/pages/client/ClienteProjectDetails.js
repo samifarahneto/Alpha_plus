@@ -1358,11 +1358,18 @@ const ClienteProjectDetails = () => {
 
                     // Se o projeto NÃO foi pago anteriormente, enviar valor total
                     // Se JÁ foi pago, enviar apenas valor da divergência
+                    const originalValue = project.files.reduce((sum, file) => {
+                      return (
+                        sum +
+                        (Number(file.total) || Number(file.totalValue) || 0)
+                      );
+                    }, 0);
+
+                    const divergenceValue = divergencePages * valuePerPage;
+
                     const paymentValue = !isProjectPaid()
-                      ? ((totalPages + divergencePages) * valuePerPage).toFixed(
-                          2
-                        ) // Valor total
-                      : (divergencePages * valuePerPage).toFixed(2); // Apenas divergência
+                      ? (originalValue + divergenceValue).toFixed(2) // Valor total: original + divergência
+                      : divergenceValue.toFixed(2); // Apenas divergência
 
                     console.log("Cálculo do valor para pagamento:", {
                       totalPages,
