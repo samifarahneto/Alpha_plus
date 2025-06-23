@@ -808,19 +808,43 @@ const ClientProjects = () => {
       return originalPages + divergencePages;
     }
 
+    // Se há divergenceInfo com páginas de divergência (após aprovação), somar ao valor original
+    if (row?.divergenceInfo?.pages) {
+      const divergencePages =
+        typeof row.divergenceInfo.pages === "string"
+          ? parseInt(row.divergenceInfo.pages) || 0
+          : row.divergenceInfo.pages || 0;
+
+      return originalPages + divergencePages;
+    }
+
     // Se não há divergência, retornar apenas as páginas originais
     return originalPages;
   }, []);
 
-  const calculateTotalValue = useCallback((files) => {
+  const calculateTotalValue = useCallback((files, row) => {
     if (!files || !Array.isArray(files)) return "0.00";
 
-    return files
-      .reduce((acc, file) => {
-        const fileTotal = Number(file.total) || 0;
-        return acc + fileTotal;
-      }, 0)
-      .toFixed(2);
+    // Calcular valor dos arquivos originais
+    let originalValue = files.reduce((acc, file) => {
+      const fileTotal = Number(file.total) || 0;
+      return acc + fileTotal;
+    }, 0);
+
+    // Se há payment_status com valor de divergência, somar ao valor original
+    if (row?.payment_status?.divergencePayment) {
+      const divergenceValue = Number(row.payment_status.divergencePayment) || 0;
+      return (originalValue + divergenceValue).toFixed(2);
+    }
+
+    // Se há divergenceInfo com valor de divergência (após aprovação), somar ao valor original
+    if (row?.divergenceInfo?.value) {
+      const divergenceValue = Number(row.divergenceInfo.value) || 0;
+      return (originalValue + divergenceValue).toFixed(2);
+    }
+
+    // Se não há divergência, retornar apenas o valor original
+    return originalValue.toFixed(2);
   }, []);
 
   const handleProjectClick = (projectId, collection) => {
@@ -1564,7 +1588,7 @@ const ClientProjects = () => {
     {
       id: "totalValue",
       label: "Valor U$",
-      render: (value, row) => `U$ ${calculateTotalValue(row.files)}`,
+      render: (value, row) => `U$ ${calculateTotalValue(row.files, row)}`,
     },
     {
       id: "isPaid",
@@ -1651,7 +1675,7 @@ const ClientProjects = () => {
       render: (value, row) => {
         const isPendingPayment =
           row.payment_status === "Pendente" &&
-          calculateTotalValue(row.files) !== "0.00";
+          calculateTotalValue(row.files, row) !== "0.00";
         const hasZeroPagesValue = hasZeroPages(row.files, row);
 
         return (

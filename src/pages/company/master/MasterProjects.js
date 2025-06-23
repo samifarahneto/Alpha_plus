@@ -225,7 +225,7 @@ const MasterProjects = ({ style, isMobile }) => {
       minWidth: "50px",
       maxWidth: "50px",
       render: (value, row) => (
-        <span>{calculateTotalPages(row.files) || "0"}</span>
+        <span>{calculateTotalPages(row.files, row) || "0"}</span>
       ),
     },
     {
@@ -255,9 +255,11 @@ const MasterProjects = ({ style, isMobile }) => {
         <span>
           U${" "}
           {Number(
-            row.totalProjectValue ||
+            (typeof row.payment_status === "object" &&
+              row.payment_status.totalPayment) ||
+              row.totalProjectValue ||
               row.totalValue ||
-              calculateTotalValue(row.files)
+              calculateTotalValue(row.files, row)
           ).toFixed(2)}
         </span>
       ),
@@ -725,6 +727,12 @@ const MasterProjects = ({ style, isMobile }) => {
       ).toFixed(2);
     }
 
+    // Se há divergenceInfo com valor de divergência (após aprovação), somar ao valor original
+    if (project?.divergenceInfo?.value) {
+      const divergenceValue = Number(project.divergenceInfo.value) || 0;
+      return (baseValue + divergenceValue).toFixed(2);
+    }
+
     return baseValue.toFixed(2);
   };
 
@@ -738,6 +746,12 @@ const MasterProjects = ({ style, isMobile }) => {
     // Se houver divergência, adicionar as páginas divergentes ao total
     if (project?.payment_status?.pages) {
       return basePages + Number(project.payment_status.pages);
+    }
+
+    // Se há divergenceInfo com páginas de divergência (após aprovação), somar ao valor original
+    if (project?.divergenceInfo?.pages) {
+      const divergencePages = Number(project.divergenceInfo.pages) || 0;
+      return basePages + divergencePages;
     }
 
     return basePages;

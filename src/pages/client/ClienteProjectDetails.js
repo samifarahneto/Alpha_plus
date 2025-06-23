@@ -154,27 +154,59 @@ const ClienteProjectDetails = () => {
     }
   }, [projectId, navigate]);
 
-  const calculateTotalPages = (files) => {
+  const calculateTotalPages = (files, projectData) => {
     if (!files || !Array.isArray(files)) return 0;
-    return files.reduce(
+
+    // Calcular páginas dos arquivos originais
+    const originalPages = files.reduce(
       (total, file) => total + (Number(file.pageCount) || 0),
       0
     );
+
+    // Se há payment_status com páginas de divergência, somar ao valor original
+    if (projectData?.payment_status?.pages) {
+      const divergencePages = Number(projectData.payment_status.pages) || 0;
+      return originalPages + divergencePages;
+    }
+
+    // Se há divergenceInfo com páginas de divergência (após aprovação), somar ao valor original
+    if (projectData?.divergenceInfo?.pages) {
+      const divergencePages = Number(projectData.divergenceInfo.pages) || 0;
+      return originalPages + divergencePages;
+    }
+
+    // Se não há divergência, retornar apenas as páginas originais
+    return originalPages;
   };
 
   const hasZeroPages = (files) => {
     return files.some((file) => file.pageCount === 0);
   };
 
-  const calculateTotalValue = (files) => {
+  const calculateTotalValue = (files, projectData) => {
     if (!files || !Array.isArray(files)) return "0.00";
 
-    return files
-      .reduce((acc, file) => {
-        const fileTotal = Number(file.total) || Number(file.totalValue) || 0;
-        return acc + fileTotal;
-      }, 0)
-      .toFixed(2);
+    // Calcular valor dos arquivos originais
+    let originalValue = files.reduce((acc, file) => {
+      const fileTotal = Number(file.total) || Number(file.totalValue) || 0;
+      return acc + fileTotal;
+    }, 0);
+
+    // Se há payment_status com valor de divergência, somar ao valor original
+    if (projectData?.payment_status?.divergencePayment) {
+      const divergenceValue =
+        Number(projectData.payment_status.divergencePayment) || 0;
+      return (originalValue + divergenceValue).toFixed(2);
+    }
+
+    // Se há divergenceInfo com valor de divergência (após aprovação), somar ao valor original
+    if (projectData?.divergenceInfo?.value) {
+      const divergenceValue = Number(projectData.divergenceInfo.value) || 0;
+      return (originalValue + divergenceValue).toFixed(2);
+    }
+
+    // Se não há divergência, retornar apenas o valor original
+    return originalValue.toFixed(2);
   };
 
   const getFileDownloadUrl = async (fileUrl) => {
@@ -435,9 +467,10 @@ const ClienteProjectDetails = () => {
             email: project.userEmail || "Não informado",
           },
           totalPaginas:
-            project.totalPages || calculateTotalPages(project.files),
+            project.totalPages || calculateTotalPages(project.files, project),
           totalValor:
-            project.totalProjectValue || calculateTotalValue(project.files),
+            project.totalProjectValue ||
+            calculateTotalValue(project.files, project),
           prazo: deadlineDays,
           dataPrazo: deadlineDate,
           idiomaOrigem: project.sourceLanguage,
@@ -672,7 +705,7 @@ const ClienteProjectDetails = () => {
 
     // Se o projeto NÃO foi pago anteriormente, calcular: páginas × valor por página
     if (!isProjectPaid()) {
-      const totalPages = calculateTotalPages(project.files);
+      const totalPages = calculateTotalPages(project.files, project);
       const valuePerPage =
         project.files && project.files.length > 0
           ? Number(project.files[0].valuePerPage) || 0
@@ -684,7 +717,7 @@ const ClienteProjectDetails = () => {
     return Number(
       project.totalProjectValue ||
         project.totalValue ||
-        calculateTotalValue(project.files)
+        calculateTotalValue(project.files, project)
     ).toFixed(2);
   };
 
@@ -1210,33 +1243,40 @@ const ClienteProjectDetails = () => {
                   Total de Páginas:
                 </span>
                 <span className="text-sm md:text-base text-gray-800">
-                  {calculateTotalPages(project.files)}
+                  {calculateTotalPages(project.files, project)}
                 </span>
               </div>
-              {typeof project.payment_status === "object" &&
-                project.payment_status.divergencePayment > 0 && (
-                  <>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm md:text-base text-gray-700 font-semibold">
-                        Páginas Divergentes:
-                      </span>
-                      <span className="text-sm md:text-base text-gray-800">
-                        {project.payment_status.pages}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm md:text-base text-gray-700 font-semibold">
-                        Valor Divergência:
-                      </span>
-                      <span className="text-sm md:text-base text-gray-800">
-                        U${" "}
-                        {Number(
-                          project.payment_status.divergencePayment
-                        ).toFixed(2)}
-                      </span>
-                    </div>
-                  </>
-                )}
+              {/* Mostrar informações de divergência se existirem */}
+              {((typeof project.payment_status === "object" &&
+                project.payment_status.divergencePayment > 0) ||
+                (project.divergenceInfo &&
+                  project.divergenceInfo.pages > 0)) && (
+                <>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm md:text-base text-gray-700 font-semibold">
+                      Páginas Divergentes:
+                    </span>
+                    <span className="text-sm md:text-base text-gray-800">
+                      {project.divergenceInfo?.pages ||
+                        project.payment_status?.pages ||
+                        "0"}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm md:text-base text-gray-700 font-semibold">
+                      Valor Divergência:
+                    </span>
+                    <span className="text-sm md:text-base text-gray-800">
+                      U${" "}
+                      {Number(
+                        project.divergenceInfo?.value ||
+                          project.payment_status?.divergencePayment ||
+                          0
+                      ).toFixed(2)}
+                    </span>
+                  </div>
+                </>
+              )}
               <div className="flex items-center justify-between">
                 <span className="text-sm md:text-base text-gray-700 font-semibold">
                   Valor Total:
@@ -1271,7 +1311,7 @@ const ClienteProjectDetails = () => {
                         Valor por Página
                       </th>
                       <th className="px-4 py-2 text-right text-sm font-medium text-gray-600">
-                        Valor Total
+                        Valor Total da divergência
                       </th>
                     </tr>
                   </thead>
@@ -1285,21 +1325,15 @@ const ClienteProjectDetails = () => {
                       </td>
                       <td className="px-4 py-2 text-sm text-right">
                         U${" "}
-                        {(
-                          Number(
-                            project.totalProjectValue || project.totalValue
-                          ) / calculateTotalPages(project.files)
+                        {(project.files && project.files.length > 0
+                          ? Number(project.files[0].valuePerPage) || 0
+                          : 0
                         ).toFixed(2)}
                       </td>
                       <td className="px-4 py-2 text-sm text-right text-red-700 font-bold">
                         U${" "}
                         {(
-                          (Number(
-                            project.totalProjectValue || project.totalValue
-                          ) /
-                            calculateTotalPages(project.files)) *
-                          (calculateTotalPages(project.files) +
-                            Number(project.payment_status.pages))
+                          Number(project.payment_status.divergencePayment) || 0
                         ).toFixed(2)}
                       </td>
                     </tr>
@@ -1310,7 +1344,10 @@ const ClienteProjectDetails = () => {
               <div className="flex justify-center mt-6 gap-4">
                 <button
                   onClick={() => {
-                    const totalPages = calculateTotalPages(project.files);
+                    const totalPages = calculateTotalPages(
+                      project.files,
+                      project
+                    );
                     const divergencePages = Number(
                       project.payment_status.pages
                     );
@@ -1369,53 +1406,35 @@ const ClienteProjectDetails = () => {
             {console.log("=== DEBUG BOTÕES DE APROVAÇÃO ===")}
             {console.log("userData:", userData)}
             {console.log("userData?.canTest:", userData?.canTest)}
+            {console.log("userData?.canTest type:", typeof userData?.canTest)}
             {console.log(
               "userData?.canTest === true:",
               userData?.canTest === true
             )}
             {console.log("project.collection:", project.collection)}
-            {console.log("Coleções aceitas:", [
-              "b2bapproval",
-              "b2capproval",
-              "b2bprojects",
-              "b2cprojects",
-              "b2bapproved",
-              "b2capproved",
-              "b2bsketch",
-              "b2csketch",
-            ])}
-            {console.log(
-              "É coleção aceita:",
-              [
-                "b2bapproval",
-                "b2capproval",
-                "b2bprojects",
-                "b2cprojects",
-                "b2bapproved",
-                "b2capproved",
-                "b2bsketch",
-                "b2csketch",
-              ].includes(project.collection)
-            )}
-            {console.log(
-              "Condição completa:",
-              userData?.canTest === true &&
-                (project.collection === "b2bapproval" ||
-                  project.collection === "b2capproval" ||
-                  project.collection === "b2bprojects" ||
-                  project.collection === "b2cprojects" ||
-                  project.collection === "b2bapproved" ||
-                  project.collection === "b2capproved" ||
-                  project.collection === "b2bsketch" ||
-                  project.collection === "b2csketch")
-            )}
+            {console.log("project.collection type:", typeof project.collection)}
             {console.log("project.status:", project.status)}
+            {console.log("project.status type:", typeof project.status)}
+            {console.log("project.project_status:", project.project_status)}
+            {console.log("project.payment_status:", project.payment_status)}
+            {console.log(
+              "project.payment_status type:",
+              typeof project.payment_status
+            )}
             {console.log(
               "project.status === 'Aprovado':",
               project.status === "Aprovado"
             )}
             {console.log(
-              "Primeira condição canTest:",
+              "É coleção b2bapproved:",
+              project.collection === "b2bapproved"
+            )}
+            {console.log(
+              "É coleção b2capproved:",
+              project.collection === "b2capproved"
+            )}
+            {console.log(
+              "Primeira condição canTest (status !== Aprovado):",
               userData?.canTest === true &&
                 project.status !== "Aprovado" &&
                 (project.collection === "b2bapproval" ||
@@ -1426,16 +1445,29 @@ const ClienteProjectDetails = () => {
                   project.collection === "b2csketch")
             )}
             {console.log(
-              "Segunda condição canTest:",
+              "Segunda condição canTest (status === Aprovado):",
               userData?.canTest === true &&
                 project.status === "Aprovado" &&
                 (project.collection === "b2bapproved" ||
                   project.collection === "b2capproved")
             )}
+            {console.log(
+              "Terceira condição canTest (outras coleções):",
+              userData?.canTest === true &&
+                project.status === "Aprovado" &&
+                (project.collection === "b2bapproval" ||
+                  project.collection === "b2capproval" ||
+                  project.collection === "b2bprojects" ||
+                  project.collection === "b2cprojects" ||
+                  project.collection === "b2bsketch" ||
+                  project.collection === "b2csketch")
+            )}
             {console.log("=== FIM DEBUG ===")}
 
             {userData?.canTest === true &&
             project.status !== "Aprovado" &&
+            project.collection !== "b2bapproved" &&
+            project.collection !== "b2capproved" &&
             (project.collection === "b2bapproval" ||
               project.collection === "b2capproval" ||
               project.collection === "b2bprojects" ||
@@ -1503,7 +1535,9 @@ const ClienteProjectDetails = () => {
                 )}
               </div>
             ) : userData?.canTest === true &&
-              project.status === "Aprovado" &&
+              (project.status === "Aprovado" ||
+                project.collection === "b2bapproved" ||
+                project.collection === "b2capproved") &&
               (project.collection === "b2bapproved" ||
                 project.collection === "b2capproved") ? (
               <div className="flex justify-center mt-6 gap-4">
@@ -1529,7 +1563,8 @@ const ClienteProjectDetails = () => {
 
                         // Calcular total de páginas: originais + divergentes
                         const originalPages = calculateTotalPages(
-                          project.files
+                          project.files,
+                          project
                         );
                         const divergencePages =
                           typeof project.payment_status === "object"
@@ -1540,7 +1575,7 @@ const ClienteProjectDetails = () => {
                         // Calcular valor total: valor inicial + valor da divergência
                         const originalValue = Number(
                           project.totalProjectValue ||
-                            calculateTotalValue(project.files)
+                            calculateTotalValue(project.files, project)
                         );
                         const divergenceValue =
                           typeof project.payment_status === "object"
@@ -1550,12 +1585,25 @@ const ClienteProjectDetails = () => {
                             : 0; // Se não há objeto payment_status, assumir 0 valor divergente
                         const totalValue = originalValue + divergenceValue;
 
-                        // Update do projeto
+                        // Update do projeto - preservar informações da divergência
                         await updateDoc(projectRef, {
                           totalPages: totalPages,
                           totalProjectValue: totalValue,
                           payment_status: "Pendente",
-                          project_status: "Ag. Pagamento",
+                          project_status: "Em Análise",
+                          // Preservar informações da divergência em campos separados
+                          divergenceInfo: {
+                            pages: divergencePages,
+                            value: divergenceValue,
+                            reason:
+                              typeof project.payment_status === "object"
+                                ? project.payment_status.reason ||
+                                  "Divergência aprovada"
+                                : "Divergência aprovada",
+                            approvedAt: new Date().toISOString(),
+                            originalPages: originalPages,
+                            originalValue: originalValue,
+                          },
                         });
 
                         // Atualizar estado local
@@ -1564,7 +1612,19 @@ const ClienteProjectDetails = () => {
                           totalPages: totalPages,
                           totalProjectValue: totalValue,
                           payment_status: "Pendente",
-                          project_status: "Ag. Pagamento",
+                          project_status: "Em Análise",
+                          divergenceInfo: {
+                            pages: divergencePages,
+                            value: divergenceValue,
+                            reason:
+                              typeof project.payment_status === "object"
+                                ? project.payment_status.reason ||
+                                  "Divergência aprovada"
+                                : "Divergência aprovada",
+                            approvedAt: new Date().toISOString(),
+                            originalPages: originalPages,
+                            originalValue: originalValue,
+                          },
                         }));
 
                         alert("Divergência aprovada com sucesso!");
@@ -1602,7 +1662,11 @@ const ClienteProjectDetails = () => {
                 project.collection === "b2bprojects" ||
                 project.collection === "b2cprojects" ||
                 project.collection === "b2bsketch" ||
-                project.collection === "b2csketch") ? (
+                project.collection === "b2csketch") &&
+              !(
+                project.collection === "b2bapproved" ||
+                project.collection === "b2capproved"
+              ) ? (
               <div className="flex justify-center mt-6">
                 <button
                   disabled

@@ -243,24 +243,7 @@ const ProjectDetails = () => {
   const [selectedRefundOption, setSelectedRefundOption] = useState("total");
   const [showCustomAmount, setShowCustomAmount] = useState(false);
 
-  // Memoização dos cálculos
-  const totalPages = useMemo(() => {
-    if (!project?.files) return 0;
-    return project.files.reduce((total, file) => {
-      const pageCount = parseInt(file.pageCount) || 0;
-      return total + pageCount;
-    }, 0);
-  }, [project?.files]);
-
-  const totalValue = useMemo(() => {
-    if (!project?.files) return "0.00";
-    return project.files
-      .reduce((acc, file) => {
-        const fileTotal = Number(file.total) || Number(file.totalValue) || 0;
-        return acc + fileTotal;
-      }, 0)
-      .toFixed(2);
-  }, [project?.files]);
+  // Memoização dos cálculos removida - agora calculamos diretamente no JSX
 
   // Debounce para atualização de páginas
   const debouncedSetEditedPages = useMemo(
@@ -2137,18 +2120,88 @@ const ProjectDetails = () => {
           <div className="pt-4 border-t border-gray-200 space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-gray-600 text-sm font-medium">
-                Total Páginas:
+                Total de Páginas Inicial:
               </span>
               <span className="text-gray-800 text-sm font-medium">
-                {totalPages}
+                {project.files.reduce(
+                  (total, file) => total + (Number(file.pageCount) || 0),
+                  0
+                )}
               </span>
             </div>
+            {((typeof project.payment_status === "object" &&
+              project.payment_status.pages > 0) ||
+              (project.divergenceInfo && project.divergenceInfo.pages > 0)) && (
+              <>
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-600 text-sm font-medium">
+                    Páginas Divergentes:
+                  </span>
+                  <span className="text-gray-800 text-sm font-medium">
+                    {project.divergenceInfo?.pages ||
+                      project.payment_status?.pages ||
+                      "0"}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-600 text-sm font-medium">
+                    Total de Páginas Final:
+                  </span>
+                  <span className="text-gray-800 text-sm font-medium">
+                    {project.files.reduce(
+                      (total, file) => total + (Number(file.pageCount) || 0),
+                      0
+                    ) +
+                      Number(
+                        project.divergenceInfo?.pages ||
+                          project.payment_status?.pages ||
+                          0
+                      )}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-600 text-sm font-medium">
+                    Valor Divergência:
+                  </span>
+                  <span className="text-gray-800 text-sm font-medium">
+                    U${" "}
+                    {Number(
+                      project.divergenceInfo?.value ||
+                        project.payment_status?.divergencePayment ||
+                        0
+                    ).toFixed(2)}
+                  </span>
+                </div>
+                <div className="flex flex-col gap-1 border-t border-gray-200 pt-2 mt-1">
+                  <span className="text-gray-600 text-sm font-medium">
+                    Motivo da Divergência:
+                  </span>
+                  <span className="text-gray-800 text-sm bg-white p-2 rounded border border-gray-200">
+                    {project.divergenceInfo?.reason ||
+                      project.payment_status?.reason ||
+                      "N/A"}
+                  </span>
+                </div>
+              </>
+            )}
             <div className="flex items-center justify-between">
               <span className="text-gray-600 text-sm font-medium">
-                Total Valor:
+                Valor Total:
               </span>
               <span className="text-gray-800 text-sm font-medium">
-                U$ {totalValue}
+                U${" "}
+                {typeof project.payment_status === "object" &&
+                project.payment_status.status === "Reembolsado"
+                  ? Number(project.payment_status.originalAmount || 0).toFixed(
+                      2
+                    )
+                  : Number(
+                      typeof project.payment_status === "object"
+                        ? project.payment_status.totalPayment
+                        : project.totalProjectValue ||
+                            project.totalValue ||
+                            calculateTotalValue(project.files)
+                    ).toFixed(2)}
               </span>
             </div>
           </div>
@@ -2851,50 +2904,63 @@ const ProjectDetails = () => {
                     )}
                   </span>
                 </div>
-                {typeof project.payment_status === "object" &&
-                  project.payment_status.pages > 0 && (
-                    <>
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm md:text-base text-gray-700 font-semibold">
-                          Páginas Divergentes:
-                        </span>
-                        <span className="text-sm md:text-base text-gray-800">
-                          {project.payment_status.pages}
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm md:text-base text-gray-700 font-semibold">
-                          Total de Páginas Final:
-                        </span>
-                        <span className="text-sm md:text-base text-gray-800">
-                          {project.files.reduce(
-                            (total, file) =>
-                              total + (Number(file.pageCount) || 0),
+                {((typeof project.payment_status === "object" &&
+                  project.payment_status.pages > 0) ||
+                  (project.divergenceInfo &&
+                    project.divergenceInfo.pages > 0)) && (
+                  <>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm md:text-base text-gray-700 font-semibold">
+                        Páginas Divergentes:
+                      </span>
+                      <span className="text-sm md:text-base text-gray-800">
+                        {project.divergenceInfo?.pages ||
+                          project.payment_status?.pages ||
+                          "0"}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm md:text-base text-gray-700 font-semibold">
+                        Total de Páginas Final:
+                      </span>
+                      <span className="text-sm md:text-base text-gray-800">
+                        {project.files.reduce(
+                          (total, file) =>
+                            total + (Number(file.pageCount) || 0),
+                          0
+                        ) +
+                          Number(
+                            project.divergenceInfo?.pages ||
+                              project.payment_status?.pages ||
+                              0
+                          )}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm md:text-base text-gray-700 font-semibold">
+                        Valor Divergência:
+                      </span>
+                      <span className="text-sm md:text-base text-gray-800">
+                        U${" "}
+                        {Number(
+                          project.divergenceInfo?.value ||
+                            project.payment_status?.divergencePayment ||
                             0
-                          ) + Number(project.payment_status.pages || 0)}
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm md:text-base text-gray-700 font-semibold">
-                          Valor Divergência:
-                        </span>
-                        <span className="text-sm md:text-base text-gray-800">
-                          U${" "}
-                          {Number(
-                            project.payment_status.divergencePayment
-                          ).toFixed(2)}
-                        </span>
-                      </div>
-                      <div className="flex flex-col gap-1 border-t border-gray-200 pt-2 mt-1">
-                        <span className="text-sm md:text-base text-gray-700 font-semibold">
-                          Motivo da Divergência:
-                        </span>
-                        <span className="text-sm md:text-base text-gray-800 bg-white p-2 rounded border border-gray-200">
-                          {project.payment_status.reason || "N/A"}
-                        </span>
-                      </div>
-                    </>
-                  )}
+                        ).toFixed(2)}
+                      </span>
+                    </div>
+                    <div className="flex flex-col gap-1 border-t border-gray-200 pt-2 mt-1">
+                      <span className="text-sm md:text-base text-gray-700 font-semibold">
+                        Motivo da Divergência:
+                      </span>
+                      <span className="text-sm md:text-base text-gray-800 bg-white p-2 rounded border border-gray-200">
+                        {project.divergenceInfo?.reason ||
+                          project.payment_status?.reason ||
+                          "N/A"}
+                      </span>
+                    </div>
+                  </>
+                )}
                 <div className="flex items-center justify-between">
                   <span className="text-sm md:text-base text-gray-700 font-semibold">
                     Valor Total:
