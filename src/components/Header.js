@@ -47,7 +47,6 @@ const Header = () => {
     masterUnreadCount,
     budgetCount,
     approvalCount,
-    approvedCount,
     inAnalysisCount,
     onGoingCount,
     clientUnreadCount,
@@ -269,11 +268,6 @@ const Header = () => {
           to: "/company/master/projects-approval",
           label: "Aguardando Aprovação",
           notificationCount: approvalCount,
-        },
-        {
-          to: "/company/master/projects-approved",
-          label: "Aprovados",
-          notificationCount: approvedCount,
         },
         {
           to: "/company/master/projects-in-analysis",
@@ -634,7 +628,6 @@ const Header = () => {
                         masterUnreadCount +
                           budgetCount +
                           approvalCount +
-                          approvedCount +
                           inAnalysisCount +
                           onGoingCount >
                           0 && (
@@ -642,7 +635,6 @@ const Header = () => {
                             {masterUnreadCount +
                               budgetCount +
                               approvalCount +
-                              approvedCount +
                               inAnalysisCount +
                               onGoingCount >
                             9
@@ -650,7 +642,6 @@ const Header = () => {
                               : masterUnreadCount +
                                 budgetCount +
                                 approvalCount +
-                                approvedCount +
                                 inAnalysisCount +
                                 onGoingCount}
                           </span>
@@ -701,7 +692,6 @@ const Header = () => {
                         masterUnreadCount +
                           budgetCount +
                           approvalCount +
-                          approvedCount +
                           inAnalysisCount +
                           onGoingCount >
                           0 && (
@@ -709,7 +699,6 @@ const Header = () => {
                             {masterUnreadCount +
                               budgetCount +
                               approvalCount +
-                              approvedCount +
                               inAnalysisCount +
                               onGoingCount >
                             99
@@ -717,7 +706,6 @@ const Header = () => {
                               : masterUnreadCount +
                                 budgetCount +
                                 approvalCount +
-                                approvedCount +
                                 inAnalysisCount +
                                 onGoingCount}
                           </span>
