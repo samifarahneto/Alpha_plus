@@ -163,6 +163,7 @@ const ClientBudgetReady = () => {
               where("project_status", "in", [
                 "Orçamento Recebido",
                 "Ag. Pagamento",
+                "Ag. Aprovação",
               ]),
               orderBy("createdAt", "desc")
             );
@@ -174,6 +175,7 @@ const ClientBudgetReady = () => {
               where("project_status", "in", [
                 "Orçamento Recebido",
                 "Ag. Pagamento",
+                "Ag. Aprovação",
               ]),
               orderBy("createdAt", "desc")
             );

@@ -1205,7 +1205,6 @@ const ProjectDetails = () => {
         totalProjectValue: newTotalProjectValue,
         deadline: `${deadlineDays} dias úteis`,
         deadlineDate: "A Definir",
-        status: "Aprovado",
         updatedAt: serverTimestamp(),
         approvedAt: serverTimestamp(),
         approvedBy: project.userEmail,

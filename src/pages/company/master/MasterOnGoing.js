@@ -340,6 +340,30 @@ const MasterOnGoing = () => {
     );
   };
 
+  const calculateTotalValue = (files, project) => {
+    if (!files || !Array.isArray(files)) return "0.00";
+
+    const baseValue = files.reduce((acc, file) => {
+      const fileTotal = Number(file.total) || Number(file.totalValue) || 0;
+      return acc + fileTotal;
+    }, 0);
+
+    // Se houver divergência, adicionar o valor da divergência
+    if (project?.payment_status?.divergencePayment) {
+      return (
+        baseValue + Number(project.payment_status.divergencePayment)
+      ).toFixed(2);
+    }
+
+    // Se há divergenceInfo com valor de divergência (após aprovação), somar ao valor original
+    if (project?.divergenceInfo?.value) {
+      const divergenceValue = Number(project.divergenceInfo.value) || 0;
+      return (baseValue + divergenceValue).toFixed(2);
+    }
+
+    return baseValue.toFixed(2);
+  };
+
   const formatDeadline = (deadline, deadlineDate) => {
     // Se deadlineDate for "A Definir" ou null, retorna "A Definir"
     if (deadlineDate === "A Definir" || deadlineDate === null) {
@@ -449,9 +473,7 @@ const MasterOnGoing = () => {
       targetLanguage: row.targetLanguage || "N/A",
       convertCurrency: row.convertCurrency ? "Sim" : "Não",
       deadline: formatDeadline(row.deadline, row.deadlineDate),
-      totalValue: `U$ ${Number(
-        row.totalProjectValue || row.totalValue || 0
-      ).toFixed(2)}`,
+      totalValue: `U$ ${calculateTotalValue(row.files, row)}`,
       paymentStatus: renderPaymentStatusBadge(
         typeof row.payment_status === "object"
           ? row.payment_status.status || "N/A"
