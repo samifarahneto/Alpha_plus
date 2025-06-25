@@ -298,7 +298,12 @@ const ProjectsBudget = () => {
       .map((row) => ({
         ...row,
         id: row.id || `temp-${Math.random()}`, // Garantir que sempre tenha um ID
-        client: clientTypes[row.userEmail]?.nomeCompleto || "N/A",
+        client: (() => {
+          const clientName = clientTypes[row.userEmail]?.nomeCompleto || "N/A";
+          return clientName.length > 15
+            ? `${clientName.slice(0, 15)}...`
+            : clientName;
+        })(),
         clientOrigin: row.userEmail || "N/A",
         type: (() => {
           const userInfo = clientTypes[row.userEmail];

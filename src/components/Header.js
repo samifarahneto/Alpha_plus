@@ -344,19 +344,26 @@ const Header = () => {
       const links = [
         { to: "/client/dashboard", label: "Dashboard" },
         { to: "/client/projects/clientaddproject", label: "Criar Projetos" },
-        { to: "/client/profile", label: "Meu Perfil" },
       ];
-
-      // Adicionar colaboradores se for b2b ou b2c
-      if (userType === "b2b" || userType === "b2c") {
-        links.push({
-          to: "/client/add-collaborator",
-          label: "Colaboradores",
-        });
-      }
 
       return links;
     }
+  };
+
+  // Links adicionais para clientes (perfil e colaboradores)
+  const getClientAdditionalLinks = () => {
+    const userType = user?.userType;
+    const links = [{ to: "/client/profile", label: "Meu Perfil" }];
+
+    // Adicionar colaboradores se for b2b ou b2c
+    if (userType === "b2b" || userType === "b2c") {
+      links.push({
+        to: "/client/add-collaborator",
+        label: "Colaboradores",
+      });
+    }
+
+    return links;
   };
 
   // Função melhorada para verificar link ativo - apenas rota exata
@@ -609,7 +616,36 @@ const Header = () => {
                     </Link>
                   ))}
 
-                {/* Menu Projetos - segundo */}
+                {/* Criar Projetos - segundo (só para clientes) */}
+                {userType !== "master" &&
+                  mainLinks
+                    .filter((link) => !link.to.includes("dashboard"))
+                    .map((link) => (
+                      <Link
+                        key={link.to}
+                        to={link.to}
+                        onClick={(e) => handleLinkClick(e, link.to)}
+                        className={`flex items-center ${
+                          shouldShowText()
+                            ? "px-2 sm:px-3"
+                            : "justify-center px-2"
+                        } py-2 sm:py-3 text-gray-700 hover:bg-gray-100 rounded-md transition-colors duration-200 ${
+                          isActive(link.to)
+                            ? "text-primary bg-blue-50 font-medium"
+                            : ""
+                        }`}
+                        title={!shouldShowText() ? link.label : ""}
+                      >
+                        {getIconForPath(link.to)}
+                        {shouldShowText() && (
+                          <span className="ml-2 sm:ml-3 text-xs sm:text-sm font-medium truncate">
+                            {link.label}
+                          </span>
+                        )}
+                      </Link>
+                    ))}
+
+                {/* Menu Projetos - terceiro */}
                 <button
                   onClick={handleProjectsClick}
                   className={`w-full flex items-center ${
@@ -784,10 +820,9 @@ const Header = () => {
                   </div>
                 )}
 
-                {/* Demais Links Principais - após projetos */}
-                {mainLinks
-                  .filter((link) => !link.to.includes("dashboard"))
-                  .map((link) => (
+                {/* Links Adicionais para Clientes - após projetos (Perfil e Colaboradores) */}
+                {userType !== "master" &&
+                  getClientAdditionalLinks().map((link) => (
                     <Link
                       key={link.to}
                       to={link.to}
@@ -811,6 +846,35 @@ const Header = () => {
                       )}
                     </Link>
                   ))}
+
+                {/* Demais Links para Master - após projetos */}
+                {userType === "master" &&
+                  mainLinks
+                    .filter((link) => !link.to.includes("dashboard"))
+                    .map((link) => (
+                      <Link
+                        key={link.to}
+                        to={link.to}
+                        onClick={(e) => handleLinkClick(e, link.to)}
+                        className={`flex items-center ${
+                          shouldShowText()
+                            ? "px-2 sm:px-3"
+                            : "justify-center px-2"
+                        } py-2 sm:py-3 text-gray-700 hover:bg-gray-100 rounded-md transition-colors duration-200 ${
+                          isActive(link.to)
+                            ? "text-primary bg-blue-50 font-medium"
+                            : ""
+                        }`}
+                        title={!shouldShowText() ? link.label : ""}
+                      >
+                        {getIconForPath(link.to)}
+                        {shouldShowText() && (
+                          <span className="ml-2 sm:ml-3 text-xs sm:text-sm font-medium truncate">
+                            {link.label}
+                          </span>
+                        )}
+                      </Link>
+                    ))}
               </div>
             </nav>
           </div>
