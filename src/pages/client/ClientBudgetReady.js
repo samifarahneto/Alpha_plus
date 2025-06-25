@@ -130,13 +130,13 @@ const ClientBudgetReady = () => {
           if (registeredByType === "b2b") {
             collections = ["b2bapproval"];
           } else if (registeredByType === "b2c") {
-            collections = ["b2capproval"];
+            collections = ["b2csketch"];
           }
         } else {
           if (userType === "b2b") {
             collections = ["b2bapproval"];
           } else if (userType === "b2c") {
-            collections = ["b2capproval"];
+            collections = ["b2csketch"];
           }
         }
 
