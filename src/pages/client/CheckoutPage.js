@@ -196,13 +196,36 @@ const CheckoutPage = () => {
 
       let totalAmount;
       if (isDivergencePayment) {
-        totalAmount = Math.round(Number(divergenceValue) * 100);
-        console.log(
-          "Valor de divergência:",
-          divergenceValue,
-          "Total em centavos:",
-          totalAmount
-        );
+        totalAmount = projects.reduce((total, project) => {
+          // Verificar se o projeto já foi pago parcialmente
+          const isPartiallyPaid =
+            typeof project.payment_status === "object" &&
+            project.payment_status.status === "Divergência" &&
+            project.payment_status.initialPayment > 0;
+
+          if (isPartiallyPaid) {
+            // Projeto pago parcialmente - pagar apenas a divergência
+            const divergenceAmount =
+              Number(project.payment_status.divergencePayment) || 0;
+            console.log(
+              `Projeto ${project.projectName} - Pago parcialmente. Divergência: ${divergenceAmount}`
+            );
+            return total + divergenceAmount * 100;
+          } else {
+            // Projeto não pago - pagar valor inicial + divergência
+            const initialValue = project.files.reduce((sum, file) => {
+              return sum + (Number(file.total) || Number(file.totalValue) || 0);
+            }, 0);
+            const divergenceAmount =
+              Number(project.payment_status?.divergencePayment) || 0;
+            const totalProjectValue = initialValue + divergenceAmount;
+            console.log(
+              `Projeto ${project.projectName} - Não pago. Inicial: ${initialValue}, Divergência: ${divergenceAmount}, Total: ${totalProjectValue}`
+            );
+            return total + totalProjectValue * 100;
+          }
+        }, 0);
+        console.log("Total de divergência em centavos:", totalAmount);
       } else {
         totalAmount = projects.reduce((total, project) => {
           console.log("Calculando valor para projeto:", project.projectName);
@@ -303,9 +326,28 @@ const CheckoutPage = () => {
   const calculateTotalValue = (projects) => {
     return projects
       .reduce((total, project) => {
-        // Se é pagamento de divergência, usar o divergenceValue passado pelo state
+        // Se é pagamento de divergência
         if (isDivergencePayment) {
-          return total + Number(divergenceValue);
+          // Verificar se o projeto já foi pago parcialmente
+          const isPartiallyPaid =
+            typeof project.payment_status === "object" &&
+            project.payment_status.status === "Divergência" &&
+            project.payment_status.initialPayment > 0;
+
+          if (isPartiallyPaid) {
+            // Projeto pago parcialmente - pagar apenas a divergência
+            const divergenceAmount =
+              Number(project.payment_status.divergencePayment) || 0;
+            return total + divergenceAmount;
+          } else {
+            // Projeto não pago - pagar valor inicial + divergência
+            const initialValue = project.files.reduce((sum, file) => {
+              return sum + (Number(file.total) || Number(file.totalValue) || 0);
+            }, 0);
+            const divergenceAmount =
+              Number(project.payment_status?.divergencePayment) || 0;
+            return total + initialValue + divergenceAmount;
+          }
         }
 
         // Para pagamentos normais, calcular valor dos arquivos
@@ -313,12 +355,6 @@ const CheckoutPage = () => {
           const fileTotal = Number(file.total) || Number(file.totalValue) || 0;
           return sum + fileTotal;
         }, 0);
-
-        // Se o projeto tem divergenceInfo mas não é pagamento específico de divergência,
-        // incluir o valor da divergência no total
-        if (project.divergenceInfo && project.divergenceInfo.value) {
-          return total + projectTotal + Number(project.divergenceInfo.value);
-        }
 
         return total + projectTotal;
       }, 0)
@@ -358,8 +394,28 @@ const CheckoutPage = () => {
 
       let totalAmount;
       if (isDivergencePayment) {
-        // Se for pagamento de divergência, usar o valor específico
-        totalAmount = Math.round(Number(divergenceValue) * 100);
+        totalAmount = projects.reduce((total, project) => {
+          // Verificar se o projeto já foi pago parcialmente
+          const isPartiallyPaid =
+            typeof project.payment_status === "object" &&
+            project.payment_status.status === "Divergência" &&
+            project.payment_status.initialPayment > 0;
+
+          if (isPartiallyPaid) {
+            // Projeto pago parcialmente - pagar apenas a divergência
+            const divergenceAmount =
+              Number(project.payment_status.divergencePayment) || 0;
+            return total + divergenceAmount * 100;
+          } else {
+            // Projeto não pago - pagar valor inicial + divergência
+            const initialValue = project.files.reduce((sum, file) => {
+              return sum + (Number(file.total) || Number(file.totalValue) || 0);
+            }, 0);
+            const divergenceAmount =
+              Number(project.payment_status?.divergencePayment) || 0;
+            return total + (initialValue + divergenceAmount) * 100;
+          }
+        }, 0);
       } else {
         // Caso contrário, calcular o valor total normal
         totalAmount = projects.reduce((total, project) => {
@@ -413,9 +469,7 @@ const CheckoutPage = () => {
           timestamp: serverTimestamp(),
           action: "erro no pagamento",
           details: {
-            valor: isDivergencePayment
-              ? divergenceValue
-              : calculateTotalValue(projects),
+            valor: calculateTotalValue(projects),
             status: "falhou",
             projeto: {
               nome:
@@ -457,9 +511,7 @@ const CheckoutPage = () => {
           timestamp: serverTimestamp(),
           action: "pagamento realizado",
           details: {
-            valor: isDivergencePayment
-              ? divergenceValue
-              : calculateTotalValue(projects),
+            valor: calculateTotalValue(projects),
             status: "sucesso",
             projeto: {
               nome:
@@ -473,6 +525,29 @@ const CheckoutPage = () => {
             tipoPagamento: isDivergencePayment
               ? "Divergência"
               : "Pagamento Inicial",
+            ...(isDivergencePayment && {
+              detalhePagamento: projects.map((project) => {
+                const isPartiallyPaid =
+                  typeof project.payment_status === "object" &&
+                  project.payment_status.status === "Divergência" &&
+                  project.payment_status.initialPayment > 0;
+                return {
+                  projeto: project.projectName,
+                  tipo: isPartiallyPaid
+                    ? "Apenas Divergência"
+                    : "Inicial + Divergência",
+                  valorInicial: isPartiallyPaid
+                    ? project.payment_status.initialPayment
+                    : project.files.reduce(
+                        (sum, file) => sum + (Number(file.total) || 0),
+                        0
+                      ),
+                  valorDivergencia:
+                    Number(project.payment_status?.divergencePayment) || 0,
+                  jaPago: isPartiallyPaid,
+                };
+              }),
+            }),
           },
         };
 
@@ -971,85 +1046,95 @@ const CheckoutPage = () => {
                   {/* Se é pagamento de divergência, mostrar breakdown dos valores */}
                   {isDivergencePayment && (
                     <div className="space-y-2 mb-4">
-                      <div className="flex justify-between items-center text-sm">
-                        <span className="text-gray-600">
-                          Valor Original dos Arquivos:
-                        </span>
-                        <span className="text-gray-800">
-                          U${" "}
-                          {projects
-                            .reduce((total, project) => {
-                              const projectTotal = project.files.reduce(
-                                (sum, file) => {
-                                  return (
-                                    sum +
-                                    (Number(file.total) ||
-                                      Number(file.totalValue) ||
-                                      0)
-                                  );
-                                },
-                                0
-                              );
-                              return total + projectTotal;
-                            }, 0)
-                            .toFixed(2)}
-                        </span>
-                      </div>
-                      <div className="flex justify-between items-center text-sm">
-                        <span className="text-red-600">
-                          Valor da Divergência:
-                        </span>
-                        <span className="text-red-700">
-                          U${" "}
-                          {projects
-                            .reduce((total, project) => {
-                              // Se tem divergenceInfo, usar esse valor
-                              if (
-                                project.divergenceInfo &&
-                                project.divergenceInfo.value
-                              ) {
-                                return (
-                                  total + Number(project.divergenceInfo.value)
-                                );
-                              }
-                              // Se tem payment_status estruturado, usar esse valor
-                              if (
-                                project.payment_status &&
-                                typeof project.payment_status === "object" &&
-                                project.payment_status.divergencePayment
-                              ) {
-                                return (
-                                  total +
-                                  Number(
-                                    project.payment_status.divergencePayment
-                                  )
-                                );
-                              }
-                              // Senão, calcular baseado no divergenceValue total menos valor original
-                              const originalValue = project.files.reduce(
-                                (sum, file) => {
-                                  return (
-                                    sum +
-                                    (Number(file.total) ||
-                                      Number(file.totalValue) ||
-                                      0)
-                                  );
-                                },
-                                0
-                              );
-                              const totalValue = Number(divergenceValue);
-                              const divergenceValueCalc =
-                                totalValue - originalValue;
-                              return (
-                                total +
-                                (divergenceValueCalc > 0
-                                  ? divergenceValueCalc
-                                  : 0)
-                              );
-                            }, 0)
-                            .toFixed(2)}
-                        </span>
-                      </div>
+                      {projects.map((project, projectIndex) => {
+                        const isPartiallyPaid =
+                          typeof project.payment_status === "object" &&
+                          project.payment_status.status === "Divergência" &&
+                          project.payment_status.initialPayment > 0;
+
+                        const originalValue = project.files.reduce(
+                          (sum, file) => {
+                            return (
+                              sum +
+                              (Number(file.total) ||
+                                Number(file.totalValue) ||
+                                0)
+                            );
+                          },
+                          0
+                        );
+
+                        const divergenceAmount =
+                          Number(project.payment_status?.divergencePayment) ||
+                          0;
+
+                        return (
+                          <div
+                            key={projectIndex}
+                            className="border border-gray-200 rounded-lg p-3 bg-gray-50"
+                          >
+                            <div className="font-medium text-sm text-gray-700 mb-2">
+                              {project.projectName}
+                            </div>
+
+                            {isPartiallyPaid ? (
+                              // Projeto pago parcialmente
+                              <div className="space-y-1">
+                                <div className="flex justify-between items-center text-xs">
+                                  <span className="text-green-600">
+                                    ✓ Valor Inicial (Pago):
+                                  </span>
+                                  <span className="text-green-700">
+                                    U${" "}
+                                    {project.payment_status.initialPayment.toFixed(
+                                      2
+                                    )}
+                                  </span>
+                                </div>
+                                <div className="flex justify-between items-center text-xs">
+                                  <span className="text-red-600">
+                                    Divergência (A Pagar):
+                                  </span>
+                                  <span className="text-red-700 font-medium">
+                                    U$ {divergenceAmount.toFixed(2)}
+                                  </span>
+                                </div>
+                              </div>
+                            ) : (
+                              // Projeto não pago
+                              <div className="space-y-1">
+                                <div className="flex justify-between items-center text-xs">
+                                  <span className="text-orange-600">
+                                    Valor Inicial (A Pagar):
+                                  </span>
+                                  <span className="text-orange-700">
+                                    U$ {originalValue.toFixed(2)}
+                                  </span>
+                                </div>
+                                <div className="flex justify-between items-center text-xs">
+                                  <span className="text-red-600">
+                                    Divergência (A Pagar):
+                                  </span>
+                                  <span className="text-red-700">
+                                    U$ {divergenceAmount.toFixed(2)}
+                                  </span>
+                                </div>
+                                <div className="flex justify-between items-center text-xs font-medium border-t border-gray-300 pt-1">
+                                  <span className="text-gray-700">
+                                    Total do Projeto:
+                                  </span>
+                                  <span className="text-gray-800">
+                                    U${" "}
+                                    {(originalValue + divergenceAmount).toFixed(
+                                      2
+                                    )}
+                                  </span>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
                       <div className="border-t border-gray-200 my-2"></div>
                     </div>
                   )}
