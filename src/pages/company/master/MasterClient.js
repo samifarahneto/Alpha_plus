@@ -689,10 +689,11 @@ const MasterClient = () => {
         userType: userType,
       };
 
-      // Se for B2B, remover registeredBy
-      if (newType === "B2B") {
-        updates.registeredBy = null;
-      }
+      // Não remover mais o registeredBy ao virar B2B para manter a relação com projetos antigos
+      // Se for B2B, manter o registeredBy existente para preservar histórico de projetos
+      // if (newType === "B2B") {
+      //   updates.registeredBy = null;
+      // }
 
       // Atualizar documento
       await updateDoc(clientDocRef, updates);

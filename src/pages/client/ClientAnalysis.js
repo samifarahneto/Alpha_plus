@@ -97,20 +97,34 @@ const ClientAnalysis = () => {
         if (userType === "colab") {
           emailsToSearch = [user.email, ...projectPermissions];
         } else {
-          // Para b2b/b2c, busca projetos do usuário e dos vinculados
-          const usersWithSameRegisteredBy = query(
-            collection(firestore, "users"),
-            where("registeredBy", "==", userRegisteredBy || user.email)
-          );
-          const usersSnapshot = await getDocs(usersWithSameRegisteredBy);
-          emailsToSearch = usersSnapshot.docs
-            .map((doc) => doc.data().email)
-            .filter((email) => email);
+          // Para b2b/b2c, sempre incluir o próprio email primeiro
+          emailsToSearch = [user.email];
 
-          // Adicionar o email do usuário atual à lista se ele não estiver incluído
-          if (user.email && !emailsToSearch.includes(user.email)) {
-            emailsToSearch.push(user.email);
+          // Buscar usuários relacionados através do registeredBy
+          if (userRegisteredBy) {
+            const usersWithSameRegisteredBy = query(
+              collection(firestore, "users"),
+              where("registeredBy", "==", userRegisteredBy)
+            );
+            const usersSnapshot = await getDocs(usersWithSameRegisteredBy);
+            const relatedEmails = usersSnapshot.docs
+              .map((doc) => doc.data().email)
+              .filter((email) => email && !emailsToSearch.includes(email));
+            emailsToSearch.push(...relatedEmails);
           }
+
+          // Buscar usuários que têm o email atual como registeredBy
+          const usersRegisteredByCurrentUser = query(
+            collection(firestore, "users"),
+            where("registeredBy", "==", user.email)
+          );
+          const registeredUsersSnapshot = await getDocs(
+            usersRegisteredByCurrentUser
+          );
+          const registeredEmails = registeredUsersSnapshot.docs
+            .map((doc) => doc.data().email)
+            .filter((email) => email && !emailsToSearch.includes(email));
+          emailsToSearch.push(...registeredEmails);
 
           // Adicionar os emails dos colaboradores
           colaboradores.forEach((colab) => {
@@ -129,11 +143,15 @@ const ClientAnalysis = () => {
             collections = ["b2cprojectspaid"];
           }
         } else {
-          if (userType === "b2b") {
-            collections = ["b2bapproved", "b2bprojectspaid"];
-          } else if (userType === "b2c") {
-            collections = ["b2cprojectspaid"];
-          }
+          // Para usuários normais (b2b/b2c), buscar em TODAS as coleções para encontrar projetos antigos
+          // independentemente do tipo atual do usuário
+          collections = [
+            // Coleções B2B
+            "b2bapproved",
+            "b2bprojectspaid",
+            // Coleções B2C
+            "b2cprojectspaid",
+          ];
         }
 
         console.log("Configuração de busca:", {

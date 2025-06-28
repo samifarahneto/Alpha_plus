@@ -139,6 +139,7 @@ export const useClientNotifications = () => {
         let goingOnCollections = [];
 
         if (userType === "colab") {
+          // Para colaboradores, usar apenas as coleções do tipo do usuário que o registrou
           if (registeredByType === "b2b") {
             collections = [
               "b2bdocsaved",
@@ -165,31 +166,38 @@ export const useClientNotifications = () => {
             goingOnCollections = ["b2cprojectspaid"];
           }
         } else {
-          if (userType === "b2b") {
-            collections = [
-              "b2bdocsaved",
-              "b2bdocprojects",
-              "b2bsketch",
-              "b2bapproved",
-              "b2bapproval",
-              "b2bprojectspaid",
-            ];
-            budgetCollections = ["b2bdocprojects"];
-            budgetReadyCollections = ["b2bapproval"];
-            analysisCollections = ["b2bapproved", "b2bprojectspaid"];
-            goingOnCollections = ["b2bprojectspaid", "b2bapproved"];
-          } else if (userType === "b2c") {
-            collections = [
-              "b2csketch",
-              "b2cdocsaved",
-              "b2cdocprojects",
-              "b2cprojectspaid",
-            ];
-            budgetCollections = ["b2cdocprojects"];
-            budgetReadyCollections = ["b2capproval"];
-            analysisCollections = ["b2cprojectspaid"];
-            goingOnCollections = ["b2cprojectspaid"];
-          }
+          // Para usuários B2B e B2C, buscar em TODAS as coleções para encontrar projetos antigos
+          collections = [
+            // Coleções B2B
+            "b2bdocsaved",
+            "b2bdocprojects",
+            "b2bsketch",
+            "b2bapproved",
+            "b2bapproval",
+            "b2bprojectspaid",
+            // Coleções B2C
+            "b2csketch",
+            "b2cdocsaved",
+            "b2cdocprojects",
+            "b2cprojectspaid",
+            "b2capproval",
+            "b2capproved",
+          ];
+
+          budgetCollections = ["b2bdocprojects", "b2cdocprojects"];
+          budgetReadyCollections = ["b2bapproval", "b2capproval"];
+          analysisCollections = [
+            "b2bapproved",
+            "b2bprojectspaid",
+            "b2cprojectspaid",
+            "b2capproved",
+          ];
+          goingOnCollections = [
+            "b2bprojectspaid",
+            "b2bapproved",
+            "b2cprojectspaid",
+            "b2capproved",
+          ];
         }
 
         // Resetar contadores
