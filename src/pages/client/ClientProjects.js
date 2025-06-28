@@ -790,6 +790,11 @@ const ClientProjects = () => {
   }, [showColumnSelector, columnOrder, modalColumnOrder.length]);
 
   const calculateTotalPages = useCallback((files, row) => {
+    // Se o projeto tem arquivos que necessitam análise manual, não calcular páginas automaticamente
+    if (row?.hasManualQuoteFiles) {
+      return "A definir";
+    }
+
     // Primeiro, calcular as páginas dos arquivos originais
     let originalPages = 0;
     if (files && Array.isArray(files)) {
@@ -833,6 +838,11 @@ const ClientProjects = () => {
 
   const calculateTotalValue = useCallback((files, row) => {
     if (!files || !Array.isArray(files)) return "0.00";
+
+    // Se o projeto tem arquivos que necessitam análise manual, não calcular valor automaticamente
+    if (row?.hasManualQuoteFiles) {
+      return "A definir";
+    }
 
     // Calcular valor dos arquivos originais
     let originalValue = files.reduce((acc, file) => {
@@ -1597,7 +1607,15 @@ const ClientProjects = () => {
     {
       id: "totalValue",
       label: "Valor U$",
-      render: (value, row) => `U$ ${calculateTotalValue(row.files, row)}`,
+      render: (value, row) => {
+        const totalValue = calculateTotalValue(row.files, row);
+        // Se o valor for uma string não numérica (como "A definir"), mostrar diretamente
+        if (typeof totalValue === "string" && isNaN(Number(totalValue))) {
+          return totalValue;
+        }
+        // Caso contrário, formatar como valor monetário
+        return `U$ ${totalValue}`;
+      },
     },
     {
       id: "isPaid",
@@ -1682,9 +1700,11 @@ const ClientProjects = () => {
       label: "Sel.",
       fixed: true,
       render: (value, row) => {
+        const totalValue = calculateTotalValue(row.files, row);
         const isPendingPayment =
           row.payment_status === "Pendente" &&
-          calculateTotalValue(row.files, row) !== "0.00";
+          totalValue !== "0.00" &&
+          totalValue !== "A definir";
         const hasZeroPagesValue = hasZeroPages(row.files, row);
 
         return (

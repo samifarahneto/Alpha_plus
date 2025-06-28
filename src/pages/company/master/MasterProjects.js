@@ -251,18 +251,27 @@ const MasterProjects = ({ style, isMobile }) => {
       id: "totalValue",
       label: "Valor (U$)",
       minWidth: "90px",
-      render: (value, row) => (
-        <span>
-          U${" "}
-          {Number(
-            (typeof row.payment_status === "object" &&
-              row.payment_status.totalPayment) ||
-              row.totalProjectValue ||
-              row.totalValue ||
-              calculateTotalValue(row.files, row)
-          ).toFixed(2)}
-        </span>
-      ),
+      render: (value, row) => {
+        // Se o projeto tem arquivos que necessitam análise manual, mostrar "A definir"
+        if (row.hasManualQuoteFiles) {
+          return <span>A definir</span>;
+        }
+
+        const totalValue =
+          (typeof row.payment_status === "object" &&
+            row.payment_status.totalPayment) ||
+          row.totalProjectValue ||
+          row.totalValue ||
+          calculateTotalValue(row.files, row);
+
+        // Se o valor for uma string (como "A definir"), mostrar diretamente
+        if (typeof totalValue === "string") {
+          return <span>{totalValue}</span>;
+        }
+
+        // Caso contrário, formatar como número
+        return <span>U$ {Number(totalValue).toFixed(2)}</span>;
+      },
     },
     {
       id: "paymentStatus",
@@ -715,6 +724,11 @@ const MasterProjects = ({ style, isMobile }) => {
   const calculateTotalValue = (files, project) => {
     if (!files || !Array.isArray(files)) return "0.00";
 
+    // Se o projeto tem arquivos que necessitam análise manual, não calcular valor automaticamente
+    if (project?.hasManualQuoteFiles) {
+      return "A definir";
+    }
+
     const baseValue = files.reduce((acc, file) => {
       const fileTotal = Number(file.total) || Number(file.totalValue) || 0;
       return acc + fileTotal;
@@ -738,6 +752,12 @@ const MasterProjects = ({ style, isMobile }) => {
 
   const calculateTotalPages = (files, project) => {
     if (!files || !Array.isArray(files)) return 0;
+
+    // Se o projeto tem arquivos que necessitam análise manual, não calcular páginas automaticamente
+    if (project?.hasManualQuoteFiles) {
+      return "A definir";
+    }
+
     const basePages = files.reduce(
       (total, file) => total + (Number(file.pageCount) || 0),
       0
