@@ -51,6 +51,7 @@ import ProjectsInAnalysis from "./pages/company/master/ProjectsInAnalysis";
 import MasterDashboard from "./pages/company/master/MasterDashboard";
 import ActivityLog from "./pages/company/master/ActivityLog";
 import MasterAddProject from "./pages/company/master/MasterAddProject";
+import MasterRefund from "./pages/company/master/MasterRefund";
 
 // Outras configurações
 import { getFirestore, collection, onSnapshot } from "firebase/firestore";
@@ -364,6 +365,14 @@ const AppContent = () => {
               element={
                 <ProtectedRoute allowedUserTypes={["master"]}>
                   <MasterPayments />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="refunds"
+              element={
+                <ProtectedRoute allowedUserTypes={["master"]}>
+                  <MasterRefund />
                 </ProtectedRoute>
               }
             />

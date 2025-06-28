@@ -171,6 +171,9 @@ const Header = () => {
       "/company/master/payments": (
         <FaCreditCard className="w-3 h-3 sm:w-4 sm:h-4 text-gray-500" />
       ),
+      "/company/master/refunds": (
+        <FaUndo className="w-3 h-3 sm:w-4 sm:h-4 text-gray-500" />
+      ),
       "/company/master/add-project": (
         <FaPlus className="w-3 h-3 sm:w-4 sm:h-4 text-gray-500" />
       ),
@@ -282,6 +285,7 @@ const Header = () => {
         { to: "/company/master/projects-done", label: "Projetos Concluídos" },
         { to: "/company/master/projects-paid", label: "Projetos Pagos" },
         { to: "/company/master/payments", label: "Pagamentos Pendentes" },
+        { to: "/company/master/refunds", label: "Reembolsos" },
         { to: "/company/master/add-project", label: "Criar Projeto" },
       ];
     } else {
