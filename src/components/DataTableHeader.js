@@ -175,7 +175,7 @@ const DataTableHeader = ({
             return (
               <th key={columnId} className="table-header-cell !py-0">
                 {column.filter ? (
-                  <span className="px-2 py-0 relative">
+                  <span className="py-0 relative">
                     {column.filter.type === "text" && (
                       <input
                         type="text"

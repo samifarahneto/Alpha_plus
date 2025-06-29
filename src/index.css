@@ -52,7 +52,7 @@
   }
 
   .table-header-cell {
-    @apply px-4 py-2 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider border-b border-gray-200 min-w-fit max-w-none !important;
+    @apply py-2 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider border-b border-gray-200 min-w-fit max-w-none !important;
   }
 
   .table-header-cell-content {
@@ -69,11 +69,11 @@
   }
 
   .table-cell {
-    @apply px-4 py-4 text-xs font-medium text-gray-700;
+    @apply py-4 text-xs font-medium text-gray-700;
   }
 
   .table-cell-select {
-    @apply px-4 py-4 text-sm text-center relative !important;
+    @apply py-4 text-sm text-center relative !important;
     pointer-events: none;
   }
 

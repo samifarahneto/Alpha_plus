@@ -88,7 +88,16 @@ const Header = () => {
   };
 
   const toggleSidebar = () => {
-    setIsSidebarExpanded(!isSidebarExpanded);
+    const newState = !isSidebarExpanded;
+    setIsSidebarExpanded(newState);
+
+    // Salvar estado no localStorage para sincronizar com ClientLayout
+    localStorage.setItem("sidebarExpanded", JSON.stringify(newState));
+
+    // Disparar evento customizado para notificar mudanças
+    window.dispatchEvent(
+      new CustomEvent("sidebarToggle", { detail: newState })
+    );
   };
 
   const toggleProjectsMenu = () => {
@@ -101,6 +110,12 @@ const Header = () => {
     if (!shouldShowText()) {
       event.preventDefault();
       setIsSidebarExpanded(true);
+
+      // Salvar estado no localStorage para sincronizar com ClientLayout/MasterLayout
+      localStorage.setItem("sidebarExpanded", JSON.stringify(true));
+
+      // Disparar evento customizado para notificar mudanças
+      window.dispatchEvent(new CustomEvent("sidebarToggle", { detail: true }));
       return;
     }
     // Se está mostrando texto, permitir navegação normal
@@ -111,6 +126,12 @@ const Header = () => {
     // Se o sidebar não está mostrando texto (está minimizado), apenas expandir
     if (!shouldShowText()) {
       setIsSidebarExpanded(true);
+
+      // Salvar estado no localStorage para sincronizar com ClientLayout/MasterLayout
+      localStorage.setItem("sidebarExpanded", JSON.stringify(true));
+
+      // Disparar evento customizado para notificar mudanças
+      window.dispatchEvent(new CustomEvent("sidebarToggle", { detail: true }));
       return;
     }
     // Se está mostrando texto, fazer toggle do menu projetos
@@ -235,6 +256,10 @@ const Header = () => {
         !event.target.closest(".sidebar-toggle-btn")
       ) {
         setIsSidebarExpanded(false);
+        localStorage.setItem("sidebarExpanded", JSON.stringify(false));
+        window.dispatchEvent(
+          new CustomEvent("sidebarToggle", { detail: false })
+        );
       }
     };
 
@@ -250,6 +275,14 @@ const Header = () => {
       setIsSidebarExpanded(true);
     }
   }, [isTablet]);
+
+  // Inicializar estado do sidebar do localStorage
+  useEffect(() => {
+    const savedState = localStorage.getItem("sidebarExpanded");
+    if (savedState !== null) {
+      setIsSidebarExpanded(JSON.parse(savedState));
+    }
+  }, []);
 
   // Links específicos por tipo de usuário para o menu "Projetos"
   const getProjectLinks = () => {
@@ -892,15 +925,6 @@ const Header = () => {
           onClick={toggleSidebar}
         />
       )}
-
-      {/* Ajuste do conteúdo principal */}
-      <div
-        className={`transition-all duration-300 ${
-          isMobile ? "" : isTablet || isSidebarExpanded ? "ml-72" : "ml-16"
-        }`}
-      >
-        {/* Conteúdo será renderizado aqui */}
-      </div>
     </>
   );
 };

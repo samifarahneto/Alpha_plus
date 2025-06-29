@@ -1,24 +1,33 @@
 /* Wrapper da tabela */
 .table-wrapper {
-  width: 100%;
+  width: 100% !important;
+  max-width: 100% !important;
   overflow-x: auto;
   background-color: #ffffff;
   position: relative;
+  margin: 0 !important;
+  padding: 0 !important;
 }
 
 .table-container {
   display: table;
-  width: 100%;
+  width: 100% !important;
+  max-width: 100% !important;
   position: relative;
+  margin: 0 !important;
+  padding: 0 !important;
 }
 
 /* Estilos base da tabela */
 .table-default {
-  width: 100%;
-  min-width: 100%;
+  width: 100% !important;
+  min-width: 100% !important;
+  max-width: 100% !important;
   border-collapse: separate;
   border-spacing: 0;
   font-size: 0.75rem;
+  margin: 0 !important;
+  padding: 0 !important;
 }
 
 /* Cabeçalho da tabela */
@@ -36,7 +45,7 @@
 }
 
 .table-header-cell {
-  padding: 0.5rem;
+  padding: 0.5rem 0;
   text-align: center;
   font-weight: 600;
   color: #374151;
@@ -85,7 +94,7 @@
 }
 
 .table-cell {
-  padding: 0.5rem;
+  padding: 0.5rem 0;
   text-align: center;
   color: #374151;
   border-bottom: 1px solid #e5e7eb;
@@ -111,7 +120,7 @@
 .table-input {
   width: 100%;
   height: 24px;
-  padding: 0 0.5rem;
+  padding: 0;
   font-size: 0.75rem;
   border: 1px solid #d1d5db;
   border-radius: 0.25rem;
@@ -125,7 +134,7 @@
 .table-select {
   width: 100%;
   height: 24px;
-  padding: 0 0.5rem;
+  padding: 0;
   font-size: 0.75rem;
   border: 1px solid #d1d5db;
   border-radius: 0.25rem;
@@ -151,7 +160,7 @@
 
 .table th,
 .table td {
-  padding: 0.75rem 1rem;
+  padding: 0.75rem 0;
   text-align: left;
   border-bottom: 1px solid #e5e7eb;
 }
@@ -289,7 +298,7 @@
   background-color: #ffffff;
   border-radius: 8px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  padding: 1.5rem;
+  padding: 1.5rem 0;
   z-index: 50;
   min-width: 300px;
 }
@@ -334,7 +343,6 @@
 }
 
 .column-selector-checkbox {
-  margin-right: 0.75rem;
 }
 
 .column-selector-label {
@@ -345,7 +353,6 @@
 .column-selector-fixed {
   color: #64748b;
   font-size: 0.75rem;
-  margin-left: 0.5rem;
 }
 
 @media (max-width: 768px) {
@@ -363,11 +370,45 @@
 
   .table-header-cell {
     min-width: 120px;
-    padding: 0.25rem;
+    padding: 0.25rem 0;
   }
 
   .table-cell {
     min-width: 120px;
-    padding: 0.25rem;
+    padding: 0.25rem 0;
   }
+}
+
+/* Forçar remoção de padding lateral APENAS nos elementos da tabela */
+.table-wrapper,
+.table-container,
+.table-default,
+.table-header,
+.table-header-cell,
+.table-body,
+.table-row,
+.table-cell {
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+
+/* Exceções para elementos de paginação - restaurar padding */
+.pagination-container,
+.pagination-rows-button,
+.pagination-rows-option,
+.pagination-page-button {
+  padding-left: 1rem !important;
+  padding-right: 1rem !important;
+}
+
+/* Garantir que divs pai também não tenham padding */
+.table-wrapper > *,
+.table-container > *,
+.table-default > * {
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
 }
